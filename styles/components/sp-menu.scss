@@ -13,7 +13,7 @@
   //------------------- FIRST LINE
 
   & > ul {
-    @apply relative flex justify-between m-0 p-0;
+    @apply relative flex justify-start gap-8 m-0 p-0;
 
     & > li {
       & > a,

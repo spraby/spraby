@@ -2,6 +2,7 @@ import Link from "next/link";
 import SearchIcon from "@/theme/assets/SearchIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
 import CartIcon from "@/theme/assets/CartIcon";
+import Menu from "@/theme/snippents/Menu";
 
 const LayoutHeader = ({}) => {
 
@@ -19,7 +20,7 @@ const LayoutHeader = ({}) => {
 
             <div className='border-gray-300 grow border flex p-1 rounded-lg justify-center items-center gap-2'>
               <div className='px-2'>
-                <SearchIcon />
+                <SearchIcon/>
               </div>
               <input className='p-2 w-full' placeholder={''}></input>
               <button className='bg-gray-200 text-gray-400 p-2 rounded-lg'>{'Serach'}</button>
@@ -37,13 +38,44 @@ const LayoutHeader = ({}) => {
               </div>
 
               <div className='flex gap-5'>
-                <HeardIcon />
-                <CartIcon />
+                <HeardIcon/>
+                <CartIcon/>
               </div>
             </div>
           </div>
         </div>
-        {/*<Menu menu={menu ?? []} />*/}
+        <Menu menu={[
+          {
+            title: 'Мужское',
+            url: '/collections/muzskoe',
+            children: [
+              {
+                title: 'Куртки',
+                url: '/collections/muzskoe-kurtki',
+                children: [
+                  {
+                    title: 'Зимние',
+                    url: '/collections/muzskoe-kurtki-zimnie',
+                  },
+                  {
+                    title: 'Летние',
+                    url: '/collections/muzskoe-kurtki-letnie',
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            title: 'Женское',
+            url: '/collections/zenskoe',
+            children: [
+              {
+                title: 'Куртки',
+                url: '/collections/zenskoe-kurtki',
+              }
+            ]
+          }
+        ]}/>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import ProductPage from "@/theme/temlates/ProductPage";
+import ProductPage from "@/theme/templates/ProductPage";
 
 export default function Page() {
   return <ProductPage/>
