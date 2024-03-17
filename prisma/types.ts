@@ -23,6 +23,7 @@ export type UsersModel = Users & {
 export type BrandsModel = Brands & {
   user?: UsersModel
   Products?: ProductsModel[]
+  Categories?: CategoriesModel[]
 }
 
 export type OptionsModel = Options & {
@@ -34,6 +35,7 @@ export type CategoriesModel = Categories & {
   Options?: OptionsModel[]
   Collections?: CollectionsModel[]
   Products?: ProductsModel[]
+  Brands?: BrandsModel[]
 }
 
 export type CollectionsModel = Collections & {
