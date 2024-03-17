@@ -1,12 +1,14 @@
+'use client'
+
 import ProductCart from "@/theme/snippents/ProductCart";
+import FilterPanel from "@/theme/snippents/FilterPanel";
 
-export default function CollectionPage() {
-
+export default function CollectionPage({filter, searchParams}: Props) {
   const products = getRandomProducts();
 
   return <main className='container mx-auto grid grid-cols-12 gap-5'>
     <div className='col-span-3'>
-      //FILTER
+      <FilterPanel options={filter} searchParams={searchParams}/>
     </div>
     <div className='col-span-9'>
       <div className='grid lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-5'>
@@ -49,3 +51,14 @@ function getRandomProducts(): any[] {
 }
 
 export const generateRandom = (min = 0, max = 100) => Math.floor(Math.random() * (max - min)) + min;
+
+type Props = {
+  searchParams: any,
+  filter: {
+    title: string,
+    values: {
+      value: string,
+      optionId: string
+    }[]
+  }[]
+}
