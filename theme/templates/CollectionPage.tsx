@@ -2,6 +2,7 @@
 
 import ProductCart from "@/theme/snippents/ProductCart";
 import FilterPanel from "@/theme/snippents/FilterPanel";
+import {FilterItem} from "@/types";
 
 export default function CollectionPage({filter, searchParams}: Props) {
   const products = getRandomProducts();
@@ -54,11 +55,5 @@ export const generateRandom = (min = 0, max = 100) => Math.floor(Math.random() *
 
 type Props = {
   searchParams: any,
-  filter: {
-    title: string,
-    values: {
-      value: string,
-      optionId: string
-    }[]
-  }[]
+  filter: FilterItem[]
 }

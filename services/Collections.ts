@@ -1,6 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {CollectionsModel} from "@/prisma/types";
+import Prisma, {CategoriesModel, CollectionsModel, OptionsModel} from "@/prisma/types";
 
 /**
  *
@@ -50,5 +50,38 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
   return {
     items,
     paginator: {pageSize: params.limit, current: params.page, total, pages: Math.ceil(total / params.limit)},
+  }
+}
+
+/**
+ *
+ * @param where
+ */
+export async function getOptions(where: Prisma.CollectionsWhereInput) {
+  try {
+    const collection = await findFirst({
+      where,
+      include: {
+        Categories: {
+          include: {
+            Options: {
+              include: {
+                Values: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    return (collection?.Categories ?? []).reduce((acc: OptionsModel[], category: CategoriesModel) => {
+      (category?.Options ?? []).map(option => {
+        if (!acc?.find(i => i.id === option.id)) acc.push(option)
+      })
+      return acc;
+    }, [])
+
+  } catch (e) {
+    return [];
   }
 }
