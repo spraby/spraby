@@ -3,7 +3,7 @@
 import {ReactNode, useEffect, useState} from "react";
 import LayoutHeader from "@/theme/sections/LayoutHeader";
 
-export default function ({children}: { children: ReactNode }) {
+export default function ({menu, children}: { menu: any, children: ReactNode }) {
   const [opacity, setOpacity] = useState(0)
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export default function ({children}: { children: ReactNode }) {
   }, [])
 
   return <div style={{opacity, transition: '1.3s opacity'}}>
-    <LayoutHeader/>
+    <LayoutHeader menu={menu}/>
     {children}
   </div>
 }

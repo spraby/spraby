@@ -4,7 +4,7 @@ import HeardIcon from "@/theme/assets/HeardIcon";
 import CartIcon from "@/theme/assets/CartIcon";
 import Menu from "@/theme/snippents/Menu";
 
-const LayoutHeader = ({}) => {
+const LayoutHeader = ({menu}: { menu: any }) => {
 
   return (
     <div className='shadow-lg shadow-slate-200'>
@@ -44,38 +44,7 @@ const LayoutHeader = ({}) => {
             </div>
           </div>
         </div>
-        <Menu menu={[
-          {
-            title: 'Мужское',
-            url: '/collections/muzskoe',
-            children: [
-              {
-                title: 'Куртки',
-                url: '/collections/muzskoe-kurtki',
-                children: [
-                  {
-                    title: 'Зимние',
-                    url: '/collections/muzskoe-kurtki-zimnie',
-                  },
-                  {
-                    title: 'Летние',
-                    url: '/collections/muzskoe-kurtki-letnie',
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            title: 'Женское',
-            url: '/collections/zenskoe',
-            children: [
-              {
-                title: 'Куртки',
-                url: '/collections/zenskoe-kurtki',
-              }
-            ]
-          }
-        ]}/>
+        <Menu menu={menu}/>
       </div>
     </div>
   );

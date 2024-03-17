@@ -7,7 +7,10 @@ import {
   Products,
   Variants,
   VariantValues,
-  Prisma
+  Images,
+  ProductImages,
+  Settings,
+  Prisma,
 } from '@prisma/client'
 
 export default Prisma
@@ -41,14 +44,28 @@ export type ProductsModel = Products & {
   Brand?: BrandsModel,
   Category?: CategoriesModel
   Variants?: VariantsModel[]
+  Images?: ProductImagesModel[]
 }
 
 export type VariantsModel = Variants & {
   Product?: ProductsModel
   Values?: VariantValuesModel[]
+  Image?: ProductImagesModel
 }
 
 export type VariantValuesModel = VariantValues & {
   Variant?: VariantsModel
   Option?: OptionsModel
 }
+
+export type ProductImagesModel = ProductImages & {
+  Product?: ProductsModel
+  Image?: ImagesModel
+  Variants?: VariantsModel[]
+}
+
+export type ImagesModel = Images & {
+  ProductImages?: ProductImagesModel[]
+}
+
+export type SettingsModel = Settings
