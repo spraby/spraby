@@ -9,10 +9,9 @@ export default function ({children}: { children: ReactNode }) {
   const [opacity, setOpacity] = useState(0)
 
   useEffect(() => {
-    getMainMenu().then(setMenu)
-    setTimeout(() => {
+    getMainMenu().then(setMenu).finally(() => {
       setOpacity(1)
-    }, 300)
+    })
   }, [])
 
   return <div style={{opacity, transition: '1.3s opacity'}}>
