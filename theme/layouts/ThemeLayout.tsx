@@ -2,11 +2,14 @@
 
 import {ReactNode, useEffect, useState} from "react";
 import LayoutHeader from "@/theme/sections/LayoutHeader";
+import {getMainMenu} from "@/services/Settings";
 
-export default function ({menu, children}: { menu: any, children: ReactNode }) {
+export default function ({children}: { children: ReactNode }) {
+  const [menu, setMenu] = useState([]);
   const [opacity, setOpacity] = useState(0)
 
   useEffect(() => {
+    getMainMenu().then(setMenu)
     setTimeout(() => {
       setOpacity(1)
     }, 300)
