@@ -1,5 +1,5 @@
 import ProductPage from "@/theme/templates/ProductPage";
 
-export default function Page() {
+export default function () {
   return <ProductPage/>
 }

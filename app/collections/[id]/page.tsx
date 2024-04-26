@@ -2,7 +2,7 @@ import CollectionPage from "@/theme/templates/CollectionPage";
 import {getOptions} from "@/services/Collections";
 import {convertOptionsToFilter} from "@/services/Options";
 
-export default async function Page(props: any) {
+export default async function (props: any) {
   const options = await getOptions({handle: props.params.id})
   const filter = await convertOptionsToFilter(options)
 

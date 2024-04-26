@@ -2,17 +2,19 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import FilterPanel from "@/theme/snippents/FilterPanel";
 import {FilterItem} from "@/types";
 
-export default function ({filter, searchParams}: Props) {
+export default function ({filter = [], searchParams, loading = false}: Props) {
   const products = getRandomProducts();
 
   return <main className='container mx-auto grid grid-cols-12 gap-5'>
     <div className='col-span-3'>
-      <FilterPanel options={filter} searchParams={searchParams}/>
+      {
+        !loading && <FilterPanel options={filter} searchParams={searchParams}/>
+      }
     </div>
     <div className='col-span-9'>
       <div className='grid lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-5'>
         {
-          products.map((product, index) => {
+          !loading && products.map((product, index) => {
             return <ProductCart product={product} key={index}/>;
           })
         }
@@ -52,6 +54,7 @@ function getRandomProducts(): any[] {
 export const generateRandom = (min = 0, max = 100) => Math.floor(Math.random() * (max - min)) + min;
 
 type Props = {
-  searchParams: any,
-  filter: FilterItem[]
+  searchParams?: any,
+  filter?: FilterItem[],
+  loading?: boolean
 }
