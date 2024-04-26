@@ -1,6 +1,7 @@
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 generator client {
@@ -13,8 +14,8 @@ enum UserRole {
   customer
 }
 
-model Users {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+model User {
+  id        String   @id @default(cuid())
   firstName String?
   lastName  String?
   email     String   @unique
@@ -22,126 +23,137 @@ model Users {
   password  String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
-  brands    Brands[]
+  Brands    Brand[]
 }
 
-model Brands {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
-  usersId     String?      @db.ObjectId
+model Brand {
+  id          String     @id @default(cuid())
+  userId      String?
   name        String
   description String?
-  categoryIds String[]     @db.ObjectId
-  updatedAt   DateTime     @updatedAt
-  createdAt   DateTime     @default(now())
-  user        Users?       @relation(fields: [usersId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Categories  Categories[] @relation(fields: [categoryIds], references: [id])
-  Products    Products[]
+  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now())
+  User        User?      @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Products    Product[]
+  Categories  Category[]
+  Images      Image[]
 }
 
-model Options {
-  id          String          @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  title       String
-  description String?
-  values      String[]
-  categoryIds String[]        @db.ObjectId
-  updatedAt   DateTime        @updatedAt
-  createdAt   DateTime        @default(now())
-  Categories  Categories[]    @relation(fields: [categoryIds], references: [id])
-  Values      VariantValues[]
-}
-
-model Categories {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  handle        String        @unique
+model Option {
+  id            String         @id @default(cuid())
   name          String
   title         String
   description   String?
-  optionIds     String[]      @db.ObjectId
-  collectionIds String[]      @db.ObjectId
-  brandIds      String[]      @db.ObjectId
-  updatedAt     DateTime      @updatedAt
-  createdAt     DateTime      @default(now())
-  Options       Options[]     @relation(fields: [optionIds], references: [id])
-  Collections   Collections[] @relation(fields: [collectionIds], references: [id])
-  Products      Products[]
-  Brands        Brands[]      @relation(fields: [brandIds], references: [id])
+  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+  Values        OptionValue[]
+  Categories    Category[]
+  VariantValues VariantValue[]
 }
 
-model Collections {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+model OptionValue {
+  id            String         @id @default(cuid())
+  optionId      String
+  value         String
+  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+  Option        Option         @relation(fields: [optionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  VariantValues VariantValue[]
+}
+
+model Category {
+  id          String       @id @default(cuid())
   handle      String       @unique
   name        String
   title       String
   description String?
-  categoryIds String[]     @db.ObjectId
   updatedAt   DateTime     @updatedAt
   createdAt   DateTime     @default(now())
-  Categories  Categories[] @relation(fields: [categoryIds], references: [id])
+  Options     Option[]
+  Collections Collection[]
+  Brands      Brand[]
+  Products    Product[]
 }
 
-model Products {
-  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+model Collection {
+  id          String     @id @default(cuid())
+  handle      String     @unique
+  name        String
   title       String
   description String?
-  brandId     String          @db.ObjectId
-  categoryId  String?         @db.ObjectId
-  updatedAt   DateTime        @updatedAt
-  createdAt   DateTime        @default(now())
-  Brand       Brands          @relation(fields: [brandId], references: [id])
-  Category    Categories?     @relation(fields: [categoryId], references: [id])
-  Variants    Variants[]
-  Images      ProductImages[]
+  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now())
+  Categories  Category[]
 }
 
-model Variants {
-  id        String          @id @default(auto()) @map("_id") @db.ObjectId
+model Product {
+  id          String         @id @default(cuid())
+  brandId     String
+  categoryId  String?
+  title       String
+  description String?
+  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime       @default(now())
+  Brand       Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Variants    Variant[]
+  Images      ProductImage[]
+}
+
+model Variant {
+  id        String         @id @default(cuid())
+  productId String
+  imageId   String?
   title     String
-  productId String          @db.ObjectId
-  imageId   String?         @db.ObjectId
-  updatedAt DateTime        @updatedAt
-  createdAt DateTime        @default(now())
-  Product   Products        @relation(fields: [productId], references: [id])
-  Values    VariantValues[]
-  Images    ProductImages?  @relation(fields: [imageId], references: [id])
+  updatedAt DateTime       @updatedAt
+  createdAt DateTime       @default(now())
+  Product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Image     Image?         @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Values    VariantValue[]
 }
 
-model VariantValues {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  value     String
-  variantId String   @db.ObjectId
-  optionId  String   @db.ObjectId
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-  Variant   Variants @relation(fields: [variantId], references: [id])
-  Option    Options  @relation(fields: [optionId], references: [id])
+model VariantValue {
+  id            String      @id @default(cuid())
+  variantId     String
+  optionId      String
+  optionValueId String
+  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+  Variant       Variant     @relation(fields: [variantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Option        Option      @relation(fields: [optionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Value         OptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([variantId, optionId])
+  @@unique([variantId, optionId, optionValueId])
 }
 
-model ProductImages {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  productId String     @db.ObjectId
-  imageId   String     @db.ObjectId
-  position  Int        @default(0)
-  default   Boolean    @default(false)
-  updatedAt DateTime   @updatedAt
-  createdAt DateTime   @default(now())
-  Product   Products   @relation(fields: [productId], references: [id])
-  Image     Images     @relation(fields: [imageId], references: [id])
-  Variants  Variants[]
-}
-
-model Images {
-  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+model Image {
+  id            String         @id @default(cuid())
+  name          String
   src           String
   alt           String?
-  updatedAt     DateTime        @updatedAt
-  createdAt     DateTime        @default(now())
-  ProductImages ProductImages[]
+  meta          String?
+  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+  Brands        Brand[]
+  ProductImages ProductImage[]
+  Variants      Variant[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  imageId   String
+  position  Int      @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  Product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Settings {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  mainMenu  Json
+  id        String   @unique
+  data      Json     @default("[]") @db.JsonB
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }

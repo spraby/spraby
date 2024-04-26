@@ -1,14 +1,14 @@
 'use server'
 
 import db from "@/prisma/db.client";
-import Prisma, {UsersModel} from "@/prisma/types";
+import Prisma, {UserModel} from "@/prisma/types";
 
 /**
  *
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.UsersFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.UserFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -20,13 +20,13 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         email: {contains: params.search, mode: 'insensitive'}
       }]
     } : {})
-  } as Prisma.UsersWhereInput
+  } as Prisma.UserWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.users.count({where: where})
+  const total = await db.user.count({where: where})
 
-  const items = await db.users.findMany({
+  const items = await db.user.findMany({
     orderBy: {
       createdAt: 'desc',
     },
@@ -45,7 +45,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  */
 export async function getList() {
-  return db.users.findMany() as Promise<UsersModel[]>
+  return db.user.findMany() as Promise<UserModel[]>
 }
 
 /**
@@ -53,7 +53,7 @@ export async function getList() {
  * @param email
  */
 export async function findByEmail(email: string) {
-  return db.users.findFirst({where: {email}, include: {brands: true}}) as Promise<UsersModel | null>
+  return db.user.findFirst({where: {email}, include: {Brands: true}}) as Promise<UserModel | null>
 }
 
 /**
@@ -61,5 +61,5 @@ export async function findByEmail(email: string) {
  * @param id
  */
 export async function findById(id: string) {
-  return db.users.findFirst({where: {id, role: {not: 'admin'}}}) as Promise<UsersModel | null>
+  return db.user.findFirst({where: {id, role: {not: 'admin'}}}) as Promise<UserModel | null>
 }

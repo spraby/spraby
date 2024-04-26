@@ -1,13 +1,13 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {CategoriesModel, OptionsModel} from "@/prisma/types";
+import Prisma, {CategoryModel, OptionModel} from "@/prisma/types";
 
 /**
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.CategoriesFindFirstArgs): Promise<CategoriesModel | null> {
-  return db.categories.findFirst(params)
+export async function findFirst(params?: Prisma.CategoryFindFirstArgs): Promise<CategoryModel | null> {
+  return db.category.findFirst(params)
 }
 
 /**
@@ -15,7 +15,7 @@ export async function findFirst(params?: Prisma.CategoriesFindFirstArgs): Promis
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.CategoriesFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.CategoryFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -24,13 +24,13 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         {title: {contains: params.search, mode: 'insensitive'}}
       ]
     } : {})
-  } as Prisma.CategoriesWhereInput
+  } as Prisma.CategoryWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.categories.count({where: where})
+  const total = await db.category.count({where: where})
 
-  const items = await db.categories.findMany({
+  const items = await db.category.findMany({
     orderBy: {
       createdAt: 'desc',
     },
@@ -49,7 +49,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  * @param where
  */
-export async function getOptions(where: Prisma.CategoriesWhereInput) {
+export async function getOptions(where: Prisma.CategoryWhereInput) {
   try {
     const category = await findFirst({
       where,
@@ -62,7 +62,7 @@ export async function getOptions(where: Prisma.CategoriesWhereInput) {
       }
     })
 
-    return (category?.Options ?? []).reduce((acc: OptionsModel[], option) => {
+    return (category?.Options ?? []).reduce((acc: OptionModel[], option) => {
       if (!acc?.find(i => i.id === option.id)) acc.push(option)
       return acc;
     }, [])

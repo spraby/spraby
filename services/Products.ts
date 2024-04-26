@@ -1,13 +1,13 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {ProductsModel} from "@/prisma/types";
+import Prisma, {ProductModel} from "@/prisma/types";
 
 /**
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.ProductsFindFirstArgs): Promise<ProductsModel | null> {
-  return db.products.findFirst(params)
+export async function findFirst(params?: Prisma.ProductFindFirstArgs): Promise<ProductModel | null> {
+  return db.product.findFirst(params)
 }
 
 /**
@@ -15,17 +15,17 @@ export async function findFirst(params?: Prisma.ProductsFindFirstArgs): Promise<
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.ProductsFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.ProductFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {title: {contains: params.search, mode: 'insensitive'}} : {})
-  } as Prisma.ProductsWhereInput
+  } as Prisma.ProductWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.products.count({where: where})
+  const total = await db.product.count({where: where})
 
-  const items = await db.products.findMany({
+  const items = await db.product.findMany({
     orderBy: {
       createdAt: 'desc',
     },

@@ -1,21 +1,21 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {CategoriesModel, CollectionsModel, OptionsModel} from "@/prisma/types";
+import Prisma, {CategoryModel, CollectionModel, OptionModel} from "@/prisma/types";
 
 /**
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.CollectionsFindFirstArgs): Promise<CollectionsModel | null> {
-  return db.collections.findFirst(params)
+export async function findFirst(params?: Prisma.CollectionFindFirstArgs): Promise<CollectionModel | null> {
+  return db.collection.findFirst(params)
 }
 
 /**
  *
  * @param params
  */
-export async function findMany(params?: Prisma.CollectionsFindManyArgs): Promise<CollectionsModel[]> {
-  return db.collections.findMany(params)
+export async function findMany(params?: Prisma.CollectionFindManyArgs): Promise<CollectionModel[]> {
+  return db.collection.findMany(params)
 }
 
 /**
@@ -23,7 +23,7 @@ export async function findMany(params?: Prisma.CollectionsFindManyArgs): Promise
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.CollectionsFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.CollectionFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -32,13 +32,13 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         {title: {contains: params.search, mode: 'insensitive'}}
       ]
     } : {})
-  } as Prisma.CollectionsWhereInput
+  } as Prisma.CollectionWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.collections.count({where: where})
+  const total = await db.collection.count({where: where})
 
-  const items = await db.collections.findMany({
+  const items = await db.collection.findMany({
     orderBy: {
       createdAt: 'desc',
     },
@@ -57,7 +57,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  * @param where
  */
-export async function getOptions(where: Prisma.CollectionsWhereInput) {
+export async function getOptions(where: Prisma.CollectionWhereInput) {
   try {
     const collection = await findFirst({
       where,
@@ -74,7 +74,7 @@ export async function getOptions(where: Prisma.CollectionsWhereInput) {
       }
     })
 
-    return (collection?.Categories ?? []).reduce((acc: OptionsModel[], category: CategoriesModel) => {
+    return (collection?.Categories ?? []).reduce((acc: OptionModel[], category: CategoryModel) => {
       (category?.Options ?? []).map(option => {
         if (!acc?.find(i => i.id === option.id)) acc.push(option)
       })

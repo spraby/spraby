@@ -1,6 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {OptionsModel} from "@/prisma/types";
+import Prisma, {OptionModel} from "@/prisma/types";
 import {transliterate as tr} from "transliteration";
 import {FilterItem} from "@/types";
 
@@ -8,8 +8,8 @@ import {FilterItem} from "@/types";
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.OptionsFindFirstArgs): Promise<OptionsModel | null> {
-  return db.options.findFirst(params)
+export async function findFirst(params?: Prisma.OptionFindFirstArgs): Promise<OptionModel | null> {
+  return db.option.findFirst(params)
 }
 
 /**
@@ -17,7 +17,7 @@ export async function findFirst(params?: Prisma.OptionsFindFirstArgs): Promise<O
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.OptionsFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.OptionFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -26,13 +26,13 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         {title: {contains: params.search, mode: 'insensitive'}}
       ]
     } : {})
-  } as Prisma.OptionsWhereInput
+  } as Prisma.OptionWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.options.count({where: where})
+  const total = await db.option.count({where: where})
 
-  const items = await db.options.findMany({
+  const items = await db.option.findMany({
     orderBy: {
       createdAt: 'desc',
     },
@@ -49,16 +49,16 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
 
 /**
  *
- * @param options
+ * @param option
  */
-export async function convertOptionsToFilter(options: OptionsModel[]) {
+export async function convertOptionsToFilter(option: OptionModel[]) {
   const filter: FilterItem[] = []
 
-  options.map(option => ({
+  option.map(option => ({
     title: option.title,
     key: tr(option.title).toLowerCase(),
-    values: option.values.map(value => ({
-      value: value,
+    values: (option.Values ?? []).map(value => ({
+      value: value.value,
       optionIds: [option.id]
     }))
   })).map(optionItem => {
@@ -69,7 +69,7 @@ export async function convertOptionsToFilter(options: OptionsModel[]) {
         const optionId = optionItemValue.optionIds[0];
         const value = optionItemValue.value;
 
-        const filterValue = filterItem.values.find((i) => i.value === value)
+        const filterValue = filterItem.values.find(i => i.value === value)
 
         if (filterValue) {
           if (!filterValue.optionIds.includes(optionId)) filterValue.optionIds.push(optionId)
