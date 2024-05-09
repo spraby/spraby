@@ -1,7 +1,7 @@
 import React, {useEffect, useRef} from 'react';
 import Link from 'next/link';
 
-export default function Menu({menu = [], deep = 1}: { menu: any[], deep: number }) {
+export default function Menu({menu = [], deep = 1}: { menu: any[], deep?: number }) {
   return (
     <nav className="sp-menu">
       <List items={menu} deep={deep}/>
