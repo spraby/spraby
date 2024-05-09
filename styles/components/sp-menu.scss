@@ -19,8 +19,8 @@
       & > a,
       & > span {
         @apply relative block text-gray-800 font-semibold py-5 px-0 cursor-pointer
-         before:absolute before:bottom-1 before:w-full before:h-1 before:rounded before:bg-purple-500 before:opacity-0 before:transition-opacity before:duration-300
-         hover:before:opacity-100;
+        before:absolute before:bottom-1 before:w-full before:h-1 before:rounded before:bg-purple-500 before:opacity-0 before:transition-opacity before:duration-300
+        hover:before:opacity-100;
       }
 
       &:hover {
@@ -32,14 +32,12 @@
       //------------------- SECOND LINE
 
       & > ul {
-        @apply absolute opacity-0 invisible right-0 z-10  grid grid-cols-1 bg-white gap-3 w-full p-6 shadow-lg shadow-slate-200 rounded-lg;
+        @apply flex flex-col gap-2 absolute opacity-0 invisible right-0 z-10 bg-white w-full p-6 shadow-lg shadow-gray-800/20 rounded-lg;
         top: calc(100% + 2px);
-        transition:
-          opacity 0.3s ease-in-out,
-          visibility 0.8s ease-in-out;
+        transition: opacity 0.4s ease-in-out,
+        visibility 0.4s ease-in-out;
 
         & > li {
-          position: relative;
 
           & > a,
           & > span {
@@ -50,42 +48,39 @@
             cursor: pointer;
           }
 
-          & > a.with-children,
-          & > span.with-children {
-            &:before {
-              content: '\\276D';
-              position: absolute;
-              right: 5%;
-              top: 50%;
-              transform: translateY(-50%);
-              opacity: 0;
-              transition: opacity 0.3s;
-            }
-          }
-
           &:hover {
-            & > a,
-            & > span {
-              &:before {
-                opacity: 1;
-              }
-            }
-
             & > ul {
-              display: grid;
+              @apply visible opacity-100;
             }
           }
 
           //------------------- THIRD LINE
 
           & > ul {
-            @apply absolute z-10 p-0 pl-5 top-0 right-0 w-3/4 hidden grid-cols-2 gap-3 border-l border-solid border-gray-400;
+            @apply flex flex-col gap-1 opacity-0 invisible absolute z-10 m-6 pl-6 top-0 right-0 w-3/4 border-l border-solid border-purple-500;
+            transition: opacity 0.4s ease-in-out,
+            visibility 0.4s ease-in-out;
 
             & > li {
               &:hover {
-                a,
-                span {
-                  @apply text-purple-500 cursor-pointer;
+                & > ul {
+                  @apply visible opacity-100;
+                }
+              }
+
+              //------------------- FORTH LINE
+
+              & > ul {
+                @apply absolute z-10 pl-6 top-0 right-0 w-3/4 opacity-0 invisible border-l border-solid border-purple-500;
+                transition: opacity 0.4s ease-in-out,
+                visibility 0.4s ease-in-out;
+
+                & > li {
+                  &:hover {
+                    a, span {
+                      @apply text-purple-500 cursor-pointer;
+                    }
+                  }
                 }
               }
             }
