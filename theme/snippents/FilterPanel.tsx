@@ -4,7 +4,7 @@ import Filter from "@/theme/snippents/Filter";
 import {useEffect, useState} from "react";
 import {useSearchParams} from "next/navigation";
 
-const FilterPanel = ({options, searchParams: defaultSearchParams}: Props) => {
+const FilterPanel = ({options, searchParams: defaultSearchParams, onChange: onChangeFilter}: Props) => {
   const router = useSearchParams()
   const [searchParams, setSearchParams] = useState(defaultSearchParams)
 
@@ -14,6 +14,7 @@ const FilterPanel = ({options, searchParams: defaultSearchParams}: Props) => {
       params[key] = value
     })
     setSearchParams(params);
+    onChangeFilter(params)
   }, [router]);
 
   const onChange = (active: boolean, item: any, filter: any) => {
@@ -30,7 +31,6 @@ const FilterPanel = ({options, searchParams: defaultSearchParams}: Props) => {
       url.searchParams.set(filter.key, params);
       if (!params?.length) url.searchParams.delete(filter.key)
     }
-
     window.history.replaceState(null, '', url);
   }
 
@@ -49,7 +49,8 @@ const FilterPanel = ({options, searchParams: defaultSearchParams}: Props) => {
 
 type Props = {
   searchParams: any,
-  options: any[]
+  options: any[],
+  onChange: any
 };
 
 export default FilterPanel;

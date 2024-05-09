@@ -13,6 +13,14 @@ export async function findFirst(params?: Prisma.ProductFindFirstArgs): Promise<P
 /**
  *
  * @param params
+ */
+export async function findMany(params?: Prisma.ProductFindManyArgs): Promise<ProductModel[]> {
+  return db.product.findMany(params)
+}
+
+/**
+ *
+ * @param params
  * @param conditions
  */
 export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.ProductFindManyArgs) {

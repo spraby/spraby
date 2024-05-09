@@ -1,10 +1,9 @@
-import CollectionPage from "@/theme/templates/CollectionPage";
-import {getOptions} from "@/services/Collections";
+import CategoriesPage from "@/theme/templates/CategoriesPage";
+import {getOptions} from "@/services/Categories";
 import {convertOptionsToFilter} from "@/services/Options";
 
 export default async function (props: any) {
   const options = await getOptions({handle: props.params.id})
   const filter = await convertOptionsToFilter(options)
-
-  return <CollectionPage filter={filter} searchParams={props.searchParams}/>
+  return <CategoriesPage filter={filter} searchParams={props.searchParams} handle={props.params.handle}/>
 }
