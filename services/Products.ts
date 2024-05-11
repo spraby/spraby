@@ -47,3 +47,99 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
     paginator: {pageSize: params.limit, current: params.page, total, pages: Math.ceil(total / params.limit)},
   }
 }
+
+/**
+ *
+ * @param filter
+ */
+export async function getFilteredProducts(filter: Filter) {
+  return findMany({
+    where: {
+      Category: {
+        ...(!!filter?.categoryHandles?.length ? {
+          handle: {
+            in: filter.categoryHandles
+          }
+        } : {}),
+
+        ...(!!filter?.collectionHandles?.length ? {
+          Collections: {
+            some: {
+              handle: {
+                in: filter.collectionHandles
+              }
+            }
+          },
+        } : {}),
+
+        ...(!!filter?.options?.length ? {
+          Options: {
+            some: {
+              id: {
+                in: filter.options.map(i => i.optionId)
+              }
+            }
+          }
+        } : {})
+      },
+      ...(!!filter?.options?.length ? {
+        Variants: {
+          some: {
+            Values: {
+              some: {
+                OR: filter.options.map(i => ({
+                  Value: {
+                    optionId: i.optionId,
+                    value: {
+                      in: i.values
+                    }
+                  }
+                }))
+              }
+            }
+          }
+        }
+      } : {})
+    },
+    include: {
+      Brand: {
+        include: {
+          User: true
+        }
+      },
+      Category: {
+        include: {
+          Options: true
+        }
+      },
+      Variants: {
+        include: {
+          Image: true,
+          Values: {
+            include: {
+              Value: true,
+              Option: true
+            }
+          }
+        }
+      },
+      Images: {
+        include: {
+          Image: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'asc'
+    }
+  })
+}
+
+type Filter = {
+  categoryHandles?: string[],
+  collectionHandles?: string[],
+  options?: {
+    optionId: string,
+    values: string[]
+  }[]
+}
