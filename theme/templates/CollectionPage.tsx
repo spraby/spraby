@@ -4,12 +4,14 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import FilterPanel from "@/theme/snippents/FilterPanel";
 import {FilterItem} from "@/types";
 import {getFilteredProducts} from "@/services/Products";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {ProductModel} from "@/prisma/types";
 import {Spin} from "antd";
+import {getOptions as getCollectionOptions} from "@/services/Collections";
+import {getOptions as getCategoriesOptions} from "@/services/Categories";
+import {convertOptionsToFilter} from "@/services/Options";
 
 export default function CollectionPage({
-                                         filter = [],
                                          searchParams,
                                          loading: defaultLoading = false,
                                          collectionHandle,
@@ -17,6 +19,15 @@ export default function CollectionPage({
                                        }: Props) {
   const [loading, setLoading] = useState(defaultLoading);
   const [products, setProducts] = useState<ProductModel[]>([]);
+  const [filter, setFilter] = useState<FilterItem[]>([])
+
+  useEffect(() => {
+    (async function () {
+      const options = collectionHandle ? await getCollectionOptions({handle: collectionHandle}) : (categoryHandle ? await getCategoriesOptions({handle: categoryHandle}) : [])
+      const filter = await convertOptionsToFilter(options)
+      setFilter(filter);
+    })().then();
+  }, [])
 
   const onChange = async (params: any) => {
     setLoading(true);
@@ -76,7 +87,6 @@ export default function CollectionPage({
 
 type Props = {
   searchParams?: any,
-  filter?: FilterItem[]
   loading?: boolean,
   collectionHandle?: string
   categoryHandle?: string
