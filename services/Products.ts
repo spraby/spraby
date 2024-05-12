@@ -55,6 +55,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
 export async function getFilteredProducts(filter: Filter) {
   return findMany({
     where: {
+      enabled: true,
       Category: {
         ...(!!filter?.categoryHandles?.length ? {
           handle: {

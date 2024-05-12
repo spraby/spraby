@@ -51,10 +51,13 @@ const ProductCart = ({product}: Props) => {
           // </div>
         }
         {
-          // <div className='flex gap-2 items-center'>
-          //   <span className='text-xs text-gray-400 line-through'>{product.price}</span>
-          //   <span className='text-base font-semibold text-purple-500'>{product.discountPrice}</span>
-          // </div>
+          <div className='flex gap-2 items-center'>
+            {
+              +product.price > +product.finalPrice &&
+              <span className="text-xs text-gray-400 line-through">{+product.price}</span>
+            }
+            <span className='text-base font-semibold text-purple-500'>{+product.finalPrice} BYN</span>
+          </div>
         }
       </div>
     </div>
