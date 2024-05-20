@@ -44,7 +44,7 @@ export default function ProductPage({id}: Props) {
       return product.Category.Options?.reduce((acc: Options[], option) => {
         const optionVariantValues = (product?.Variants ?? []).reduce((acc: string[], variant) => {
           (variant.Values ?? []).map(value => {
-            if (value.optionId === option.id && value.Value?.value) acc.push(value.Value.value);
+            if (value.optionId === option.id && value.Value?.value && !acc.includes(value.Value.value)) acc.push(value.Value.value);
           });
           return acc;
         }, []);
