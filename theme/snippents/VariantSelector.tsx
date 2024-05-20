@@ -3,8 +3,8 @@
 import {useEffect, useMemo, useState} from 'react';
 import Select from "@/theme/snippents/Select";
 
-const VariantSelector = ({}) => {
-  const [combination, setCombination] = useState('l');
+const VariantSelector = ({options = []}: Props) => {
+  const [combination, setCombination] = useState(options?.length && options[0].options ? options[0].options[0].value : '');
 
   useEffect(() => {
   }, [combination]);
@@ -23,25 +23,7 @@ const VariantSelector = ({}) => {
 
   return combination && <>
     {
-      [{
-        id: 'csacfs',
-        label: 'Рамер',
-        options: [
-          {
-            label: 'S',
-            value: 's'
-          },
-          {
-            label: 'M',
-            value: 'm'
-          },
-          {
-            label: 'L',
-            value: 'l'
-          }
-        ]
-
-      }].map((i: any) =>
+      options.map((i: any) =>
         <Select
           key={i.id}
           label={i.label}
@@ -55,3 +37,16 @@ const VariantSelector = ({}) => {
 };
 
 export default VariantSelector;
+
+type Props = {
+  options?: Options[]
+}
+
+type Options = {
+  id: string,
+  label: string,
+  options: {
+    label: string,
+    value: string
+  }[]
+}

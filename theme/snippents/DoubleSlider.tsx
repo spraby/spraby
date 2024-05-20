@@ -1,11 +1,11 @@
 'use client';
 // @ts-ignore
-import { Splide, SplideSlide } from '@splidejs/react-splide';
+import {Splide, SplideSlide} from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import {useEffect, useRef} from 'react';
 
-const DoubleSlider = ({ images, startImage = null }: Props) => {
+const DoubleSlider = ({images, startImage = null}: Props) => {
   const main = useRef(null);
   const thumbnails = useRef(null);
 
@@ -39,7 +39,7 @@ const DoubleSlider = ({ images, startImage = null }: Props) => {
           images.map((image, index) => {
             return (
               <SplideSlide key={index}>
-                <Image alt='' src={image} width={1500} height={1500} />
+                <Image alt='' src={image} width={1500} height={1500}/>
               </SplideSlide>
             );
           })
@@ -74,7 +74,7 @@ const DoubleSlider = ({ images, startImage = null }: Props) => {
           {images.map((image, index) => {
             return (
               <SplideSlide key={index}>
-                <Image alt='' src={image} width={500} height={500} />
+                <Image alt='' src={image} width={500} height={500}/>
               </SplideSlide>
             );
           })}

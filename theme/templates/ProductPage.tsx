@@ -1,27 +1,71 @@
+'use client'
+
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import Accordion from "@/theme/snippents/Accordion";
 import VariantSelector from "@/theme/snippents/VariantSelector";
+import {useEffect, useMemo, useState} from "react";
+import {ProductModel} from "@/prisma/types";
+import {findFirst} from "@/services/Products";
 
-export default function ProductPage() {
-  const product = {
-    title: 'test product',
-    images: [
-      'https://avatars.mds.yandex.net/i?id=43131c522436b4d49d2229d770e7d46f-4766550-images-thumbs&n=13&exp=1',
-      'https://avatars.mds.yandex.net/i?id=31b6375bebb40ffbb28ca32ebf0e6de2-5311685-images-thumbs&n=13&exp=1',
-      'https://avatars.mds.yandex.net/i?id=7b9ab108d7cdcd2cfbff44e6d423ced9-5673334-images-thumbs&n=13&exp=1',
-      'https://avatars.mds.yandex.net/i?id=7ee764dec4cc15fa74f03c138979ab16-5346024-images-thumbs&n=13&exp=1',
-      'https://avatars.mds.yandex.net/i?id=b1e343efd12ee13775cd9b25f874e352-5038807-images-thumbs&n=13&exp=1',
-    ]
-  }
+export default function ProductPage({id}: Props) {
+
+  const [product, setProduct] = useState<ProductModel | null>(null);
+
+  useEffect(() => {
+    findFirst({
+      where: {id},
+      include: {
+        Category: {
+          include: {
+            Options: true,
+          }
+        },
+        Variants: {
+          include: {
+            Values: {
+              include: {
+                Value: true
+              }
+            }
+          }
+        },
+        Images: {
+          include: {
+            Image: true
+          }
+        }
+      }
+    }).then(p => setProduct(p))
+  }, [id]);
+
+  const options = useMemo(() => {
+    if (product && product?.Category && product?.Variants?.length) {
+      return product.Category.Options?.reduce((acc: Options[], option) => {
+        const optionVariantValues = (product?.Variants ?? []).reduce((acc: string[], variant) => {
+          (variant.Values ?? []).map(value => {
+            if (value.optionId === option.id && value.Value?.value) acc.push(value.Value.value);
+          });
+          return acc;
+        }, []);
+        if (optionVariantValues?.length) acc.push({
+          id: option.id,
+          label: option.title,
+          options: optionVariantValues.map(i => ({label: i, value: i}))
+        })
+        return acc;
+      }, []);
+    }
+
+    return [];
+  }, [product]);
 
   const variant = {}
 
-
-  return <main>
+  return !!product && <main className='pt-10'>
     <div className='container mx-auto grid gap-10 grid-cols-12'>
       <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-7'>
-        <DoubleSlider images={product.images} startImage={product.images[0]}/>
+        <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)}/>
         <Tabs
           tabs={[
             {
@@ -62,9 +106,22 @@ export default function ProductPage() {
         </div>
         <Accordion label='Дополнительная информация' value={'Дополнительная информация'}/>
         <div className='h-px bg-gray-200'></div>
-        <VariantSelector />
+        <VariantSelector options={options}/>
         <div className='h-px bg-gray-200'></div>
       </div>
     </div>
   </main>
+}
+
+type Props = {
+  id: string
+}
+
+type Options = {
+  id: string,
+  label: string,
+  options: {
+    label: string,
+    value: string
+  }[]
 }
