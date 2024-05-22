@@ -11,6 +11,7 @@ import {findFirst} from "@/services/Products";
 export default function ProductPage({id}: Props) {
 
   const [product, setProduct] = useState<ProductModel | null>(null);
+  const [startImage, setStartImage] = useState<string | null>(null);
 
   useEffect(() => {
     findFirst({
@@ -23,6 +24,11 @@ export default function ProductPage({id}: Props) {
         },
         Variants: {
           include: {
+            Image: {
+              include: {
+                Image: true
+              }
+            },
             Values: {
               include: {
                 Value: true
@@ -65,7 +71,7 @@ export default function ProductPage({id}: Props) {
   return !!product && <main className='pt-10'>
     <div className='container mx-auto grid gap-10 grid-cols-12'>
       <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-7'>
-        <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)}/>
+        <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
         <Tabs
           tabs={[
             {
@@ -106,7 +112,11 @@ export default function ProductPage({id}: Props) {
         </div>
         <Accordion label='Дополнительная информация' value={'Дополнительная информация'}/>
         <div className='h-px bg-gray-200'></div>
-        <VariantSelector options={options}/>
+        <VariantSelector variants={product?.Variants ?? []}
+                         options={options}
+                         onChange={v => {
+                           if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src)
+                         }}/>
         <div className='h-px bg-gray-200'></div>
       </div>
     </div>

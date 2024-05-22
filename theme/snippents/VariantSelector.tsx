@@ -1,16 +1,33 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import Select from "@/theme/snippents/Select";
+import {VariantModel} from "@/prisma/types";
+import {isEqual} from "lodash";
 
-const VariantSelector = ({options = []}: Props) => {
-  const [combination, setCombination] = useState(options?.length && options[0].options ? options[0].options[0].value : '');
+const VariantSelector = ({variants, options = [], onChange}: Props) => {
+  const [selectedOptions, setSelectedOption] = useState<SelectedOptions>({});
 
   useEffect(() => {
-  }, [combination]);
+    const firstValidVariant = variants.find(i => isValidVariant(i, options))
 
-  useEffect(() => {
+    if (firstValidVariant) {
+      const selectedOptionsData = getVariantOptionsData(firstValidVariant);
+      setSelectedOption(selectedOptionsData);
+    }
   }, []);
+
+  useEffect(() => {
+    const selectedVariant = variants.find(variant => {
+      if (isValidVariant(variant, options)) {
+        const variantOptionsData = getVariantOptionsData(variant);
+        return Object.keys(variantOptionsData).length && isEqual(variantOptionsData, selectedOptions);
+      }
+
+      return false;
+    });
+    if (typeof onChange === 'function' && selectedVariant) onChange(selectedVariant);
+  }, [selectedOptions]);
 
   /**
    *
@@ -18,16 +35,17 @@ const VariantSelector = ({options = []}: Props) => {
    * @param id
    */
   const _onChange = (value: string, id: string) => {
-    setCombination(value);
+    setSelectedOption(v => ({...v, [id]: value}));
   };
 
-  return combination && <>
+  return <>
     {
       options.map((i: any) =>
         <Select
+          disabled={!selectedOptions[i.id]}
           key={i.id}
           label={i.label}
-          value={combination}
+          value={selectedOptions[i.id]}
           options={i.options}
           onChange={(v: any) => _onChange(v, i.id)}
         />,
@@ -39,7 +57,9 @@ const VariantSelector = ({options = []}: Props) => {
 export default VariantSelector;
 
 type Props = {
-  options?: Options[]
+  variants: VariantModel[],
+  options?: Options[],
+  onChange?: (variant: VariantModel) => any
 }
 
 type Options = {
@@ -49,4 +69,20 @@ type Options = {
     label: string,
     value: string
   }[]
+}
+
+type SelectedOptions = {
+  [key: string]: string
+}
+
+function isValidVariant(variant: VariantModel, options: Options[]) {
+  const optionIds = (options ?? []).map(i => i.id);
+  return (variant.Values ?? []).map(v => v.optionId).filter(i => optionIds.includes(i)).length === optionIds?.length;
+}
+
+function getVariantOptionsData(variant: VariantModel) {
+  return (variant.Values ?? []).reduce((acc: SelectedOptions, i) => {
+    if (i.Value?.value) acc[i.optionId] = i.Value.value;
+    return acc;
+  }, {});
 }
