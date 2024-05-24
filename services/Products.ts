@@ -88,7 +88,7 @@ export async function getFilteredProducts(filter: Filter) {
           some: {
             Values: {
               some: {
-                OR: filter.options.map(i => ({
+                AND: filter.options.map(i => ({
                   Value: {
                     optionId: i.optionId,
                     value: {
