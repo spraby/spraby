@@ -86,18 +86,18 @@ export async function getFilteredProducts(filter: Filter) {
       ...(!!filter?.options?.length ? {
         Variants: {
           some: {
-            Values: {
-              some: {
-                AND: filter.options.map(i => ({
+            AND: filter.options.map(i => ({
+              Values: {
+                some: {
                   Value: {
                     optionId: i.optionId,
                     value: {
                       in: i.values
                     }
                   }
-                }))
+                }
               }
-            }
+            }))
           }
         }
       } : {})
