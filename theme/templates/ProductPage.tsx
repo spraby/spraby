@@ -5,12 +5,13 @@ import Tabs from "@/theme/snippents/Tabs";
 import Accordion from "@/theme/snippents/Accordion";
 import VariantSelector from "@/theme/snippents/VariantSelector";
 import {useEffect, useMemo, useState} from "react";
-import {ProductModel} from "@/prisma/types";
+import {ProductModel, VariantModel} from "@/prisma/types";
 import {findFirst} from "@/services/Products";
 
 export default function ProductPage({id}: Props) {
 
   const [product, setProduct] = useState<ProductModel | null>(null);
+  const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,8 +67,6 @@ export default function ProductPage({id}: Props) {
     return [];
   }, [product]);
 
-  const variant = {}
-
   return !!product && <main className='pt-10'>
     <div className='container mx-auto grid gap-10 grid-cols-12'>
       <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-7'>
@@ -116,6 +115,7 @@ export default function ProductPage({id}: Props) {
                          options={options}
                          onChange={v => {
                            if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src)
+                           setVariant(v);
                          }}/>
         <div className='h-px bg-gray-200'></div>
       </div>

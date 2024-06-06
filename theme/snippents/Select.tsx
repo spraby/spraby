@@ -2,7 +2,8 @@
 
 const Select = ({label, value, options, onChange, disabled = false}: Props) => {
   return (
-    <label className={`w-full border border-gray-200 p-3 rounded-lg relative ${disabled ? 'opacity-55 cursor-not-allowed' : ''}`}>
+    <label
+      className={`w-full border border-gray-200 p-3 rounded-lg relative ${disabled ? 'opacity-55 cursor-not-allowed' : ''}`}>
       <span className='absolute -top-3 bg-white px-2'>{label}</span>
       <select
         disabled={disabled}
@@ -13,7 +14,7 @@ const Select = ({label, value, options, onChange, disabled = false}: Props) => {
         {
           options.map((option, index) => {
             return (
-              <option key={index} value={option.value}>
+              <option key={index} value={option.value} disabled={!!option?.disabled}>
                 {option.label}
               </option>
             );
@@ -31,6 +32,7 @@ type Props = {
   options: {
     label: string;
     value: string;
+    disabled?: boolean;
   }[];
   onChange: (value: string) => void;
 };

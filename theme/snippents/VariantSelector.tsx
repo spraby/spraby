@@ -7,27 +7,35 @@ import {isEqual} from "lodash";
 
 const VariantSelector = ({variants, options = [], onChange}: Props) => {
   const [selectedOptions, setSelectedOption] = useState<SelectedOptions>({});
+  const [selectedVariant, setSelectedValiant] = useState<VariantModel>();
 
   useEffect(() => {
+    //find first valid product variant by options
     const firstValidVariant = variants.find(i => isValidVariant(i, options))
 
     if (firstValidVariant) {
+      //get options from product variant
       const selectedOptionsData = getVariantOptionsData(firstValidVariant);
       setSelectedOption(selectedOptionsData);
     }
   }, []);
 
   useEffect(() => {
+    //on change product variant
     const selectedVariant = variants.find(variant => {
       if (isValidVariant(variant, options)) {
         const variantOptionsData = getVariantOptionsData(variant);
         return Object.keys(variantOptionsData).length && isEqual(variantOptionsData, selectedOptions);
       }
-
       return false;
     });
-    if (typeof onChange === 'function' && selectedVariant) onChange(selectedVariant);
+
+    setSelectedValiant(selectedVariant);
   }, [selectedOptions]);
+
+  useEffect(() => {
+    if (typeof onChange === 'function') onChange(selectedVariant);
+  }, [selectedVariant]);
 
   /**
    *
@@ -39,17 +47,50 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
   };
 
   return <>
+    <div className={'flex flex-col gap-5'}>
+      {
+        // variants.map(i => {
+        //   const value = i.Values?.map(i => i.Value?.value)?.join(',');
+        //   return <div>{value}</div>
+        // })
+      }
+    </div>
     {
-      options.map((i: any) =>
-        <Select
-          disabled={!selectedOptions[i.id]}
-          key={i.id}
-          label={i.label}
-          value={selectedOptions[i.id]}
-          options={i.options}
-          onChange={(v: any) => _onChange(v, i.id)}
-        />,
-      )
+      options.map((option: any, index) => {
+        //get values prev options < index []
+        const prevOptions = options.filter((_, y) => y < index)
+
+        //get [optionId with value]
+        const prevOptionsData = prevOptions.reduce((acc: { id: string, value: string }[], i) => {
+          if (selectedOptions && i?.id && selectedOptions[i.id]) acc.push({id: i.id, value: selectedOptions[i.id]})
+          return acc;
+        }, []);
+
+        const enabledVariants = variants.filter(i => {
+          const iValues = (i.Values ?? []).filter(v => {
+            return prevOptionsData.find(pod => pod.id === v.Value?.optionId && pod.value === v.Value?.value)
+          });
+          return prevOptionsData.length === iValues?.length
+        })
+
+        const enabledValues = enabledVariants.reduce((acc: string[], i) => {
+          const value = (i.Values ?? []).find(j => j.optionId === option.id)
+          if (value && value?.Value?.value) acc.push(value.Value.value)
+          return acc;
+        }, []);
+
+        if (enabledValues?.length && !enabledValues.includes(selectedOptions[option.id]))
+          setSelectedOption(v => ({...v, [option.id]: enabledValues[0]}))
+
+        return <Select
+          disabled={!selectedOptions[option.id] || !enabledValues.find(i => i === selectedOptions[option.id])}
+          key={option.id}
+          label={option.label}
+          value={selectedOptions[option.id]}
+          options={option.options.map((i: any) => ({...i, disabled: !enabledValues.includes(i.value)}))}
+          onChange={(v: any) => _onChange(v, option.id)}
+        />
+      })
     }
   </>;
 };
@@ -59,7 +100,7 @@ export default VariantSelector;
 type Props = {
   variants: VariantModel[],
   options?: Options[],
-  onChange?: (variant: VariantModel) => any
+  onChange?: (variant?: VariantModel) => any
 }
 
 type Options = {
@@ -68,6 +109,7 @@ type Options = {
   options: {
     label: string,
     value: string
+    disabled?: boolean
   }[]
 }
 
