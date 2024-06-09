@@ -1,5 +1,6 @@
 import CollectionPage from "@/theme/templates/CollectionPage";
 
 export default async function (props: any) {
-  return <CollectionPage loading collectionHandle={props?.params?.handle}/>
+  const params =  props?.searchParams ?? {}
+  return <CollectionPage filter={[]} products={[]} searchParams={params} loading/>
 }

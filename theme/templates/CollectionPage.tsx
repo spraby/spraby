@@ -4,51 +4,25 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import FilterPanel from "@/theme/snippents/FilterPanel";
 import {FilterItem} from "@/types";
 import {getFilteredProducts} from "@/services/Products";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {ProductModel} from "@/prisma/types";
 import {Spin} from "antd";
-import {getOptions as getCollectionOptions} from "@/services/Collections";
-import {getOptions as getCategoriesOptions} from "@/services/Categories";
-import {convertOptionsToFilter} from "@/services/Options";
+import {convertSearchParamsToQueryParams} from "@/services/Options";
 
 export default function CollectionPage({
                                          searchParams,
-                                         loading: defaultLoading = false,
+                                         products: defaultProducts,
+                                         filter,
+                                         loading: defaultLoading,
                                          collectionHandle,
                                          categoryHandle
                                        }: Props) {
   const [loading, setLoading] = useState(defaultLoading);
-  const [products, setProducts] = useState<ProductModel[]>([]);
-  const [filter, setFilter] = useState<FilterItem[]>([])
-
-  useEffect(() => {
-    (async function () {
-      const options = collectionHandle ? await getCollectionOptions({handle: collectionHandle}) : (categoryHandle ? await getCategoriesOptions({handle: categoryHandle}) : [])
-      const filter = await convertOptionsToFilter(options)
-      setFilter(filter);
-    })().then();
-  }, [])
+  const [products, setProducts] = useState<ProductModel[]>(defaultProducts);
 
   const onChange = async (params: any) => {
     setLoading(true);
-    const data: any = {}
-
-    Object.entries(params).map(([key, value]: any) => {
-      const values = value.split(',').map((i: string) => i.trim())
-      const filterItem = filter.find(i => i.key === key);
-
-      if (filterItem) {
-        values.map((value: string) => {
-          const filterValue = filterItem.values.find(i => value === i.value);
-          if (filterValue) {
-            filterValue.optionIds.map((id: string) => {
-              if (!data[id]) data[id] = [];
-              data[id] = Array.from(new Set([...data[id], filterValue.value]))
-            })
-          }
-        })
-      }
-    })
+    const data: any = await convertSearchParamsToQueryParams(params, filter);
 
     const products = await getFilteredProducts({
       options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
@@ -86,8 +60,10 @@ export default function CollectionPage({
 }
 
 type Props = {
+  products: ProductModel[],
+  filter: FilterItem[],
   searchParams?: any,
   loading?: boolean,
-  collectionHandle?: string
+  collectionHandle?: string,
   categoryHandle?: string
 }

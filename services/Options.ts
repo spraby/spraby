@@ -84,3 +84,33 @@ export async function convertOptionsToFilter(option: OptionModel[]) {
 
   return filter;
 }
+
+/**
+ *
+ * @param searchParams
+ * @param filter
+ */
+export async function convertSearchParamsToQueryParams(searchParams: {
+  [key: string]: string | number
+}, filter: FilterItem[]) {
+  const data: any = {};
+
+  Object.entries(searchParams).map(([key, value]) => {
+    const values = `${value}`.split(',').map((i: string) => i.trim())
+    const filterItem = filter.find(i => i.key === key);
+
+    if (filterItem) {
+      values.map((value: string) => {
+        const filterValue = filterItem.values.find(i => value === i.value);
+        if (filterValue) {
+          filterValue.optionIds.map((id: string) => {
+            if (!data[id]) data[id] = [];
+            data[id] = Array.from(new Set([...data[id], filterValue.value]))
+          })
+        }
+      })
+    }
+  })
+
+  return data;
+}

@@ -3,6 +3,7 @@
 import Filter from "@/theme/snippents/Filter";
 import {useEffect, useState} from "react";
 import {useSearchParams} from "next/navigation";
+import {isEqual} from "lodash";
 
 const FilterPanel = ({options, searchParams: defaultSearchParams, onChange: onChangeFilter}: Props) => {
   const router = useSearchParams()
@@ -13,8 +14,10 @@ const FilterPanel = ({options, searchParams: defaultSearchParams, onChange: onCh
     router.forEach((value, key) => {
       params[key] = value
     })
-    setSearchParams(params);
-    onChangeFilter(params)
+    if (!isEqual(params, searchParams)) {
+      setSearchParams(params);
+      onChangeFilter(params)
+    }
   }, [router]);
 
   const onChange = (active: boolean, item: any, filter: any) => {
@@ -39,7 +42,8 @@ const FilterPanel = ({options, searchParams: defaultSearchParams, onChange: onCh
       options.map((filter, index) => (
         <Filter
           selected={(searchParams[filter.key] ?? '').split(',')}
-          key={index} filter={filter}
+          key={index}
+          filter={filter}
           onChange={(active: boolean, item: any) => onChange(active, item, filter)}
         />
       ))
