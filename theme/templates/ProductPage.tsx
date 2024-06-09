@@ -4,47 +4,12 @@ import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import Accordion from "@/theme/snippents/Accordion";
 import VariantSelector from "@/theme/snippents/VariantSelector";
-import {useEffect, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {ProductModel, VariantModel} from "@/prisma/types";
-import {findFirst} from "@/services/Products";
 
-export default function ProductPage({id}: Props) {
-
-  const [product, setProduct] = useState<ProductModel | null>(null);
+export default function ProductPage({product}: Props) {
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    findFirst({
-      where: {id},
-      include: {
-        Category: {
-          include: {
-            Options: true,
-          }
-        },
-        Variants: {
-          include: {
-            Image: {
-              include: {
-                Image: true
-              }
-            },
-            Values: {
-              include: {
-                Value: true
-              }
-            }
-          }
-        },
-        Images: {
-          include: {
-            Image: true
-          }
-        }
-      }
-    }).then(p => setProduct(p))
-  }, [id]);
 
   const options = useMemo(() => {
     if (product && product?.Category && product?.Variants?.length) {
@@ -124,7 +89,7 @@ export default function ProductPage({id}: Props) {
 }
 
 type Props = {
-  id: string
+  product: ProductModel
 }
 
 type Options = {
