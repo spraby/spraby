@@ -12,6 +12,11 @@ export default async function (props: any) {
           Options: true,
         }
       },
+      Brand: {
+        include: {
+          BrandSettings: true
+        }
+      },
       Variants: {
         include: {
           Image: {

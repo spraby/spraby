@@ -32,6 +32,22 @@ export default function ProductPage({product}: Props) {
     return [];
   }, [product]);
 
+  /**
+   *
+   */
+  const delivery = useMemo(() => {
+    const settings = (product.Brand?.Settings ?? []).find(i => i.id === 'delivery')
+    return (settings?.data as any)?.description ?? '';
+  }, [product]);
+
+  /**
+   *
+   */
+  const refund = useMemo(() => {
+    const settings = (product.Brand?.Settings ?? []).find(i => i.id === 'refund')
+    return (settings?.data as any)?.description ?? '';
+  }, [product]);
+
   return !!product && <main className='pt-10'>
     <div className='container mx-auto grid gap-10 grid-cols-12'>
       <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-7'>
@@ -44,19 +60,12 @@ export default function ProductPage({product}: Props) {
                 '1 sdfbsdb Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod quos alias ipsam in eligendi blanditiis sint et, ratione nisi vero voluptates, amet mollitia perferendis nostrum minima atque sunt rerum at.',
             },
             {
-              label: 'Характеристики',
-              value:
-                '2 sdvsdvfdsb Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod quos alias ipsam in eligendi blanditiis sint et, ratione nisi vero voluptates, amet mollitia perferendis nostrum minima atque sunt rerum at.',
-            },
-            {
               label: 'Способы доставки',
-              value:
-                '3 sdvssdcvsv Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod quos alias ipsam in eligendi blanditiis sint et, ratione nisi vero voluptates, amet mollitia perferendis nostrum minima atque sunt rerum at.',
+              value: delivery
             },
             {
               label: 'Условия возврата',
-              value:
-                '4 sdvssdcvcascsacsv Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod quos alias ipsam in eligendi blanditiis sint et, ratione nisi vero voluptates, amet mollitia perferendis nostrum minima atque sunt rerum at.',
+              value: refund
             },
           ]}
         />

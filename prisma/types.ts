@@ -1,6 +1,7 @@
 import {
   User,
   Brand,
+  BrandSettings,
   Option,
   OptionValue,
   Category,
@@ -25,6 +26,7 @@ export type BrandModel = Brand & {
   Products?: ProductModel[]
   Categories?: CategoryModel[]
   Images?: ImageModel[]
+  Settings?: BrandSettingsModel[]
 }
 
 export type OptionModel = Option & {
@@ -80,3 +82,7 @@ export type ProductImageModel = ProductImage & {
 }
 
 export type SettingsModel = Settings & {}
+
+export type BrandSettingsModel = BrandSettings & {
+  Brand?: BrandModel
+}
