@@ -36,7 +36,7 @@ export default function ProductPage({product}: Props) {
    *
    */
   const delivery = useMemo(() => {
-    const settings = (product.Brand?.Settings ?? []).find(i => i.id === 'delivery')
+    const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'delivery')
     return (settings?.data as any)?.description ?? '';
   }, [product]);
 
@@ -44,7 +44,7 @@ export default function ProductPage({product}: Props) {
    *
    */
   const refund = useMemo(() => {
-    const settings = (product.Brand?.Settings ?? []).find(i => i.id === 'refund')
+    const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'refund')
     return (settings?.data as any)?.description ?? '';
   }, [product]);
 
