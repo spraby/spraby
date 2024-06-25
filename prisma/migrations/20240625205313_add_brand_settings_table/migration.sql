@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "BrandSettingsType" AS ENUM ('delivery', 'refund');
+
 -- CreateTable
 CREATE TABLE "BrandSettings" (
     "id" TEXT NOT NULL,

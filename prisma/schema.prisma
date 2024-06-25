@@ -32,17 +32,17 @@ model User {
 }
 
 model Brand {
-  id            String          @id @default(cuid())
-  userId        String?
-  name          String
-  description   String?
-  updatedAt     DateTime        @updatedAt
-  createdAt     DateTime        @default(now())
-  User          User?           @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Products      Product[]
-  Categories    Category[]
-  Images        Image[]
-  BrandSettings BrandSettings[]
+  id          String          @id @default(cuid())
+  userId      String?
+  name        String
+  description String?
+  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime        @default(now())
+  User        User?           @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Products    Product[]
+  Categories  Category[]
+  Images      Image[]
+  Settings    BrandSettings[]
 }
 
 model Option {

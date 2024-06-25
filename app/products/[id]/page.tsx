@@ -14,7 +14,7 @@ export default async function (props: any) {
       },
       Brand: {
         include: {
-          BrandSettings: true
+          Settings: true
         }
       },
       Variants: {
