@@ -7,7 +7,7 @@ import VariantSelector from "@/theme/snippents/VariantSelector";
 import {useMemo, useState} from "react";
 import {ProductModel, VariantModel} from "@/prisma/types";
 
-export default function ProductPage({product}: Props) {
+export default function ProductPage({product, informationSettings}: Props) {
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
 
@@ -83,7 +83,7 @@ export default function ProductPage({product}: Props) {
             <button>Контакты</button>
           </label>
         </div>
-        <Accordion label='Дополнительная информация' value={'Дополнительная информация'}/>
+        <Accordion label='Дополнительная информация' value={informationSettings?.description ?? ''}/>
         <div className='h-px bg-gray-200'></div>
         <VariantSelector variants={product?.Variants ?? []}
                          options={options}
@@ -99,6 +99,9 @@ export default function ProductPage({product}: Props) {
 
 type Props = {
   product: ProductModel
+  informationSettings?: {
+    description: string
+  }
 }
 
 type Options = {

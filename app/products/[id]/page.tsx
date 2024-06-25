@@ -1,5 +1,6 @@
 import ProductPage from "@/theme/templates/ProductPage";
 import {findFirst} from "@/services/Products";
+import {getInformationSettings} from "@/services/Settings";
 
 // export const revalidate = 120
 
@@ -39,5 +40,7 @@ export default async function (props: any) {
     }
   });
 
-  return !!product ? <ProductPage product={product}/> : <div>no product</div>
+  const informationSettings = await getInformationSettings() as any;
+
+  return !!product ? <ProductPage product={product} informationSettings={informationSettings}/> : <div>no product</div>
 }
