@@ -66,7 +66,13 @@ export async function getOptions(where: Prisma.CollectionWhereInput) {
           include: {
             Options: {
               include: {
-                Values: true
+                Values: {
+                  where: {
+                    VariantValues: {
+                      some: {}
+                    }
+                  }
+                }
               }
             }
           }
