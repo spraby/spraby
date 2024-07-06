@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import {useState} from 'react';
 
-const Tabs = ({ tabs }: Props) => {
+const Tabs = ({tabs}: Props) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
@@ -24,11 +24,11 @@ const Tabs = ({ tabs }: Props) => {
       </div>
       <div>
         {tabs.map((tab, index) => {
-          return (
-            <div className={`${activeIndex !== index && 'hidden'}`} key={index}>
-              {tab.value}
-            </div>
-          );
+          return <div
+            className={`${activeIndex !== index && 'hidden'} default`}
+            key={index}
+            dangerouslySetInnerHTML={{__html: tab.value}}
+          />
         })}
       </div>
     </div>

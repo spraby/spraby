@@ -56,8 +56,7 @@ export default function ProductPage({product, informationSettings}: Props) {
           tabs={[
             {
               label: 'Описание',
-              value:
-                '1 sdfbsdb Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod quos alias ipsam in eligendi blanditiis sint et, ratione nisi vero voluptates, amet mollitia perferendis nostrum minima atque sunt rerum at.',
+              value: product.description
             },
             {
               label: 'Способы доставки',

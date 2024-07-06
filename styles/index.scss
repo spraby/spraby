@@ -5,6 +5,12 @@
 //COMPONENTS
 @import 'components/sp-menu.scss';
 
+.default {
+  li {
+    list-style-type: disc;
+    margin: 0 0 0 40px;
+  }
+}
 
 .cover-absolute {
   @apply absolute top-0 left-0 right-0 bottom-0

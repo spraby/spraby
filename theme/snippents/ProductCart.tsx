@@ -28,28 +28,6 @@ const ProductCart = ({product}: Props) => {
         <h3 className='text-sm'>
           <Link href={`/products/${product.id}`}> {product.title} </Link>
         </h3>
-        <h4 className='text-xs'>{product.description}</h4>
-        {
-          // <div>
-          //   <div>{product.Brand?.User?.email}</div>
-          //   <div className={'flex flex-col gap-2'}>
-          //     {
-          //       product.Variants?.map(variant => {
-          //         const optionIds = product.Category?.Options?.map(i => i.id);
-          //
-          //         return <div className={'flex gap-2'}>
-          //           {
-          //             variant.Values?.map(i => {
-          //               const isActive = optionIds?.includes(i.Value?.optionId as string);
-          //               return <div className={!isActive ? 'text-red-500' : ''}>{i.Value?.value}</div>
-          //             })
-          //           }
-          //         </div>
-          //       })
-          //     }
-          //   </div>
-          // </div>
-        }
         {
           <div className='flex gap-2 items-center'>
             {
