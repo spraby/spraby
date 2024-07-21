@@ -13,9 +13,12 @@ import {
   Image,
   ProductImage,
   Prisma,
+  BrandSettingsType as BrandSettingsTypeDefault
 } from '@prisma/client'
 
 export default Prisma
+
+export type BrandSettingsType = BrandSettingsTypeDefault
 
 export type UserModel = User & {
   Brands?: BrandModel[]
@@ -86,3 +89,20 @@ export type SettingsModel = Settings & {}
 export type BrandSettingsModel = BrandSettings & {
   Brand?: BrandModel
 }
+
+export type BrandSettingsData = {
+  delivery: {
+    description: string
+  },
+  refund: {
+    description: string
+  },
+  phones: string[],
+  emails: string[],
+  socials: {
+    type: 'whatsapp' | 'telegram' | 'instagram'
+    link: string
+  }[]
+  addresses: string[]
+}
+
