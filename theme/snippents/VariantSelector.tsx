@@ -1,9 +1,9 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import Select from "@/theme/snippents/Select";
 import {VariantModel} from "@/prisma/types";
 import {isEqual} from "lodash";
+import {Select, SelectItem} from "@nextui-org/select";
 
 const VariantSelector = ({variants, options = [], onChange}: Props) => {
   const [selectedOptions, setSelectedOption] = useState<SelectedOptions>({});
@@ -54,9 +54,10 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
         //   return <div>{value}</div>
         // })
       }
+
     </div>
     {
-      options.map((option: any, index) => {
+      options.map((option, index) => {
         //get values prev options < index []
         const prevOptions = options.filter((_, y) => y < index)
 
@@ -83,13 +84,18 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
           setSelectedOption(v => ({...v, [option.id]: enabledValues[0]}))
 
         return <Select
-          disabled={!selectedOptions[option.id] || !enabledValues.find(i => i === selectedOptions[option.id])}
-          key={option.id}
+          isDisabled={!selectedOptions[option.id] || !enabledValues.find(i => i === selectedOptions[option.id])}
           label={option.label}
-          value={selectedOptions[option.id]}
-          options={option.options.map((i: any) => ({...i, disabled: !enabledValues.includes(i.value)}))}
-          onChange={(v: any) => _onChange(v, option.id)}
-        />
+          onChange={({target}) => {
+            _onChange(target.value, option.id)
+          }}
+          selectedKeys={[selectedOptions[option.id]]}
+          disabledKeys={option.options.filter(i => !enabledValues.includes(i.value)).map(i => i.value)}
+        >
+          {
+            option.options.map(option => <SelectItem key={option.value}>{option.label}</SelectItem>)
+          }
+        </Select>
       })
     }
   </>;

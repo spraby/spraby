@@ -1,6 +1,7 @@
 import ProductPage from "@/theme/templates/ProductPage";
 import {findFirst} from "@/services/Products";
 import {getInformationSettings} from "@/services/Settings";
+import {serializeObject} from "@/services/utilits";
 
 // export const revalidate = 120
 
@@ -15,7 +16,8 @@ export default async function (props: any) {
       },
       Brand: {
         include: {
-          Settings: true
+          Settings: true,
+          User: true
         }
       },
       Variants: {
@@ -27,7 +29,11 @@ export default async function (props: any) {
           },
           Values: {
             include: {
-              Value: true
+              Value: {
+                include: {
+                  Option: true
+                }
+              },
             }
           }
         }
@@ -38,9 +44,9 @@ export default async function (props: any) {
         }
       }
     }
-  });
+  })
 
   const informationSettings = await getInformationSettings() as any;
-
-  return !!product ? <ProductPage product={product} informationSettings={informationSettings}/> : <div>no product</div>
+  return !!product ? <ProductPage product={serializeObject(product)} informationSettings={informationSettings}/> :
+    <div>no product</div>
 }

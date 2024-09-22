@@ -19,3 +19,12 @@
 .cover-fixed {
   @apply fixed top-0 left-0 right-0 bottom-0
 }
+
+.line-through-block {
+  position: relative;
+
+  &:after {
+    content: '';
+    @apply bg-gray-400 h-[1px] w-full left-0 top-1/2 absolute
+  }
+}

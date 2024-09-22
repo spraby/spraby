@@ -14,6 +14,30 @@ enum UserRole {
   customer
 }
 
+enum OrderStatus {
+  pending
+  confirmed
+  processing
+  completed
+  cancelled
+  arhived
+}
+
+enum DeliveryStatus {
+  pending
+  packing
+  shipped
+  transit
+  delivered
+}
+
+enum FinancialStatus {
+  unpaid
+  paid
+  partial_paid
+  refunded
+}
+
 enum BrandSettingsType {
   delivery
   refund
@@ -111,6 +135,7 @@ model Product {
   Category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Variants    Variant[]
   Images      ProductImage[]
+  OrderItem   OrderItem[]
 }
 
 model Variant {
@@ -125,6 +150,7 @@ model Variant {
   Product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Image      ProductImage?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Values     VariantValue[]
+  OrderItem  OrderItem[]
 }
 
 model VariantValue {
@@ -155,15 +181,16 @@ model Image {
 }
 
 model ProductImage {
-  id        String    @id @default(cuid())
+  id        String      @id @default(cuid())
   productId String
   imageId   String
-  position  Int       @default(0)
-  updatedAt DateTime  @updatedAt
-  createdAt DateTime  @default(now())
-  Product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Image     Image     @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  position  Int         @default(0)
+  updatedAt DateTime    @updatedAt
+  createdAt DateTime    @default(now())
+  Product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Image     Image       @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Variant   Variant[]
+  OrderItem OrderItem[]
 }
 
 model Settings {
@@ -184,4 +211,59 @@ model BrandSettings {
 
   @@unique([type, brandId])
   @@unique([id, type, brandId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String
+  name      String
+  phone     String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  Orders    Order[]
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  name            String
+  customerId      String
+  note            String?
+  status          OrderStatus     @default(pending)
+  deliveryStatus  DeliveryStatus  @default(pending)
+  financialStatus FinancialStatus @default(unpaid)
+  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime        @default(now())
+  Customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  OrderShipping   OrderShipping[]
+  OrderItem       OrderItem[]
+}
+
+model OrderItem {
+  id          String        @id @default(cuid())
+  orderId     String
+  productId   String?
+  variantId   String?
+  imageId     String?
+  title       String
+  description String?
+  quantity    Int
+  price       Decimal       @default(0) @db.Decimal(10, 2)
+  finalPrice  Decimal       @default(0) @db.Decimal(10, 2)
+  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now())
+  Order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Product     Product?      @relation(fields: [productId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Variant     Variant?      @relation(fields: [variantId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Image       ProductImage? @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+}
+
+model OrderShipping {
+  id        String   @id @default(cuid())
+  orderId   String
+  name      String
+  phone     String
+  note      String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  Order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
