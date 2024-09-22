@@ -136,51 +136,54 @@ export default function ProductPage({product, informationSettings}: Props) {
       </div>
     </div>
     <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
-      <div className={'p-5 bg-gray-800 min-h-[200px] text-white text-2xl flex justify-between items-center'}>
-        <h3>Заказ товара</h3>
-        <span role={"button"} onClick={() => setOpen(false)}> <AiOutlineClose/></span>
-      </div>
-      <div className={'p-5'}>
-        <span>Данные покупателя</span>
-        <form className={'flex flex-col gap-5'} onSubmit={handleSubmit(() => {
-        })}>
-          <Input {...register("name")} variant="bordered" label="Name" errorMessage={errors.name?.message}
-                 isInvalid={false}/>
-          <Input {...register("phone")} variant="bordered" label="Phone" errorMessage={errors.phone?.message}
-                 isInvalid={!!errors.phone?.message?.length}/>
-          <Input {...register("email")} variant="bordered" label="Email" errorMessage={errors.email?.message}
-                 isInvalid={!!errors.email?.message?.length}/>
-          <Textarea
-            label="Description"
-            variant={'bordered'}
-          />
+      <form className={'relative flex flex-col p-5 gap-5 h-screen'} onSubmit={handleSubmit(() => {
+      })}>
+        <div
+          className={'p-5 -mx-5 -mt-5 bg-gray-800 min-h-[120px] text-white text-2xl flex justify-between items-center'}>
+          <h3>Заказ товара</h3>
+          <span role={"button"} onClick={() => setOpen(false)}> <AiOutlineClose/></span>
+        </div>
+        <div className={'flex flex-col gap-5 justify-between overflow-auto flex-grow'}>
+          <div className={'flex flex-col gap-5 overflow-auto'}>
+            <span>Данные покупателя</span>
+            <Input {...register("name")} variant="bordered" label="Name" errorMessage={errors.name?.message}
+                   isInvalid={false}/>
+            <Input {...register("phone")} variant="bordered" label="Phone" errorMessage={errors.phone?.message}
+                   isInvalid={!!errors.phone?.message?.length}/>
+            <Input {...register("email")} variant="bordered" label="Email" errorMessage={errors.email?.message}
+                   isInvalid={!!errors.email?.message?.length}/>
+            <Textarea
+              label="Description"
+              variant={'bordered'}
+            />
+          </div>
           <div className={'bg-gray-800 text-white text-xl rounded-2xl'}>
             <div className={'p-5 flex flex-col '}>
-              <span>{product.title}</span>
-              <span>
+              <span className={'text-2xl font-black'}>{product.title}</span>
+              <span className={'max-h-[100px] overflow-auto'}>
               {
-
                 (variant?.Values ?? []).map(i => {
                   return `${i.Value?.Option?.title}: ${i.Value?.value}`
                 }).join(', ')
               }
               </span>
             </div>
-            <div className={'p-5'}>Стоимость товара: {toMoney(+product.finalPrice)}</div>
+            <div className={'flex gap-2 p-5'}>
+              <span className={'text-gray-400'}>Стоимость товара: </span>
+              <Price finalPrice={+product.finalPrice}/>
+            </div>
             <div className={'p-5 bg-purple-900 text-3xl rounded-b-2xl'}>
-              <span>Итого: {toMoney(+product.finalPrice)}</span>
+              <span className={'flex gap-2'}>Итого: <Price size={'3xl'} finalPrice={+product.finalPrice}/></span>
             </div>
           </div>
-
-          <div className={'flex gap-5 justify-between'}>
-            <button className={'bg-gray-800 rounded-2xl text-white p-5 w-full'}>Оформить</button>
-            <button className={'border border-solid border-gray-800 rounded-2xl w-full'}
-                    onClick={() => setOpen(false)}>Отмена
-            </button>
-          </div>
-
-        </form>
-      </div>
+        </div>
+        <div className={'flex gap-5 justify-between'}>
+          <button className={'bg-gray-800 rounded-2xl text-white p-5 w-full'}>Оформить</button>
+          <button className={'border border-solid border-gray-800 rounded-2xl w-full'}
+                  onClick={() => setOpen(false)}>Отмена
+          </button>
+        </div>
+      </form>
     </Drawer>
   </main>
 }
