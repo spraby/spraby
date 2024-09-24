@@ -135,7 +135,7 @@ model Product {
   Category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Variants    Variant[]
   Images      ProductImage[]
-  OrderItem   OrderItem[]
+  OrderItems  OrderItem[]
 }
 
 model Variant {
@@ -150,7 +150,7 @@ model Variant {
   Product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Image      ProductImage?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Values     VariantValue[]
-  OrderItem  OrderItem[]
+  OrderItems OrderItem[]
 }
 
 model VariantValue {
@@ -215,7 +215,7 @@ model BrandSettings {
 
 model Customer {
   id        String   @id @default(cuid())
-  email     String
+  email     String   @unique
   name      String
   phone     String
   updatedAt DateTime @updatedAt
@@ -234,8 +234,8 @@ model Order {
   updatedAt       DateTime        @updatedAt
   createdAt       DateTime        @default(now())
   Customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  OrderShipping   OrderShipping[]
-  OrderItem       OrderItem[]
+  OrderShippings  OrderShipping[]
+  OrderItems      OrderItem[]
 }
 
 model OrderItem {

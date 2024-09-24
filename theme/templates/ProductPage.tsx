@@ -13,14 +13,15 @@ import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
 import {Accordion, AccordionItem} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
-import {toMoney} from "@/services/utilits";
 import Price from "@/theme/snippents/Price";
+import {create} from "@/services/Orders";
 
 const schema = yup
   .object({
     name: yup.string().required(),
     phone: yup.number().positive().integer().required(),
-    email: yup.string().email().required()
+    email: yup.string().email().required(),
+    description: yup.string()
   })
   .required()
 
@@ -136,7 +137,48 @@ export default function ProductPage({product, informationSettings}: Props) {
       </div>
     </div>
     <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
-      <form className={'relative flex flex-col p-5 gap-5 h-screen'} onSubmit={handleSubmit(() => {
+      <form className={'relative flex flex-col p-5 gap-5 h-screen'} onSubmit={handleSubmit((data) => {
+        if (variant && product) {
+          create({
+            data: {
+              name: '',
+              Customer: {
+                connectOrCreate: {
+                  where: {
+                    email: data.email
+                  },
+                  create: {
+                    email: data.email,
+                    name: data.name,
+                    phone: `${data.phone}`
+                  }
+                }
+              },
+              OrderItems: {
+                createMany: {
+                  data: {
+                    price: product.price,
+                    finalPrice: product.finalPrice,
+                    imageId: variant?.imageId,
+                    productId: product.id,
+                    variantId: variant.id,
+                    quantity: 1,
+                    title: product.title,
+                  }
+                }
+              },
+              OrderShippings: {
+                createMany: {
+                  data: {
+                    name: data.name,
+                    phone: `${data.phone}`,
+                    note: data?.description ?? ''
+                  }
+                }
+              }
+            }
+          });
+        }
       })}>
         <div
           className={'p-5 -mx-5 -mt-5 bg-gray-800 min-h-[120px] text-white text-2xl flex justify-between items-center'}>
@@ -153,6 +195,7 @@ export default function ProductPage({product, informationSettings}: Props) {
             <Input {...register("email")} variant="bordered" label="Email" errorMessage={errors.email?.message}
                    isInvalid={!!errors.email?.message?.length}/>
             <Textarea
+              {...register('description')}
               label="Description"
               variant={'bordered'}
             />
