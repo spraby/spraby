@@ -34,6 +34,7 @@ export type BrandModel = Brand & {
   Categories?: CategoryModel[]
   Images?: ImageModel[]
   Settings?: BrandSettingsModel[]
+  Orders?: OrderModel[]
 }
 
 export type OptionModel = Option & {
@@ -101,6 +102,7 @@ export type CustomerModel = Customer & {
 }
 
 export type OrderModel = Order & {
+  Brand?: BrandModel,
   Customer?: CustomerModel,
   OrderShippings?: OrderShippingModel[],
   OrderItems?: OrderItemModel[]
