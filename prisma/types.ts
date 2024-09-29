@@ -112,7 +112,7 @@ export type OrderItemModel = OrderItem & {
   Order: OrderModel,
   Product: ProductModel,
   Variant: VariantModel,
-  Image: ProductImage
+  Image: ProductImageModel
 }
 
 export type OrderShippingModel = OrderShipping & {
