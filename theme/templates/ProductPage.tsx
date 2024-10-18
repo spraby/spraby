@@ -281,7 +281,6 @@ export default function ProductPage({product, informationSettings}: Props) {
       </div>
     </div>
     <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
-      {thankYouMarkup}
       {!orderNumber && orderFormMarkup}
       {!!orderNumber && thankYouMarkup}
     </Drawer>
