@@ -11,7 +11,7 @@ import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
-import {Accordion, AccordionItem, Button} from "@nextui-org/react";
+import {Accordion, AccordionItem, Button, Snippet} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
 import Price from "@/theme/snippents/Price";
 import {create} from "@/services/Orders";
@@ -40,6 +40,14 @@ export default function ProductPage({product, informationSettings}: Props) {
   } = useForm({
     resolver: yupResolver(schema),
   })
+
+  /**
+   *
+   */
+  const orderLink = useMemo(() => {
+    if (!orderNumber) return `${window.location.origin}/purchases/241002-085023434`;
+    return `${window.location.origin}/purchases/${orderNumber.replace('#', '')}`;
+  }, [orderNumber])
 
   const options = useMemo(() => {
     if (product && product?.Category && product?.Variants?.length) {
@@ -199,6 +207,15 @@ export default function ProductPage({product, informationSettings}: Props) {
       <p>Заказ № {orderNumber} успешно отправлен!</p>
       <br/>
       <p>Ожидайте, представитель "{product?.Brand?.name ?? 'брэнда'}" свяжется с вами для подтверждления заказа.</p>
+      <br/>
+      {
+        orderLink && <>
+          <p>Вот ссылка для остлеживания статуса заказа</p>
+          <Snippet hideSymbol size="sm">
+            <a href={orderLink} className={'text-purple-700 hover:underline'}>{orderLink}</a>
+          </Snippet>
+        </>
+      }
     </div>
   </div>
 
@@ -264,7 +281,8 @@ export default function ProductPage({product, informationSettings}: Props) {
       </div>
     </div>
     <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
-      {!orderNumber && orderFormMarkup}
+      {thankYouMarkup}
+      {!!orderNumber && orderFormMarkup}
       {!!orderNumber && thankYouMarkup}
     </Drawer>
   </main>
