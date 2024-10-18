@@ -45,7 +45,7 @@ export default function ProductPage({product, informationSettings}: Props) {
    *
    */
   const orderLink = useMemo(() => {
-    if (!orderNumber) return `${window.location.origin}/purchases/241002-085023434`;
+    if (!orderNumber) return null;
     return `${window.location.origin}/purchases/${orderNumber.replace('#', '')}`;
   }, [orderNumber])
 
@@ -282,7 +282,7 @@ export default function ProductPage({product, informationSettings}: Props) {
     </div>
     <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
       {thankYouMarkup}
-      {!!orderNumber && orderFormMarkup}
+      {!orderNumber && orderFormMarkup}
       {!!orderNumber && thankYouMarkup}
     </Drawer>
   </main>
