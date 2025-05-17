@@ -56,7 +56,11 @@ export async function getOptions(where: Prisma.categoriesWhereInput) {
       include: {
         Options: {
           include: {
-            Values: true
+            option: {
+              include: {
+                Values: true
+              }
+            }
           }
         }
       }
