@@ -76,14 +76,16 @@ export default function OrderPage({order}: Props) {
 }
 
 type Props = {
-  order: OrderModel
+  // order: OrderModel
+  order: any
 }
 
 /**
  *
  * @param orderStatus
  */
-function getStatusesState(orderStatus: OrderModel['status']): { [key: string]: boolean } {
+// function getStatusesState(orderStatus: OrderModel['status']): { [key: string]: boolean } {
+function getStatusesState(orderStatus: any): { [key: string]: boolean } {
   const statuses = ['pending', 'confirmed', 'processing', 'completed', 'cancelled', 'archived'];
   let isActive = true;
 

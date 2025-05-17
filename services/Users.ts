@@ -8,7 +8,7 @@ import Prisma, {UserModel} from "@/prisma/types";
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.UserFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.usersFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -20,15 +20,15 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         email: {contains: params.search, mode: 'insensitive'}
       }]
     } : {})
-  } as Prisma.UserWhereInput
+  } as Prisma.usersWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.user.count({where: where})
+  const total = await db.users.count({where: where})
 
-  const items = await db.user.findMany({
+  const items = await db.users.findMany({
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...conditions,
     skip: (params.page - 1) * params.limit,
@@ -45,7 +45,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  */
 export async function getList() {
-  return db.user.findMany() as Promise<UserModel[]>
+  return db.users.findMany() as Promise<UserModel[]>
 }
 
 /**
@@ -53,13 +53,13 @@ export async function getList() {
  * @param email
  */
 export async function findByEmail(email: string) {
-  return db.user.findFirst({where: {email}, include: {Brands: true}}) as Promise<UserModel | null>
+  return db.users.findFirst({where: {email}, include: {Brands: true}}) as Promise<UserModel | null>
 }
 
 /**
  *
  * @param id
  */
-export async function findById(id: string) {
-  return db.user.findFirst({where: {id, role: {not: 'admin'}}}) as Promise<UserModel | null>
+export async function findById(id: bigint) {
+  return db.users.findFirst({where: {id}}) as Promise<UserModel | null>
 }

@@ -6,16 +6,16 @@ import Prisma, {CategoryModel, CollectionModel, OptionModel} from "@/prisma/type
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.CollectionFindFirstArgs): Promise<CollectionModel | null> {
-  return db.collection.findFirst(params)
+export async function findFirst(params?: Prisma.collectionsFindFirstArgs): Promise<CollectionModel | null> {
+  return db.collections.findFirst(params)
 }
 
 /**
  *
  * @param params
  */
-export async function findMany(params?: Prisma.CollectionFindManyArgs): Promise<CollectionModel[]> {
-  return db.collection.findMany(params)
+export async function findMany(params?: Prisma.collectionsFindManyArgs): Promise<CollectionModel[]> {
+  return db.collections.findMany(params)
 }
 
 /**
@@ -23,7 +23,7 @@ export async function findMany(params?: Prisma.CollectionFindManyArgs): Promise<
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.CollectionFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.collectionsFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -32,15 +32,15 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         {title: {contains: params.search, mode: 'insensitive'}}
       ]
     } : {})
-  } as Prisma.CollectionWhereInput
+  } as Prisma.collectionsWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.collection.count({where: where})
+  const total = await db.collections.count({where: where})
 
-  const items = await db.collection.findMany({
+  const items = await db.collections.findMany({
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...conditions,
     skip: (params.page - 1) * params.limit,
@@ -57,19 +57,27 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  * @param where
  */
-export async function getOptions(where: Prisma.CollectionWhereInput) {
+export async function getOptions(where: Prisma.collectionsWhereInput) {
   try {
     const collection = await findFirst({
       where,
       include: {
         Categories: {
           include: {
-            Options: {
+            category: {
               include: {
-                Values: {
-                  where: {
-                    VariantValues: {
-                      some: {}
+                Options: {
+                  include: {
+                    option: {
+                      include: {
+                        Values: {
+                          where: {
+                            VariantValues: {
+                              some: {}
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }

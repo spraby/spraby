@@ -6,8 +6,8 @@ import Prisma, {VariantModel} from "@/prisma/types";
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.VariantFindFirstArgs): Promise<VariantModel | null> {
-  return db.variant.findFirst(params)
+export async function findFirst(params?: Prisma.variantsFindFirstArgs): Promise<VariantModel | null> {
+  return db.variants.findFirst(params)
 }
 
 /**
@@ -15,19 +15,19 @@ export async function findFirst(params?: Prisma.VariantFindFirstArgs): Promise<V
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.VariantFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.variantsFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {title: {contains: params.search, mode: 'insensitive'}} : {})
-  } as Prisma.VariantWhereInput
+  } as Prisma.variantsWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.variant.count({where: where})
+  const total = await db.variants.count({where: where})
 
-  const items = await db.variant.findMany({
+  const items = await db.variants.findMany({
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...conditions,
     skip: (params.page - 1) * params.limit,

@@ -134,7 +134,8 @@ export default function ProductPage({product, informationSettings}: Props) {
                                           }
                                         }
                                       }
-                                    }).then(order => {
+                                    // }).then(order => {
+                                    }).then((order: any) => {
                                       if (order.name) setOrderNumber(order.name);
                                     }).finally(() => setSubmiting(false));
                                   }

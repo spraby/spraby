@@ -8,8 +8,8 @@ import {FilterItem} from "@/types";
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.OptionFindFirstArgs): Promise<OptionModel | null> {
-  return db.option.findFirst(params)
+export async function findFirst(params?: Prisma.optionsFindFirstArgs): Promise<OptionModel | null> {
+  return db.options.findFirst(params)
 }
 
 /**
@@ -17,7 +17,7 @@ export async function findFirst(params?: Prisma.OptionFindFirstArgs): Promise<Op
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.OptionFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.optionsFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -26,15 +26,15 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         {title: {contains: params.search, mode: 'insensitive'}}
       ]
     } : {})
-  } as Prisma.OptionWhereInput
+  } as Prisma.optionsWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.option.count({where: where})
+  const total = await db.options.count({where: where})
 
-  const items = await db.option.findMany({
+  const items = await db.options.findMany({
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...conditions,
     skip: (params.page - 1) * params.limit,
@@ -103,9 +103,9 @@ export async function convertSearchParamsToQueryParams(searchParams: {
       values.map((value: string) => {
         const filterValue = filterItem.values.find(i => value === i.value);
         if (filterValue) {
-          filterValue.optionIds.map((id: string) => {
-            if (!data[id]) data[id] = [];
-            data[id] = Array.from(new Set([...data[id], filterValue.value]))
+          filterValue.optionIds.map((id: bigint) => {
+            if (!data[`${id}`]) data[`${id}`] = [];
+            data[`${id}`] = Array.from(new Set([...data[`${id}`], filterValue.value]))
           })
         }
       })

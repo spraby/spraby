@@ -3,6 +3,6 @@ export type FilterItem = {
   key: string,
   values: {
     value: string,
-    optionIds: string[]
+    optionIds: bigint[]
   }[]
 }
