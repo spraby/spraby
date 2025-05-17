@@ -54,7 +54,7 @@ export default function ProductPage({product, informationSettings}: Props) {
       return product.Category.Options?.reduce((acc: Options[], option) => {
         const optionVariantValues = (product?.Variants ?? []).reduce((acc: string[], variant) => {
           (variant.Values ?? []).map(value => {
-            if (value.optionId === option.id && value.Value?.value && !acc.includes(value.Value.value)) acc.push(value.Value.value);
+            if (value.option_id === option.id && value.Value?.value && !acc.includes(value.Value.value)) acc.push(value.Value.value);
           });
           return acc;
         }, []);
@@ -107,15 +107,15 @@ export default function ProductPage({product, informationSettings}: Props) {
                                         },
                                         Brand: {
                                           connect: {
-                                            id: product.brandId
+                                            id: product.brand_id
                                           }
                                         },
                                         OrderItems: {
                                           createMany: {
                                             data: {
                                               price: product.price,
-                                              finalPrice: product.finalPrice,
-                                              imageId: variant?.imageId,
+                                              finalPrice: product.final_price,
+                                              imageId: variant?.image_id,
                                               productId: product.id,
                                               variantId: variant.id,
                                               quantity: 1,
@@ -176,10 +176,10 @@ export default function ProductPage({product, informationSettings}: Props) {
         </div>
         <div className={'flex gap-2 p-5'}>
           <span className={'text-gray-400'}>Стоимость товара: </span>
-          <Price finalPrice={+product.finalPrice}/>
+          <Price finalPrice={+product.final_price}/>
         </div>
         <div className={'p-5 bg-purple-900 text-3xl rounded-b-2xl'}>
-          <span className={'flex gap-2'}>Итого: <Price size={'3xl'} finalPrice={+product.finalPrice}/></span>
+          <span className={'flex gap-2'}>Итого: <Price size={'3xl'} finalPrice={+product.final_price}/></span>
         </div>
       </div>
     </div>
@@ -243,7 +243,7 @@ export default function ProductPage({product, informationSettings}: Props) {
       </div>
       <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-5'>
         <h2 className='text-2xl font-semibold'>{product.title}</h2>
-        <Price finalPrice={+product.finalPrice} price={+product.price}/>
+        <Price finalPrice={+product.final_price} price={+product.price}/>
         <div className='grid grid-cols-2 gap-3'>
           <label
             className={`${!!variant ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-200'} transition-colors duration-300 text-center text-white p-3 rounded-md`}>
@@ -295,7 +295,7 @@ type Props = {
 }
 
 type Options = {
-  id: string,
+  id: bigint,
   label: string,
   options: {
     label: string,

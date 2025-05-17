@@ -62,34 +62,34 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
         const prevOptions = options.filter((_, y) => y < index)
 
         //get [optionId with value]
-        const prevOptionsData = prevOptions.reduce((acc: { id: string, value: string }[], i) => {
-          if (selectedOptions && i?.id && selectedOptions[i.id]) acc.push({id: i.id, value: selectedOptions[i.id]})
+        const prevOptionsData = prevOptions.reduce((acc: { id: bigint, value: string }[], i) => {
+          if (selectedOptions && i?.id && selectedOptions[`${i.id}`]) acc.push({id: i.id, value: selectedOptions[`${i.id}`]})
           return acc;
         }, []);
 
         const enabledVariants = variants.filter(i => {
           const iValues = (i.Values ?? []).filter(v => {
-            return prevOptionsData.find(pod => pod.id === v.Value?.optionId && pod.value === v.Value?.value)
+            return prevOptionsData.find(pod => pod.id === v.Value?.option_id && pod.value === v.Value?.value)
           });
           return prevOptionsData.length === iValues?.length
         })
 
         const enabledValues = enabledVariants.reduce((acc: string[], i) => {
-          const value = (i.Values ?? []).find(j => j.optionId === option.id)
+          const value = (i.Values ?? []).find(j => j.option_id === option.id)
           if (value && value?.Value?.value) acc.push(value.Value.value)
           return acc;
         }, []);
 
-        if (enabledValues?.length && !enabledValues.includes(selectedOptions[option.id]))
-          setSelectedOption(v => ({...v, [option.id]: enabledValues[0]}))
+        if (enabledValues?.length && !enabledValues.includes(selectedOptions[`${option.id}`]))
+          setSelectedOption(v => ({...v, [`${option.id}`]: enabledValues[0]}))
 
         return <Select
-          isDisabled={!selectedOptions[option.id] || !enabledValues.find(i => i === selectedOptions[option.id])}
+          isDisabled={!selectedOptions[`${option.id}`] || !enabledValues.find(i => i === selectedOptions[`${option.id}`])}
           label={option.label}
           onChange={({target}) => {
-            _onChange(target.value, option.id)
+            _onChange(target.value, `${option.id}`)
           }}
-          selectedKeys={[selectedOptions[option.id]]}
+          selectedKeys={[selectedOptions[`${option.id}`]]}
           disabledKeys={option.options.filter(i => !enabledValues.includes(i.value)).map(i => i.value)}
         >
           {
@@ -110,7 +110,7 @@ type Props = {
 }
 
 type Options = {
-  id: string,
+  id: bigint,
   label: string,
   options: {
     label: string,
@@ -125,12 +125,12 @@ type SelectedOptions = {
 
 function isValidVariant(variant: VariantModel, options: Options[]) {
   const optionIds = (options ?? []).map(i => i.id);
-  return (variant.Values ?? []).map(v => v.optionId).filter(i => optionIds.includes(i)).length === optionIds?.length;
+  return (variant.Values ?? []).map(v => v.option_id).filter(i => optionIds.includes(i)).length === optionIds?.length;
 }
 
 function getVariantOptionsData(variant: VariantModel) {
   return (variant.Values ?? []).reduce((acc: SelectedOptions, i) => {
-    if (i.Value?.value) acc[i.optionId] = i.Value.value;
+    if (i.Value?.value) acc[`${i.option_id}`] = i.Value.value;
     return acc;
   }, {});
 }

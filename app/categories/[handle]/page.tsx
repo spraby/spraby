@@ -9,6 +9,7 @@ export default async function (props: any) {
   const params = props?.searchParams ?? {}
   const data: any = await convertSearchParamsToQueryParams(params, filter);
 
+
   const products = await getFilteredProducts({
     options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
     categoryHandles: [props.params.handle]

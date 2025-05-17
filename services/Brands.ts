@@ -6,8 +6,8 @@ import Prisma, {BrandModel} from "@/prisma/types";
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.BrandFindFirstArgs): Promise<BrandModel | null> {
-  return db.brand.findFirst(params)
+export async function findFirst(params?: Prisma.brandsFindFirstArgs): Promise<BrandModel | null> {
+  return db.brands.findFirst(params)
 }
 
 /**
@@ -15,19 +15,19 @@ export async function findFirst(params?: Prisma.BrandFindFirstArgs): Promise<Bra
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.BrandFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.brandsFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {name: {contains: params.search, mode: 'insensitive'}} : {})
-  } as Prisma.BrandWhereInput
+  } as Prisma.brandsWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.brand.count({where: where})
+  const total = await db.brands.count({where: where})
 
-  const items = await db.brand.findMany({
+  const items = await db.brands.findMany({
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...conditions,
     skip: (params.page - 1) * params.limit,

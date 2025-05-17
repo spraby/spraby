@@ -5,12 +5,6 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'avatars.mds.yandex.net',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'spraby.s3.eu-north-1.amazonaws.com',
         port: '',
         pathname: '/**',

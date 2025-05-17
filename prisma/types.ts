@@ -1,34 +1,27 @@
 import {
-  User,
-  Brand,
-  BrandSettings,
-  Option,
-  OptionValue,
-  Category,
-  Collection,
-  Product,
-  Variant,
-  VariantValue,
-  Settings,
-  Image,
-  ProductImage,
+  users,
+  brands,
+  brand_settings,
+  options,
+  option_values,
+  categories,
+  collections,
+  products,
+  variants,
+  variant_values,
+  settings,
+  images,
+  product_images,
   Prisma,
-  Customer,
-  Order,
-  OrderItem,
-  OrderShipping,
-  BrandSettingsType as BrandSettingsTypeDefault
 } from '@prisma/client'
 
 export default Prisma
 
-export type BrandSettingsType = BrandSettingsTypeDefault
-
-export type UserModel = User & {
+export type UserModel = users & {
   Brands?: BrandModel[]
 }
 
-export type BrandModel = Brand & {
+export type BrandModel = brands & {
   User?: UserModel
   Products?: ProductModel[]
   Categories?: CategoryModel[]
@@ -37,29 +30,29 @@ export type BrandModel = Brand & {
   Orders?: OrderModel[]
 }
 
-export type OptionModel = Option & {
+export type OptionModel = options & {
   Values?: OptionValueModel[]
   Categories?: CategoryModel[]
   VariantValues?: VariantValueModel[]
 }
 
-export type OptionValueModel = OptionValue & {
+export type OptionValueModel = option_values & {
   Option?: OptionModel
   VariantValues?: VariantValueModel[]
 }
 
-export type CategoryModel = Category & {
+export type CategoryModel = categories & {
   Options?: OptionModel[]
   Collections?: CollectionModel[]
   Brands?: BrandModel[]
   Products?: ProductModel[]
 }
 
-export type CollectionModel = Collection & {
+export type CollectionModel = collections & {
   Categories?: CategoryModel[]
 }
 
-export type ProductModel = Product & {
+export type ProductModel = products & {
   Brand?: BrandModel
   Category?: CategoryModel
   Variants?: VariantModel[]
@@ -67,55 +60,55 @@ export type ProductModel = Product & {
   OrderItems?: OrderItemModel[]
 }
 
-export type VariantModel = Variant & {
+export type VariantModel = variants & {
   Product?: ProductModel
   Image?: ProductImageModel
   Values?: VariantValueModel[],
   OrderItems?: OrderItemModel[]
 }
 
-export type VariantValueModel = VariantValue & {
+export type VariantValueModel = variant_values & {
   Variant?: VariantModel
   Option?: OptionModel
   Value?: OptionValueModel
 }
 
-export type ImageModel = Image & {
+export type ImageModel = images & {
   Brands?: BrandModel[]
   ProductImages?: ProductImageModel[]
   Variants?: VariantModel[]
 }
 
-export type ProductImageModel = ProductImage & {
+export type ProductImageModel = product_images & {
   Product?: ProductModel
   Image?: ImageModel
 }
 
-export type SettingsModel = Settings & {}
+export type SettingsModel = settings & {}
 
-export type BrandSettingsModel = BrandSettings & {
-  Brand?: BrandModel
+export type BrandSettingsModel = brand_settings & {
+  brands?: BrandModel
 }
 
-export type CustomerModel = Customer & {
+export type CustomerModel = {
   Orders?: OrderModel[]
 }
 
-export type OrderModel = Order & {
-  Brand?: BrandModel,
+export type OrderModel = {
+  brands?: BrandModel,
   Customer?: CustomerModel,
   OrderShippings?: OrderShippingModel[],
   OrderItems?: OrderItemModel[]
 }
 
-export type OrderItemModel = OrderItem & {
+export type OrderItemModel = {
   Order: OrderModel,
-  Product: ProductModel,
-  Variant: VariantModel,
-  Image: ProductImageModel
+  products: ProductModel,
+  variants: VariantModel,
+  images: ProductImageModel
 }
 
-export type OrderShippingModel = OrderShipping & {
+export type OrderShippingModel = {
   Order: OrderModel
 }
 

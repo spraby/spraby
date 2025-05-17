@@ -6,8 +6,8 @@ import Prisma, {CategoryModel, OptionModel} from "@/prisma/types";
  *
  * @param params
  */
-export async function findFirst(params?: Prisma.CategoryFindFirstArgs): Promise<CategoryModel | null> {
-  return db.category.findFirst(params)
+export async function findFirst(params?: Prisma.categoriesFindFirstArgs): Promise<CategoryModel | null> {
+  return db.categories.findFirst(params)
 }
 
 /**
@@ -15,7 +15,7 @@ export async function findFirst(params?: Prisma.CategoryFindFirstArgs): Promise<
  * @param params
  * @param conditions
  */
-export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.CategoryFindManyArgs) {
+export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.categoriesFindManyArgs) {
   const where = {
     ...(conditions?.where ?? {}),
     ...(params?.search?.length ? {
@@ -24,15 +24,15 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
         {title: {contains: params.search, mode: 'insensitive'}}
       ]
     } : {})
-  } as Prisma.CategoryWhereInput
+  } as Prisma.categoriesWhereInput
 
   conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
 
-  const total = await db.category.count({where: where})
+  const total = await db.categories.count({where: where})
 
-  const items = await db.category.findMany({
+  const items = await db.categories.findMany({
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...conditions,
     skip: (params.page - 1) * params.limit,
@@ -49,7 +49,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  * @param where
  */
-export async function getOptions(where: Prisma.CategoryWhereInput) {
+export async function getOptions(where: Prisma.categoriesWhereInput) {
   try {
     const category = await findFirst({
       where,

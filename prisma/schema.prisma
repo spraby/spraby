@@ -8,266 +8,183 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum UserRole {
-  admin
-  manager
-  customer
+model users {
+  id         BigInt   @id @default(autoincrement())
+  first_name String?
+  last_name  String?
+  email      String   @unique
+  password   String
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  Brands     brands[]
 }
 
-enum OrderStatus {
-  pending
-  confirmed
-  processing
-  completed
-  cancelled
-  archived
-}
-
-enum DeliveryStatus {
-  pending
-  packing
-  shipped
-  transit
-  delivered
-}
-
-enum FinancialStatus {
-  unpaid
-  paid
-  partial_paid
-  refunded
-}
-
-enum BrandSettingsType {
-  delivery
-  refund
-  phones
-  emails
-  socials
-  addresses
-}
-
-model User {
-  id        String   @id @default(cuid())
-  firstName String?
-  lastName  String?
-  email     String   @unique
-  role      UserRole @default(manager)
-  password  String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-  Brands    Brand[]
-}
-
-model Brand {
-  id          String          @id @default(cuid())
-  userId      String?
+model brands {
+  id          BigInt           @id @default(autoincrement())
+  user_id     BigInt?
   name        String
   description String?
-  updatedAt   DateTime        @updatedAt
-  createdAt   DateTime        @default(now())
-  User        User?           @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Products    Product[]
-  Categories  Category[]
-  Images      Image[]
-  Settings    BrandSettings[]
-  Orders      Order[]
+  updated_at  DateTime         @updatedAt
+  created_at  DateTime         @default(now())
+  User        users?           @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Products    products[]
+  Categories  categories[]
+  Images      images[]
+  Settings    brand_settings[]
 }
 
-model Option {
-  id            String         @id @default(cuid())
+model options {
+  id            BigInt            @id @default(autoincrement())
   name          String
   title         String
   description   String?
-  updatedAt     DateTime       @updatedAt
-  createdAt     DateTime       @default(now())
-  Values        OptionValue[]
-  Categories    Category[]
-  VariantValues VariantValue[]
+  updated_at    DateTime          @updatedAt
+  created_at    DateTime          @default(now())
+  Values        option_values[]
+  Categories    category_option[]
+  VariantValues variant_values[]
 }
 
-model OptionValue {
-  id            String         @id @default(cuid())
-  optionId      String
+model option_values {
+  id            BigInt           @id @default(autoincrement())
+  option_id     BigInt
   value         String
-  updatedAt     DateTime       @updatedAt
-  createdAt     DateTime       @default(now())
-  Option        Option         @relation(fields: [optionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  VariantValues VariantValue[]
+  updated_at    DateTime         @updatedAt
+  created_at    DateTime         @default(now())
+  Option        options          @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  VariantValues variant_values[]
 }
 
-model Category {
-  id          String       @id @default(cuid())
-  handle      String       @unique
+model category_collection {
+  category_id   BigInt
+  collection_id BigInt
+
+  category   categories  @relation(fields: [category_id], references: [id])
+  collection collections @relation(fields: [collection_id], references: [id])
+
+  @@id([category_id, collection_id])
+}
+
+model category_option {
+  category_id BigInt
+  option_id   BigInt
+  category    categories @relation(fields: [category_id], references: [id])
+  option      options    @relation(fields: [option_id], references: [id])
+
+  @@id([category_id, option_id])
+}
+
+model categories {
+  id          BigInt                @id @default(autoincrement())
+  handle      String                @unique
   name        String
   title       String
   description String?
-  updatedAt   DateTime     @updatedAt
-  createdAt   DateTime     @default(now())
-  Options     Option[]
-  Collections Collection[]
-  Brands      Brand[]
-  Products    Product[]
+  updated_at  DateTime              @updatedAt
+  created_at  DateTime              @default(now())
+  Options     category_option[]
+  Brands      brands[]
+  Products    products[]
+  Collections category_collection[]
 }
 
-model Collection {
-  id          String     @id @default(cuid())
-  handle      String     @unique
+model collections {
+  id          BigInt                @id @default(autoincrement())
+  handle      String                @unique
   name        String
   title       String
   description String?
-  updatedAt   DateTime   @updatedAt
-  createdAt   DateTime   @default(now())
-  Categories  Category[]
+  updated_at  DateTime              @updatedAt
+  created_at  DateTime              @default(now())
+  Categories  category_collection[]
 }
 
-model Product {
-  id          String         @id @default(cuid())
-  brandId     String
-  categoryId  String?
+model products {
+  id          BigInt           @id @default(autoincrement())
+  brand_id    BigInt
+  category_id BigInt?
   title       String
   description String?
-  enabled     Boolean        @default(true)
-  price       Decimal        @default(0) @db.Decimal(10, 2)
-  finalPrice  Decimal        @default(0) @db.Decimal(10, 2)
-  updatedAt   DateTime       @updatedAt
-  createdAt   DateTime       @default(now())
-  Brand       Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Variants    Variant[]
-  Images      ProductImage[]
-  OrderItems  OrderItem[]
+  enabled     Boolean          @default(true)
+  price       Decimal          @default(0) @db.Decimal(10, 2)
+  final_price Decimal          @default(0) @db.Decimal(10, 2)
+  updated_at  DateTime         @updatedAt
+  created_at  DateTime         @default(now())
+  Brand       brands           @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Category    categories?      @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Variants    variants[]
+  Images      product_images[]
 }
 
-model Variant {
-  id         String         @id @default(cuid())
-  productId  String
-  imageId    String?
-  title      String?
-  price      Decimal        @default(0) @db.Decimal(10, 2)
-  finalPrice Decimal        @default(0) @db.Decimal(10, 2)
-  updatedAt  DateTime       @updatedAt
-  createdAt  DateTime       @default(now())
-  Product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Image      ProductImage?  @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Values     VariantValue[]
-  OrderItems OrderItem[]
+model variants {
+  id          BigInt           @id @default(autoincrement())
+  product_id  BigInt
+  image_id    BigInt?
+  title       String?
+  price       Decimal          @default(0) @db.Decimal(10, 2)
+  final_price Decimal          @default(0) @db.Decimal(10, 2)
+  updated_at  DateTime         @updatedAt
+  created_at  DateTime         @default(now())
+  Product     products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Image       product_images?  @relation(fields: [image_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Values      variant_values[]
 }
 
-model VariantValue {
-  id            String      @id @default(cuid())
-  variantId     String
-  optionId      String
-  optionValueId String
-  updatedAt     DateTime    @updatedAt
-  createdAt     DateTime    @default(now())
-  Variant       Variant     @relation(fields: [variantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Option        Option      @relation(fields: [optionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Value         OptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+model variant_values {
+  id              BigInt        @id @default(autoincrement())
+  variant_id      BigInt
+  option_id       BigInt
+  option_value_id BigInt
+  updated_at      DateTime      @updatedAt
+  created_at      DateTime      @default(now())
+  Variant         variants      @relation(fields: [variant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Option          options       @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Value           option_values @relation(fields: [option_value_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([variantId, optionId])
-  @@unique([variantId, optionId, optionValueId])
+  @@unique([variant_id, option_id])
+  @@unique([variant_id, option_id, option_value_id])
 }
 
-model Image {
-  id            String         @id @default(cuid())
+model images {
+  id            BigInt           @id @default(autoincrement())
   name          String
   src           String
   alt           String?
   meta          String?
-  updatedAt     DateTime       @updatedAt
-  createdAt     DateTime       @default(now())
-  Brands        Brand[]
-  ProductImages ProductImage[]
+  updated_at    DateTime         @updatedAt
+  created_at    DateTime         @default(now())
+  Brands        brands[]
+  ProductImages product_images[]
 }
 
-model ProductImage {
-  id        String      @id @default(cuid())
-  productId String
-  imageId   String
-  position  Int         @default(0)
-  updatedAt DateTime    @updatedAt
-  createdAt DateTime    @default(now())
-  Product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Image     Image       @relation(fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Variant   Variant[]
-  OrderItem OrderItem[]
+model product_images {
+  id         BigInt     @id @default(autoincrement())
+  product_id BigInt
+  image_id   BigInt
+  position   Int        @default(0)
+  updated_at DateTime   @updatedAt
+  created_at DateTime   @default(now())
+  Product    products   @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Image      images     @relation(fields: [image_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Variant    variants[]
 }
 
-model Settings {
-  id        String   @unique
-  data      Json     @default("[]") @db.JsonB
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+model settings {
+  id         BigInt   @id @default(autoincrement())
+  key        String   @unique
+  data       Json     @default("[]") @db.JsonB
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
 }
 
-model BrandSettings {
-  id        String            @id @default(cuid())
-  type      BrandSettingsType
-  data      Json              @default("{}") @db.JsonB
-  brandId   String
-  updatedAt DateTime          @updatedAt
-  createdAt DateTime          @default(now())
-  Brand     Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+model brand_settings {
+  id         BigInt   @id @default(autoincrement())
+  type       String
+  data       Json     @default("{}") @db.JsonB
+  brand_id   BigInt
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  Brand      brands   @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([type, brandId])
-  @@unique([id, type, brandId])
-}
-
-model Customer {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  phone     String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-  Orders    Order[]
-}
-
-model Order {
-  id              String          @id @default(cuid())
-  name            String
-  customerId      String
-  brandId         String
-  note            String?
-  status          OrderStatus     @default(pending)
-  deliveryStatus  DeliveryStatus  @default(pending)
-  financialStatus FinancialStatus @default(unpaid)
-  updatedAt       DateTime        @updatedAt
-  createdAt       DateTime        @default(now())
-  Customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Brand           Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  OrderShippings  OrderShipping[]
-  OrderItems      OrderItem[]
-}
-
-model OrderItem {
-  id           String        @id @default(cuid())
-  orderId      String
-  productId    String?
-  variantId    String?
-  imageId      String?
-  title        String
-  variantTitle String
-  description  String?
-  quantity     Int
-  price        Decimal       @default(0) @db.Decimal(10, 2)
-  finalPrice   Decimal       @default(0) @db.Decimal(10, 2)
-  updatedAt    DateTime      @updatedAt
-  createdAt    DateTime      @default(now())
-  Order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Product      Product?      @relation(fields: [productId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Variant      Variant?      @relation(fields: [variantId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Image        ProductImage? @relation(fields: [imageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-}
-
-model OrderShipping {
-  id        String   @id @default(cuid())
-  orderId   String
-  name      String
-  phone     String
-  note      String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-  Order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  @@unique([type, brand_id])
 }

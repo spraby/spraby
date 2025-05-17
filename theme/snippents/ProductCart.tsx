@@ -31,10 +31,10 @@ const ProductCart = ({product}: Props) => {
         {
           <div className='flex gap-2 items-center'>
             {
-              +product.price > +product.finalPrice &&
+              +product.price > +product.final_price &&
               <span className="text-xs text-gray-400 line-through">{+product.price}</span>
             }
-            <span className='text-base font-semibold text-purple-500'>{+product.finalPrice} BYN</span>
+            <span className='text-base font-semibold text-purple-500'>{+product.final_price} BYN</span>
           </div>
         }
       </div>

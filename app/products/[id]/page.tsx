@@ -46,7 +46,19 @@ export default async function (props: any) {
     }
   })
 
+  const productData =  {
+    ...product,
+    Images: product?.Images?.map(i => ({
+      ...i,
+      Image: {
+        ...i.Image,
+        src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
+      }
+    }))
+  }
+
+
   const informationSettings = await getInformationSettings() as any;
-  return !!product ? <ProductPage product={serializeObject(product)} informationSettings={informationSettings}/> :
+  return !!productData ? <ProductPage product={serializeObject(productData)} informationSettings={informationSettings}/> :
     <div>no product</div>
 }
