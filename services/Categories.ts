@@ -54,9 +54,9 @@ export async function getOptions(where: Prisma.categoriesWhereInput) {
     const category = await findFirst({
       where,
       include: {
-        Options: {
+        CategoryOption: {
           include: {
-            option: {
+            Option: {
               include: {
                 Values: true
               }
@@ -66,8 +66,8 @@ export async function getOptions(where: Prisma.categoriesWhereInput) {
       }
     })
 
-    return (category?.Options ?? []).reduce((acc: OptionModel[], option) => {
-      if (!acc?.find(i => i.id === option.id)) acc.push(option)
+    return (category?.CategoryOption ?? []).reduce((acc: OptionModel[], categoryOption) => {
+      if (!acc?.find(i => i.id === categoryOption.Option.id)) acc.push(categoryOption.Option)
       return acc;
     }, [])
 
