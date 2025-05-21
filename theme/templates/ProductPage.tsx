@@ -51,24 +51,28 @@ export default function ProductPage({product, informationSettings}: Props) {
 
   const options = useMemo(() => {
     if (product && product?.Category && product?.Variants?.length) {
-      return product.Category.Options?.reduce((acc: Options[], option) => {
+      return product.Category.CategoryOption?.reduce((acc: Options[], categoryOption) => {
         const optionVariantValues = (product?.Variants ?? []).reduce((acc: string[], variant) => {
-          (variant.Values ?? []).map(value => {
-            if (value.option_id === option.id && value.Value?.value && !acc.includes(value.Value.value)) acc.push(value.Value.value);
+          (variant.VariantValue ?? []).map(variantValue => {
+            if (variantValue.option_id === categoryOption.option_id && variantValue.Value?.value && !acc.includes(variantValue.Value.value)) acc.push(variantValue.Value.value);
           });
           return acc;
         }, []);
         if (optionVariantValues?.length) acc.push({
-          id: option.id,
-          label: option.title,
+          id: categoryOption.Option.id,
+          label: categoryOption.Option.title,
           options: optionVariantValues.map(i => ({label: i, value: i}))
         })
         return acc;
+
       }, []);
     }
 
     return [];
   }, [product]);
+
+
+  console.log('options => ', options);
 
   /**
    *
@@ -120,7 +124,7 @@ export default function ProductPage({product, informationSettings}: Props) {
                                               variantId: variant.id,
                                               quantity: 1,
                                               title: product.title,
-                                              variantTitle: (variant?.Values ?? []).map(i => `${i?.Value?.Option?.title}: ${i?.Value?.value}`).join(', ')
+                                              variantTitle: (variant?.VariantValue ?? []).map(i => `${i?.Value?.Option?.title}: ${i?.Value?.value}`).join(', ')
                                             }
                                           }
                                         },
@@ -134,7 +138,7 @@ export default function ProductPage({product, informationSettings}: Props) {
                                           }
                                         }
                                       }
-                                    // }).then(order => {
+                                      // }).then(order => {
                                     }).then((order: any) => {
                                       if (order.name) setOrderNumber(order.name);
                                     }).finally(() => setSubmiting(false));
@@ -169,7 +173,7 @@ export default function ProductPage({product, informationSettings}: Props) {
           <span className={'text-2xl font-black'}>{product.title}</span>
           <span className={'max-h-[100px] overflow-auto'}>
               {
-                (variant?.Values ?? []).map(i => {
+                (variant?.VariantValue ?? []).map(i => {
                   return `${i.Value?.Option?.title}: ${i.Value?.value}`
                 }).join(', ')
               }
@@ -275,6 +279,9 @@ export default function ProductPage({product, informationSettings}: Props) {
         <VariantSelector variants={product?.Variants ?? []}
                          options={options}
                          onChange={v => {
+
+                           console.log('VARIANT => ', v)
+
                            if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src)
                            setVariant(v);
                          }}/>

@@ -1,6 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {CategoryModel, CollectionModel, OptionModel} from "@/prisma/types";
+import Prisma, {CategoryCollection, CategoryModel, CollectionModel, OptionModel} from "@/prisma/types";
 
 /**
  *
@@ -62,21 +62,15 @@ export async function getOptions(where: Prisma.collectionsWhereInput) {
     const collection = await findFirst({
       where,
       include: {
-        Categories: {
+        CategoryCollection: {
           include: {
-            category: {
+            Category: {
               include: {
-                Options: {
+                CategoryOption: {
                   include: {
-                    option: {
+                    Option: {
                       include: {
-                        Values: {
-                          where: {
-                            VariantValues: {
-                              some: {}
-                            }
-                          }
-                        }
+                        Values: true
                       }
                     }
                   }
@@ -88,9 +82,10 @@ export async function getOptions(where: Prisma.collectionsWhereInput) {
       }
     })
 
-    return (collection?.Categories ?? []).reduce((acc: OptionModel[], category: CategoryModel) => {
-      (category?.Options ?? []).map(option => {
-        if (!acc?.find(i => i.id === option.id)) acc.push(option)
+    return (collection?.CategoryCollection ?? []).reduce((acc: OptionModel[], categoryCollection: CategoryCollection) => {
+      (categoryCollection.Category.CategoryOption ?? []).map(option => {
+        console.log('option.Option => ', option.Option)
+        if (!acc?.find(i => i.id === option.Option.id)) acc.push(option.Option)
       })
       return acc;
     }, [])

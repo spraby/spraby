@@ -52,10 +52,41 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
  *
  * @param filter
  */
-export async function getFilteredProducts(filter: Filter): Promise<ProductModel[]> {
+export async function getFilteredProducts(filter: Filter): Promise<(ProductModel & {
+  price: string;
+  final_price: string
+})[]> {
+
+
+  console.log('collectionHandles => ', filter?.collectionHandles)
+  console.log('categoryHandles => ', filter?.categoryHandles)
+  console.log('filterOptions => ', filter.options)
+
+  console.log('QUERY', JSON.stringify({
+    ...(!!filter?.options?.length ? {
+      Variants: {
+        some: {
+          AND: filter.options.map(i => ({
+            VariantValue: {
+              some: {
+                Value: {
+                  option_id: +i.optionId,
+                  value: {
+                    in: i.values
+                  }
+                }
+              }
+            }
+          }))
+        }
+      }
+    } : {})
+  }, null, 2))
+
   const products = await findMany({
     where: {
       enabled: true,
+
       Category: {
         ...(!!filter?.categoryHandles?.length ? {
           handle: {
@@ -63,9 +94,9 @@ export async function getFilteredProducts(filter: Filter): Promise<ProductModel[
           }
         } : {}),
         ...(!!filter?.collectionHandles?.length ? {
-          Collections: {
+          CategoryCollection: {
             some: {
-              collection: {
+              Collection: {
                 handle: {
                   in: filter.collectionHandles,
                 },
@@ -73,27 +104,27 @@ export async function getFilteredProducts(filter: Filter): Promise<ProductModel[
             }
           },
         } : {}),
-
         ...(!!filter?.options?.length ? {
-          Options: {
+          CategoryOption: {
             some: {
-              option: {
+              Option: {
                 id: {
-                  in: filter.options.map(i => i.optionId)
+                  in: filter.options.map(i => +i.optionId)
                 }
               }
             }
           }
-        } : {})
+        } : {}),
       },
+
       ...(!!filter?.options?.length ? {
         Variants: {
           some: {
             AND: filter.options.map(i => ({
-              Values: {
+              VariantValue: {
                 some: {
                   Value: {
-                    optionId: i.optionId,
+                    option_id: +i.optionId,
                     value: {
                       in: i.values
                     }
@@ -113,13 +144,17 @@ export async function getFilteredProducts(filter: Filter): Promise<ProductModel[
       },
       Category: {
         include: {
-          Options: true
+          CategoryOption: {
+            include: {
+              Option: true
+            }
+          }
         }
       },
       Variants: {
         include: {
           Image: true,
-          Values: {
+          VariantValue: {
             include: {
               Value: true,
               Option: true
@@ -141,6 +176,13 @@ export async function getFilteredProducts(filter: Filter): Promise<ProductModel[
   return products.map(product => {
     return {
       ...product,
+      price: `${product.price}`,
+      final_price: `${product.final_price}`,
+      Variants: product.Variants?.map(v => ({
+        ...v,
+        price: `${v.price}`,
+        final_price: `${v.final_price}`
+      })),
       Images: product.Images?.map(i => ({
         ...i,
         Image: {
@@ -149,7 +191,7 @@ export async function getFilteredProducts(filter: Filter): Promise<ProductModel[
         }
       }))
     }
-  }) as ProductModel[]
+  }) as (ProductModel & { price: string; final_price: string })[]
 }
 
 type Filter = {

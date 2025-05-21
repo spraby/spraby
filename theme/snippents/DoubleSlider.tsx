@@ -10,6 +10,9 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
   const thumbnails = useRef(null);
 
   useEffect(() => {
+    console.log('images => ', images)
+    console.log('startImage => ', startImage)
+
     if (images?.length <= 1) return;
     // @ts-ignore
     if (main.current && thumbnails.current && thumbnails.current.splide) {
@@ -17,7 +20,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
       main.current.sync(thumbnails.current.splide);
     }
     if (startImage) {
-      const imageIndex = images.findIndex(i => i === startImage);
+      const imageIndex = images.findIndex(i => i.includes(startImage));
       // @ts-ignore
       if (imageIndex != -1) thumbnails.current.go(imageIndex);
     }

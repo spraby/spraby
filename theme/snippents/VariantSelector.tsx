@@ -68,14 +68,14 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
         }, []);
 
         const enabledVariants = variants.filter(i => {
-          const iValues = (i.Values ?? []).filter(v => {
+          const iValues = (i.VariantValue ?? []).filter(v => {
             return prevOptionsData.find(pod => pod.id === v.Value?.option_id && pod.value === v.Value?.value)
           });
           return prevOptionsData.length === iValues?.length
         })
 
         const enabledValues = enabledVariants.reduce((acc: string[], i) => {
-          const value = (i.Values ?? []).find(j => j.option_id === option.id)
+          const value = (i.VariantValue ?? []).find(j => j.option_id === option.id)
           if (value && value?.Value?.value) acc.push(value.Value.value)
           return acc;
         }, []);
@@ -125,11 +125,11 @@ type SelectedOptions = {
 
 function isValidVariant(variant: VariantModel, options: Options[]) {
   const optionIds = (options ?? []).map(i => i.id);
-  return (variant.Values ?? []).map(v => v.option_id).filter(i => optionIds.includes(i)).length === optionIds?.length;
+  return (variant.VariantValue ?? []).map(v => v.option_id).filter(i => optionIds.includes(i)).length === optionIds?.length;
 }
 
 function getVariantOptionsData(variant: VariantModel) {
-  return (variant.Values ?? []).reduce((acc: SelectedOptions, i) => {
+  return (variant.VariantValue ?? []).reduce((acc: SelectedOptions, i) => {
     if (i.Value?.value) acc[`${i.option_id}`] = i.Value.value;
     return acc;
   }, {});

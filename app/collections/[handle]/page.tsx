@@ -5,9 +5,16 @@ import {getFilteredProducts} from "@/services/Products";
 
 export default async function (props: any) {
   const options = await getCollectionOptions({handle: props.params.handle});
+  console.log('options => ', options);
+
   const filter = await convertOptionsToFilter(options);
-  const params = props?.searchParams ?? {}
+  console.log('filter => ', filter);
+
+  const params = props?.searchParams ?? {};
+  console.log('params => ', params);
+
   const data: any = await convertSearchParamsToQueryParams(params, filter);
+  console.log('data => ', data)
 
   const products = await getFilteredProducts({
     options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),

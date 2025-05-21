@@ -12,6 +12,8 @@ import {
   settings,
   images,
   product_images,
+  category_collection,
+  category_option,
   Prisma,
 } from '@prisma/client'
 
@@ -32,7 +34,7 @@ export type BrandModel = brands & {
 
 export type OptionModel = options & {
   Values?: OptionValueModel[]
-  Categories?: CategoryModel[]
+  CategoryOption?: CategoryOption[]
   VariantValues?: VariantValueModel[]
 }
 
@@ -42,14 +44,24 @@ export type OptionValueModel = option_values & {
 }
 
 export type CategoryModel = categories & {
-  Options?: OptionModel[]
-  Collections?: CollectionModel[]
+  CategoryOption?: CategoryOption[]
+  CategoryCollection?: CategoryCollection[]
   Brands?: BrandModel[]
   Products?: ProductModel[]
 }
 
+export type CategoryOption = category_option & {
+  Category: CategoryModel,
+  Option: OptionModel
+}
+
 export type CollectionModel = collections & {
-  Categories?: CategoryModel[]
+  CategoryCollection?: CategoryCollection[],
+}
+
+export type CategoryCollection = category_collection & {
+  Category: CategoryModel
+  Collection: CollectionModel
 }
 
 export type ProductModel = products & {
@@ -63,7 +75,7 @@ export type ProductModel = products & {
 export type VariantModel = variants & {
   Product?: ProductModel
   Image?: ProductImageModel
-  Values?: VariantValueModel[],
+  VariantValue?: VariantValueModel[],
   OrderItems?: OrderItemModel[]
 }
 

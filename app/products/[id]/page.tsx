@@ -11,7 +11,11 @@ export default async function (props: any) {
     include: {
       Category: {
         include: {
-          Options: true,
+          CategoryOption: {
+            include: {
+              Option: true
+            }
+          },
         }
       },
       Brand: {
@@ -27,13 +31,13 @@ export default async function (props: any) {
               Image: true
             }
           },
-          Values: {
+          VariantValue: {
             include: {
               Value: {
                 include: {
                   Option: true
                 }
-              },
+              }
             }
           }
         }
@@ -46,7 +50,7 @@ export default async function (props: any) {
     }
   })
 
-  const productData =  {
+  const productData = {
     ...product,
     Images: product?.Images?.map(i => ({
       ...i,
@@ -59,6 +63,7 @@ export default async function (props: any) {
 
 
   const informationSettings = await getInformationSettings() as any;
-  return !!productData ? <ProductPage product={serializeObject(productData)} informationSettings={informationSettings}/> :
+  return !!productData ?
+    <ProductPage product={serializeObject(productData)} informationSettings={informationSettings}/> :
     <div>no product</div>
 }
