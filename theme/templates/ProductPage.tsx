@@ -71,9 +71,6 @@ export default function ProductPage({product, informationSettings}: Props) {
     return [];
   }, [product]);
 
-
-  console.log('options => ', options);
-
   /**
    *
    */
@@ -91,59 +88,61 @@ export default function ProductPage({product, informationSettings}: Props) {
   }, [product]);
 
   const orderFormMarkup = <form className={'relative flex flex-col p-5 gap-5 h-screen'}
-                                onSubmit={handleSubmit((data) => {
-                                  if (variant && product) {
-                                    setSubmiting(true);
-                                    create({
-                                      data: {
-                                        name: `#${format(new Date(), 'yyMMdd-HHmmssSSS')}`,
-                                        Customer: {
-                                          connectOrCreate: {
-                                            where: {
-                                              email: data.email
-                                            },
-                                            create: {
-                                              email: data.email,
-                                              name: data.name,
-                                              phone: `${data.phone}`
+                                onSubmit={
+                                  handleSubmit((data) => {
+                                    console.log('DATA => ', data, variant, product)
+                                    if (variant && product) {
+                                      setSubmiting(true);
+                                      create({
+                                        data: {
+                                          name: `#${format(new Date(), 'yyMMdd-HHmmssSSS')}`,
+                                          Customer: {
+                                            connectOrCreate: {
+                                              where: {
+                                                email: data.email
+                                              },
+                                              create: {
+                                                email: data.email,
+                                                name: data.name,
+                                                phone: `${data.phone}`
+                                              }
                                             }
-                                          }
-                                        },
-                                        Brand: {
-                                          connect: {
-                                            id: product.brand_id
-                                          }
-                                        },
-                                        OrderItems: {
-                                          createMany: {
-                                            data: {
-                                              price: product.price,
-                                              finalPrice: product.final_price,
-                                              imageId: variant?.image_id,
-                                              productId: product.id,
-                                              variantId: variant.id,
-                                              quantity: 1,
-                                              title: product.title,
-                                              variantTitle: (variant?.VariantValue ?? []).map(i => `${i?.Value?.Option?.title}: ${i?.Value?.value}`).join(', ')
+                                          },
+                                          Brand: {
+                                            connect: {
+                                              id: product.brand_id
                                             }
-                                          }
-                                        },
-                                        OrderShippings: {
-                                          createMany: {
-                                            data: {
-                                              name: data.name,
-                                              phone: `${data.phone}`,
-                                              note: data?.description ?? ''
+                                          },
+                                          OrderItems: {
+                                            createMany: {
+                                              data: {
+                                                price: product.price,
+                                                final_price: product.final_price,
+                                                image_id: variant?.image_id,
+                                                product_id: product.id,
+                                                variant_id: variant.id,
+                                                quantity: 1,
+                                                title: product.title,
+                                                variant_title: (variant?.VariantValue ?? []).map(i => `${i?.Value?.Option?.title}: ${i?.Value?.value}`).join(', ')
+                                              }
+                                            }
+                                          },
+                                          OrderShippings: {
+                                            createMany: {
+                                              data: {
+                                                name: data.name,
+                                                phone: `${data.phone}`,
+                                                note: data?.description ?? ''
+                                              }
                                             }
                                           }
                                         }
-                                      }
-                                      // }).then(order => {
-                                    }).then((order: any) => {
-                                      if (order.name) setOrderNumber(order.name);
-                                    }).finally(() => setSubmiting(false));
-                                  }
-                                })}>
+                                      }).then(order => {
+                                        if (order.name) setOrderNumber(order.name);
+                                      }).finally(() => setSubmiting(false));
+                                    }
+                                  })
+                                }>
     <div
       className={'p-5 -mx-5 -mt-5 bg-gray-800 min-h-[120px] text-white text-2xl flex justify-between items-center'}>
       <h3>Заказ товара</h3>

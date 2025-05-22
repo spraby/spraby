@@ -14,6 +14,10 @@ import {
   product_images,
   category_collection,
   category_option,
+  customers,
+  orders,
+  order_items,
+  order_shippings,
   Prisma,
 } from '@prisma/client'
 
@@ -102,25 +106,25 @@ export type BrandSettingsModel = brand_settings & {
   brands?: BrandModel
 }
 
-export type CustomerModel = {
+export type CustomerModel = customers & {
   Orders?: OrderModel[]
 }
 
-export type OrderModel = {
-  brands?: BrandModel,
+export type OrderModel = orders & {
+  Brand?: BrandModel,
   Customer?: CustomerModel,
   OrderShippings?: OrderShippingModel[],
   OrderItems?: OrderItemModel[]
 }
 
-export type OrderItemModel = {
+export type OrderItemModel = order_items & {
   Order: OrderModel,
-  products: ProductModel,
-  variants: VariantModel,
-  images: ProductImageModel
+  Product: ProductModel,
+  Variant: VariantModel,
+  Image: ProductImageModel
 }
 
-export type OrderShippingModel = {
+export type OrderShippingModel = order_shippings & {
   Order: OrderModel
 }
 

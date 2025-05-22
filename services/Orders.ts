@@ -1,36 +1,19 @@
 'use server'
-// import db from "@/prisma/db.client";
-// import Prisma, {OrderModel} from "@/prisma/types";
+import db from "@/prisma/db.client";
+import Prisma, {OrderModel} from "@/prisma/types";
 
 /**
  *
  * @param params
  */
-export async function create(params: any) {
-  return {}
+export async function create(params: Prisma.ordersCreateArgs) {
+  return db.orders.create(params)
 }
 
 /**
  *
  * @param params
  */
-export async function findFirst(params?: any): Promise<any> {
-  return {}
+export async function findFirst(params?: Prisma.ordersFindFirstArgs): Promise<OrderModel | null> {
+  return db.orders.findFirst(params)
 }
-
-
-// /**
-//  *
-//  * @param params
-//  */
-// export async function create(params: Prisma.orderCreateArgs) {
-//   return db.order.create(params)
-// }
-//
-// /**
-//  *
-//  * @param params
-//  */
-// export async function findFirst(params?: Prisma.OrderFindFirstArgs): Promise<OrderModel | null> {
-//   return db.order.findFirst(params)
-// }

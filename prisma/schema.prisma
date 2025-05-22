@@ -8,6 +8,30 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum order_status {
+  pending
+  confirmed
+  processing
+  completed
+  cancelled
+  archived
+}
+
+enum delivery_status {
+  pending
+  packing
+  shipped
+  transit
+  delivered
+}
+
+enum financial_status {
+  unpaid
+  paid
+  partial_paid
+  refunded
+}
+
 model users {
   id         BigInt   @id @default(autoincrement())
   first_name String?
@@ -31,6 +55,7 @@ model brands {
   Categories  categories[]
   Images      images[]
   Settings    brand_settings[]
+  orders      orders[]
 }
 
 model options {
@@ -114,6 +139,7 @@ model products {
   Category    categories?      @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Variants    variants[]
   Images      product_images[]
+  OrderItems  order_items[]
 }
 
 model variants {
@@ -128,6 +154,7 @@ model variants {
   Product      products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Image        product_images?  @relation(fields: [image_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
   VariantValue variant_values[]
+  order_items  order_items[]
 }
 
 model variant_values {
@@ -158,15 +185,16 @@ model images {
 }
 
 model product_images {
-  id         BigInt     @id @default(autoincrement())
-  product_id BigInt
-  image_id   BigInt
-  position   Int        @default(0)
-  updated_at DateTime   @updatedAt
-  created_at DateTime   @default(now())
-  Product    products   @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Image      images     @relation(fields: [image_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Variant    variants[]
+  id          BigInt        @id @default(autoincrement())
+  product_id  BigInt
+  image_id    BigInt
+  position    Int           @default(0)
+  updated_at  DateTime      @updatedAt
+  created_at  DateTime      @default(now())
+  Product     products      @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Image       images        @relation(fields: [image_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Variant     variants[]
+  order_items order_items[]
 }
 
 model settings {
@@ -187,4 +215,62 @@ model brand_settings {
   Brand      brands   @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([type, brand_id])
+}
+
+model customers {
+  id         BigInt   @id @default(autoincrement())
+  email      String   @unique
+  name       String
+  phone      String
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  Orders     orders[]
+}
+
+model orders {
+  id               BigInt            @id @default(autoincrement())
+  name             String
+  customer_id      BigInt
+  brand_id         BigInt
+  note             String?
+  status           order_status      @default(pending)
+  delivery_status  delivery_status   @default(pending)
+  financial_status financial_status  @default(unpaid)
+  updated_at       DateTime          @updatedAt
+  created_at       DateTime          @default(now())
+  Customer         customers         @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Brand            brands            @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  OrderShippings   order_shippings[]
+  OrderItems       order_items[]
+}
+
+model order_items {
+  id            BigInt          @id @default(autoincrement())
+  order_id      BigInt
+  product_id    BigInt?
+  variant_id    BigInt?
+  image_id      BigInt?
+  title         String
+  variant_title String
+  description   String?
+  quantity      Int
+  price         Decimal         @default(0) @db.Decimal(10, 2)
+  final_price   Decimal         @default(0) @db.Decimal(10, 2)
+  updated_at    DateTime        @updatedAt
+  created_at    DateTime        @default(now())
+  Order         orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Product       products?       @relation(fields: [product_id], references: [id], onDelete: SetNull)
+  Variant       variants?       @relation(fields: [variant_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Image         product_images? @relation(fields: [image_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
+}
+
+model order_shippings {
+  id         BigInt   @id @default(autoincrement())
+  order_id   BigInt
+  name       String
+  phone      String
+  note       String
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+  Order      orders   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
