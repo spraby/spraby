@@ -75,7 +75,7 @@ export type ProductModel = products & {
   Variants?: VariantModel[]
   Images?: ProductImageModel[],
   OrderItems?: OrderItemModel[],
-  Statistics: ProductStatisticsModel[],
+  Statistics?: ProductStatisticsModel[],
 }
 
 export type VariantModel = variants & {
