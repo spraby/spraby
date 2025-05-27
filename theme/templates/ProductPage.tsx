@@ -3,7 +3,7 @@
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
-import {useMemo, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {ProductModel, VariantModel} from "@/prisma/types";
 import Drawer from "@/theme/snippents/Drawer";
 import {AiOutlineClose} from "react-icons/ai";
@@ -15,6 +15,7 @@ import {Accordion, AccordionItem, Button, Snippet} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
 import Price from "@/theme/snippents/Price";
 import {create} from "@/services/Orders";
+import {setStatistic} from "@/services/ProductStatistics";
 import {format} from "date-fns";
 
 const schema = yup
@@ -40,6 +41,10 @@ export default function ProductPage({product, informationSettings}: Props) {
   } = useForm({
     resolver: yupResolver(schema),
   })
+
+  useEffect(() => {
+    setStatistic(product.id, 'view').then();
+  }, []);
 
   /**
    *
@@ -90,7 +95,6 @@ export default function ProductPage({product, informationSettings}: Props) {
   const orderFormMarkup = <form className={'relative flex flex-col p-5 gap-5 h-screen'}
                                 onSubmit={
                                   handleSubmit((data) => {
-                                    console.log('DATA => ', data, variant, product)
                                     if (variant && product) {
                                       setSubmiting(true);
                                       create({

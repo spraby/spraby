@@ -125,21 +125,22 @@ model collections {
 }
 
 model products {
-  id          BigInt           @id @default(autoincrement())
+  id          BigInt              @id @default(autoincrement())
   brand_id    BigInt
   category_id BigInt?
   title       String
   description String?
-  enabled     Boolean          @default(true)
-  price       Decimal          @default(0) @db.Decimal(10, 2)
-  final_price Decimal          @default(0) @db.Decimal(10, 2)
-  updated_at  DateTime         @updatedAt
-  created_at  DateTime         @default(now())
-  Brand       brands           @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Category    categories?      @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  enabled     Boolean             @default(true)
+  price       Decimal             @default(0) @db.Decimal(10, 2)
+  final_price Decimal             @default(0) @db.Decimal(10, 2)
+  updated_at  DateTime            @updatedAt
+  created_at  DateTime            @default(now())
+  Brand       brands              @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Category    categories?         @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Variants    variants[]
   Images      product_images[]
   OrderItems  order_items[]
+  Statistics  ProductStatistics[]
 }
 
 model variants {
@@ -273,4 +274,19 @@ model order_shippings {
   updated_at DateTime @updatedAt
   created_at DateTime @default(now())
   Order      orders   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model ProductStatistics {
+  id         BigInt   @id @default(autoincrement()) @db.BigInt
+  product_id BigInt   @db.BigInt
+  client_id  String
+  type       String
+  geo        Json?    @db.JsonB
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+
+  Product products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([product_id, client_id, type], name: "statistics")
+  @@map("product_statistics")
 }

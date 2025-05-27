@@ -19,6 +19,7 @@ import {
   order_items,
   order_shippings,
   Prisma,
+  ProductStatistics,
 } from '@prisma/client'
 
 export default Prisma
@@ -73,7 +74,8 @@ export type ProductModel = products & {
   Category?: CategoryModel
   Variants?: VariantModel[]
   Images?: ProductImageModel[],
-  OrderItems?: OrderItemModel[]
+  OrderItems?: OrderItemModel[],
+  Statistics: ProductStatisticsModel[],
 }
 
 export type VariantModel = variants & {
@@ -87,6 +89,10 @@ export type VariantValueModel = variant_values & {
   Variant?: VariantModel
   Option?: OptionModel
   Value?: OptionValueModel
+}
+
+export type ProductStatisticsModel = ProductStatistics & {
+  Product?: ProductModel
 }
 
 export type ImageModel = images & {
