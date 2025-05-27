@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {ProductModel} from "@/prisma/types";
+import {setStatistic} from "@/services/ProductStatistics";
 
 /**
  *
@@ -8,8 +9,13 @@ import {ProductModel} from "@/prisma/types";
  * @constructor
  */
 const ProductCart = ({product}: Props) => {
+
+  const onClick = () => {
+    setStatistic(product.id, 'click').then();
+  }
+
   return (
-    <div className='flex gap-2 p-2 flex-col'>
+    <div className='flex gap-2 p-2 flex-col' onClick={onClick}>
       <Link href={`/products/${product.id}`}>
         <div className='aspect-square bg-white rounded-md'>
           {

@@ -255,7 +255,10 @@ export default function ProductPage({product, informationSettings}: Props) {
         <div className='grid grid-cols-2 gap-3'>
           <label
             className={`${!!variant ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-200'} transition-colors duration-300 text-center text-white p-3 rounded-md`}>
-            <button disabled={!variant} onClick={() => setOpen(true)}>Заказать</button>
+            <button disabled={!variant} onClick={() => {
+              setOpen(true)
+              setStatistic(product.id, 'add_to_cart').then();
+            }}>Заказать</button>
           </label>
           <label
             className='bg-white text-center text-purple-600 hover:bg-purple-700 hover:text-white transition-colors duration-300 p-3 rounded-md border border-purple-600'>
