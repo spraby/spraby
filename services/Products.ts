@@ -48,6 +48,65 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
   }
 }
 
+export async function getProductsOnTrend() {
+  const productViewCounts = await db.products.findMany({
+    select: {
+      id: true,
+      _count: {
+        select: {
+          Statistics: {
+            where: {
+              type: 'view'
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      Statistics: {
+        _count: 'desc'
+      }
+    },
+    take: 12
+  });
+
+  const topProductIds = productViewCounts.map(i => i.id);
+
+  const products = await findMany({
+    where: {
+      enabled: true,
+      id: {
+        in: topProductIds
+      }
+    },
+    include: {
+      Images: {
+        include: {
+          Image: true
+        }
+      },
+    },
+  });
+
+  const productsMap = new Map(products.map(p => [p.id, p]));
+  const sortedProducts = topProductIds.map(id => productsMap.get(id)).filter(Boolean) as ProductModel[];
+  return sortedProducts.map(product => {
+    return {
+      ...product,
+      price: `${product.price}`,
+      final_price: `${product.final_price}`,
+      Images: product.Images?.map(i => ({
+        ...i,
+        Image: {
+          ...i.Image,
+          src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
+        }
+      }))
+    }
+  }) as (ProductModel & { price: string; final_price: string })[]
+}
+
+
 /**
  *
  * @param filter
@@ -56,32 +115,6 @@ export async function getFilteredProducts(filter: Filter): Promise<(ProductModel
   price: string;
   final_price: string
 })[]> {
-
-
-  console.log('collectionHandles => ', filter?.collectionHandles)
-  console.log('categoryHandles => ', filter?.categoryHandles)
-  console.log('filterOptions => ', filter.options)
-
-  console.log('QUERY', JSON.stringify({
-    ...(!!filter?.options?.length ? {
-      Variants: {
-        some: {
-          AND: filter.options.map(i => ({
-            VariantValue: {
-              some: {
-                Value: {
-                  option_id: +i.optionId,
-                  value: {
-                    in: i.values
-                  }
-                }
-              }
-            }
-          }))
-        }
-      }
-    } : {})
-  }, null, 2))
 
   const products = await findMany({
     where: {

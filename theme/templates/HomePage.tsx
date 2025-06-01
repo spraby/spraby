@@ -1,13 +1,50 @@
 'use client'
 
 import ProductCart from "@/theme/snippents/ProductCart";
+import {ProductModel} from "@/prisma/types";
+import '@splidejs/react-splide/css';
+import {Splide, SplideSlide} from "react-splide-ts";
 
-export default function HomePage() {
-  const products = getRandomProducts();
+export default function HomePage({topProducts}: { topProducts: ProductModel[] }) {
 
   return <main>
-    <div className='container mx-auto grid lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-5'>
-      {products.map((product, index) => <ProductCart product={product} key={index}/>)}
+    <div className={'container mx-auto'}>
+      <h3 className={'text-xl font-bold text-center m-5'}>В тренде</h3>
+      <Splide
+        options={{
+          perPage: 4,
+          breakpoints: {
+            320: {
+              perPage: 1,
+            },
+            640: {
+              perPage: 2,
+            },
+            768: {
+              perPage: 3,
+            },
+          },
+          arrows: false,
+          cover: false,
+        }}
+      >
+        {
+          topProducts.reduce((acc: ProductModel[], product) => {
+            const image = (product?.Images ?? []).find(i => !!i?.Image?.src);
+            const src = image?.Image?.src ?? null;
+            if (src) acc.push(product);
+            return acc;
+          }, []).map((product, index) => {
+            return (
+              <SplideSlide key={index}>
+
+                <ProductCart product={product} key={index}/>
+
+              </SplideSlide>
+            );
+          })
+        }
+      </Splide>
     </div>
   </main>
 }
