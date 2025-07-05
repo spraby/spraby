@@ -105,6 +105,9 @@ model categories {
   name               String
   title              String
   description        String?
+  meta_title         String?
+  meta_description   String?
+  meta_keywords      String?
   updated_at         DateTime              @updatedAt
   created_at         DateTime              @default(now())
   CategoryOption     category_option[]
@@ -119,6 +122,9 @@ model collections {
   name               String
   title              String
   description        String?
+  meta_title         String?
+  meta_description   String?
+  meta_keywords      String?
   updated_at         DateTime              @updatedAt
   created_at         DateTime              @default(now())
   CategoryCollection category_collection[]
