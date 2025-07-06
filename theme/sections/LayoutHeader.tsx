@@ -3,8 +3,9 @@ import SearchIcon from "@/theme/assets/SearchIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
 import CartIcon from "@/theme/assets/CartIcon";
 import Menu from "@/theme/snippents/Menu";
+import {MenuItem} from "@/types";
 
-const LayoutHeader = ({menu}: { menu: any }) => {
+const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
   return (
     <div className='shadow-lg shadow-slate-200'>
@@ -14,9 +15,9 @@ const LayoutHeader = ({menu}: { menu: any }) => {
             className='bg-gray-800 p-2 text-center text-gray-200 text-xs rounded-bl-md rounded-br-md'>{'SPRABY'}</div>
 
           <div className='flex items-center flex-col gap-4 lg:flex-row lg:gap-10 py-2'>
-            <h1 className='text-purple-600 text-2xl font-semibold'>
+            <div className='text-purple-600 text-2xl font-semibold'>
               <Link href={'/'}>SPRA.BY</Link>
-            </h1>
+            </div>
 
             <div className='border-gray-300 grow border flex p-1 rounded-lg justify-center items-center gap-2'>
               <div className='px-2'>

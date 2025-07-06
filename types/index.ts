@@ -6,3 +6,15 @@ export type FilterItem = {
     optionIds: bigint[]
   }[]
 }
+
+export type BreadcrumbItem = {
+  title: string;
+  url: string;
+}
+
+export type MenuItem = {
+  id: number;
+  url: string;
+  title: string;
+  children?: MenuItem[];
+}

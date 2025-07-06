@@ -1,7 +1,8 @@
 import React, {useEffect, useRef} from 'react';
 import Link from 'next/link';
+import {MenuItem} from "@/types";
 
-export default function Menu({menu = [], deep = 1}: { menu: any[], deep?: number }) {
+export default function Menu({menu = [], deep = 1}: { menu: MenuItem[], deep?: number }) {
   return (
     <nav className="sp-menu">
       <List items={menu} deep={deep}/>
@@ -9,7 +10,7 @@ export default function Menu({menu = [], deep = 1}: { menu: any[], deep?: number
   );
 }
 
-function List({items = [], deep = 1}: { items: any[], deep: number }) {
+function List({items = [], deep = 1}: { items: MenuItem[], deep: number }) {
   const ref = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ function List({items = [], deep = 1}: { items: any[], deep: number }) {
         items.map((i, index) => (
           <li key={`${deep}_${index}`}>
             {i.url?.length ? <Link href={i.url}>{i.title}</Link> : <span>{i.title}</span>}
-            {i.children?.length > 0 && <List items={i.children} deep={deep + 1}/>}
+            {!!i?.children?.length && <List items={i.children} deep={deep + 1}/>}
           </li>
         ))
       }

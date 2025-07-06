@@ -3,21 +3,23 @@ import {convertOptionsToFilter, convertSearchParamsToQueryParams} from "@/servic
 import {getFilteredProducts} from "@/services/Products";
 import {getOptions, findFirst} from "@/services/Categories";
 import {CategoryModel} from "@/prisma/types";
+import {getBreadcrumbs, getMainMenu} from "@/services/Settings";
 
-export async function generateMetadata({ params }: any) {
+export async function generateMetadata({params}: any) {
   const category = await findFirst({where: {handle: params.handle}}) as CategoryModel;
   return {
-    title: category?.meta_title,
-    description: category?.meta_description,
-    keywords: category?.meta_keywords,
+    title: category?.title,
+    description: category?.description,
   };
 }
 
 export default async function (props: any) {
+  const category = await findFirst({where: {handle: props.params.handle}}) as CategoryModel;
   const options = await getOptions({handle: props.params.handle});
   const filter = await convertOptionsToFilter(options);
   const params = props?.searchParams ?? {}
   const data: any = await convertSearchParamsToQueryParams(params, filter);
+  const breadcrumbs = await getBreadcrumbs(`/categories/${props.params.handle}`);
 
   const products = await getFilteredProducts({
     options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
@@ -25,8 +27,9 @@ export default async function (props: any) {
   });
 
   return <CollectionPage
+    breadcrumbs={breadcrumbs}
+    category={category}
     searchParams={params}
-    categoryHandle={props.params.handle}
     products={products}
     filter={filter}
   />

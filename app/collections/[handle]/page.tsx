@@ -3,22 +3,24 @@ import {findFirst, getOptions as getCollectionOptions} from "@/services/Collecti
 import {convertOptionsToFilter, convertSearchParamsToQueryParams} from "@/services/Options";
 import {getFilteredProducts} from "@/services/Products";
 import {CollectionModel} from "@/prisma/types";
+import {getBreadcrumbs} from "@/services/Settings";
 
 export async function generateMetadata({ params }: any) {
   const collection = await findFirst({where: {handle: params.handle}}) as CollectionModel;
 
   return {
-    title: collection?.meta_title,
-    description: collection?.meta_description,
-    keywords: collection?.meta_keywords,
+    title: collection?.title,
+    description: collection?.description,
   };
 }
 
 export default async function (props: any) {
+  const collection = await findFirst({where: {handle: props.params.handle}}) as CollectionModel;
   const options = await getCollectionOptions({handle: props.params.handle});
   const filter = await convertOptionsToFilter(options);
   const params = props?.searchParams ?? {};
   const data: any = await convertSearchParamsToQueryParams(params, filter);
+  const breadcrumbs = await getBreadcrumbs(`/collections/${props.params.handle}`);
 
   const products = await getFilteredProducts({
     options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
@@ -26,9 +28,10 @@ export default async function (props: any) {
   });
 
   return <CollectionPage
+    breadcrumbs={breadcrumbs}
+    collection={collection}
     products={products}
     filter={filter}
     searchParams={params}
-    collectionHandle={props.params.handle}
   />
 }
