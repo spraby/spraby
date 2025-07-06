@@ -1,5 +1,5 @@
 import CollectionPage from "@/theme/templates/CollectionPage";
 
-export default async function (props: any) {
-  return <CollectionPage loading collectionHandle={props?.params?.handle} filter={[]} products={[]}/>
+export default async function () {
+  return <CollectionPage loading filter={[]} products={[]}/>
 }
