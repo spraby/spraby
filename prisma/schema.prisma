@@ -104,6 +104,7 @@ model categories {
   handle             String                @unique
   name               String
   title              String
+  header             String?
   description        String?
   updated_at         DateTime              @updatedAt
   created_at         DateTime              @default(now())
@@ -118,6 +119,7 @@ model collections {
   handle             String                @unique
   name               String
   title              String
+  header             String?
   description        String?
   updated_at         DateTime              @updatedAt
   created_at         DateTime              @default(now())

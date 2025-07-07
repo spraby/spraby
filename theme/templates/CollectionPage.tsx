@@ -66,7 +66,7 @@ export default function CollectionPage({
     }
     {
       (!!collection || !!category) &&
-      <h1 className={'text-left text-2xl font-bold'}>{collection?.title ?? (category?.title ?? '')}</h1>
+      <h1 className={'text-left text-2xl font-bold'}>{collection?.header ?? (category?.header ?? '')}</h1>
     }
     <div className='grid grid-cols-12 gap-5 pt-10'>
       {
