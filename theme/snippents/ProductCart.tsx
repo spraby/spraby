@@ -20,13 +20,15 @@ const ProductCart = ({product}: Props) => {
         <div className='aspect-square bg-white rounded-md'>
           {
             product.Images?.length &&
-            <Image
-              style={{aspectRatio: 1, objectFit: 'cover', borderRadius: '0.375rem'}}
-              width={500}
-              height={500}
-              src={product.Images[0]?.Image?.src as string}
-              alt={product.title}
-            />
+            <div className={'relative w-full h-full'}>
+              <Image
+                style={{aspectRatio: 1, objectFit: 'contain', borderRadius: '10px'}}
+                fill
+                sizes={'(max-width: 768px) 300px, 200px'}
+                src={product.Images[0]?.Image?.src as string}
+                alt={product.title}
+              />
+            </div>
           }
         </div>
       </Link>

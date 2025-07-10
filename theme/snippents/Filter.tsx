@@ -1,4 +1,4 @@
-import Checkbox from './Checkbox';
+import {Checkbox} from "@nextui-org/react";
 
 const Filter = ({filter, onChange, selected = []}: Props) => {
   return (
@@ -11,10 +11,11 @@ const Filter = ({filter, onChange, selected = []}: Props) => {
               return (
                 <li key={index} title={i.value}>
                   <Checkbox
+                    color='default'
                     checked={selected?.includes(i.value)}
-                    label={i.value}
-                    onChange={(v: boolean) => onChange(v, i)}
-                  />
+                    onValueChange={(v: boolean) => onChange(v, i)}
+                  >{i.value}
+                  </Checkbox>
                 </li>
               );
             })

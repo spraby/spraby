@@ -10,9 +10,6 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
   const thumbnails = useRef(null);
 
   useEffect(() => {
-    console.log('images => ', images)
-    console.log('startImage => ', startImage)
-
     if (images?.length <= 1) return;
     // @ts-ignore
     if (main.current && thumbnails.current && thumbnails.current.splide) {
@@ -42,7 +39,8 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
           images.map((image, index) => {
             return (
               <SplideSlide key={index}>
-                <Image alt='' src={image} width={1500} height={1500}/>
+                <Image alt='' src={image} fill sizes="(max-width: 768px) 800px, 500px" objectFit={'contain'}
+                       className={'rounded-[20px]'}/>
               </SplideSlide>
             );
           })
@@ -55,7 +53,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
           options={{
             rewind: true,
             fixedWidth: 104,
-            fixedHeight: 58,
+            fixedHeight: 104,
             isNavigation: true,
             gap: 10,
             focus: 'left',
@@ -77,7 +75,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
           {images.map((image, index) => {
             return (
               <SplideSlide key={index}>
-                <Image alt='' src={image} width={500} height={500}/>
+                <Image alt='' src={image} fill sizes="(max-width: 768px) 104px, 104px" objectFit={'contain'}/>
               </SplideSlide>
             );
           })}
