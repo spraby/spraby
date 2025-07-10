@@ -11,7 +11,19 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
 
   useEffect(() => {
     //find first valid product variant by options
-    const firstValidVariant = variants.find(i => isValidVariant(i, options))
+    const firstOption = options?.length ? options[0] : null;
+    const firstOptionValue = firstOption ? (firstOption?.options?.length ? firstOption.options[0].value : null) : null;
+
+    let firstValidVariant = null;
+
+    if (firstOption && firstOptionValue) {
+      firstValidVariant = variants.find(v => (v.VariantValue ?? []).find(i => i?.Value?.option_id === firstOption.id && i?.Value?.value === firstOptionValue));
+      if (firstValidVariant && !isValidVariant(firstValidVariant, options)) firstValidVariant = null;
+    }
+
+    if (!firstValidVariant) {
+      firstValidVariant = variants.find(i => isValidVariant(i, options))
+    }
 
     if (firstValidVariant) {
       //get options from product variant
@@ -63,7 +75,10 @@ const VariantSelector = ({variants, options = [], onChange}: Props) => {
 
         //get [optionId with value]
         const prevOptionsData = prevOptions.reduce((acc: { id: bigint, value: string }[], i) => {
-          if (selectedOptions && i?.id && selectedOptions[`${i.id}`]) acc.push({id: i.id, value: selectedOptions[`${i.id}`]})
+          if (selectedOptions && i?.id && selectedOptions[`${i.id}`]) acc.push({
+            id: i.id,
+            value: selectedOptions[`${i.id}`]
+          })
           return acc;
         }, []);
 

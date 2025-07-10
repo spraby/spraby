@@ -63,13 +63,20 @@ export default function ProductPage({product, informationSettings}: Props) {
           });
           return acc;
         }, []);
+
+        const sortedOptionVariantValues: string[] = [];
+        categoryOption.Option.Values?.sort((a, b) => a.position - b.position).forEach(i => {
+          const o = optionVariantValues.find(j => j === i.value);
+          if (o) sortedOptionVariantValues.push(o);
+        });
+
         if (optionVariantValues?.length) acc.push({
           id: categoryOption.Option.id,
           label: categoryOption.Option.title,
-          options: optionVariantValues.map(i => ({label: i, value: i}))
+          options: sortedOptionVariantValues.map(i => ({label: i, value: i}))
         })
-        return acc;
 
+        return acc;
       }, []);
     }
 
@@ -285,9 +292,6 @@ export default function ProductPage({product, informationSettings}: Props) {
         <VariantSelector variants={product?.Variants ?? []}
                          options={options}
                          onChange={v => {
-
-                           console.log('VARIANT => ', v)
-
                            if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src)
                            setVariant(v);
                          }}/>

@@ -9,7 +9,7 @@ const Filter = ({filter, onChange, selected = []}: Props) => {
           {
             filter.values.map((i: any, index: number) => {
               return (
-                <li key={index}>
+                <li key={index} title={i.value}>
                   <Checkbox
                     checked={selected?.includes(i.value)}
                     label={i.value}

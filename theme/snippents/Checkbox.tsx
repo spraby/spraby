@@ -10,7 +10,7 @@ const Checkbox = ({label, onChange = undefined, checked = undefined}: Props) => 
         before:absolute before:rounded before:w-5 before:h-5 before:bg-white before:border before:border-gray-300 before:border-solid before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2
         after:opacity-0 after:transition-opacity after:content-['\2713'] after:absolute after:text-2xl after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2"
       />
-      <span>{label}</span>
+      <span className={'truncate'}>{label}</span>
     </label>
   );
 };

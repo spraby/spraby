@@ -13,7 +13,11 @@ export default async function (props: any) {
         include: {
           CategoryOption: {
             include: {
-              Option: true
+              Option: {
+                include: {
+                  Values: true
+                }
+              }
             }
           },
         }
