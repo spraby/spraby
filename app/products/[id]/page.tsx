@@ -29,6 +29,9 @@ export default async function (props: any) {
         }
       },
       Variants: {
+        where: {
+          enabled: true,
+        },
         include: {
           Image: {
             include: {

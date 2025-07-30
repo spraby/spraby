@@ -163,7 +163,8 @@ export async function getFilteredProducts(filter: Filter): Promise<(ProductModel
                     }
                   }
                 }
-              }
+              },
+              enabled: true,
             }))
           }
         }
