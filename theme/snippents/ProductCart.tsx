@@ -24,7 +24,7 @@ const ProductCart = ({product}: Props) => {
               <Image
                 style={{aspectRatio: 1, objectFit: 'contain', borderRadius: '10px'}}
                 fill
-                sizes={'(max-width: 768px) 300px, 200px'}
+                sizes={'(max-width: 768px) 50px, 20px'}
                 src={product.Images[0]?.Image?.src as string}
                 alt={product.title}
               />
