@@ -14,8 +14,8 @@ export default function HomePage({topProducts}: { topProducts: ProductModel[] })
     return acc;
   }, []);
 
-  return <main className="pb-20">
-    <div className="container mx-auto flex flex-col gap-16">
+  return <main className="px-4 pt-6 pb-20 sm:px-6 lg:px-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-12 sm:gap-16">
       <HeroShowcase cards={HERO_CARDS}/>
 
       <section className="flex flex-col gap-6">

@@ -234,9 +234,9 @@ export default function ProductPage({product, informationSettings}: Props) {
     </div>
   </div>
 
-  return !!product && <main className='pt-10'>
-    <div className='container mx-auto grid gap-10 grid-cols-12'>
-      <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-7'>
+  return !!product && <main className='px-4 pt-6 pb-12 sm:px-6 lg:px-8'>
+    <div className='mx-auto flex max-w-6xl flex-col gap-8 lg:grid lg:grid-cols-12 lg:gap-10'>
+      <div className='flex flex-col gap-7 lg:col-span-7 xl:col-span-7'>
         <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
         <Tabs
           tabs={[
@@ -256,8 +256,8 @@ export default function ProductPage({product, informationSettings}: Props) {
         />
         <div className='h-px bg-gray-200'></div>
       </div>
-      <div className='flex gap-7 flex-col col-span-12 lg:col-span-6 xl:col-span-5'>
-        <h2 className='text-2xl font-semibold'>{product.title}</h2>
+      <div className='flex flex-col gap-7 lg:col-span-5 xl:col-span-5'>
+        <h2 className='text-2xl font-semibold text-gray-900 sm:text-3xl'>{product.title}</h2>
         <Price finalPrice={+product.final_price} price={+product.price}/>
         <div className='grid grid-cols-2 gap-3'>
           <label

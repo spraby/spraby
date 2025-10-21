@@ -15,15 +15,15 @@ const ProductCart = ({product}: Props) => {
   }
 
   return (
-    <div className='flex gap-2 p-2 flex-col' onClick={onClick}>
+    <div className='flex flex-col gap-2 p-2' onClick={onClick}>
       <Link href={`/products/${product.id}`}>
-        <div className='aspect-square bg-white rounded-md'>
+        <div className='aspect-square overflow-hidden rounded-xl border border-gray-200/60 bg-white'>
           {
             product.Images?.length &&
-            <div className={'relative w-full h-full'}>
+            <div className='relative h-full w-full'>
               <Image
-                style={{aspectRatio: 1, objectFit: 'contain', borderRadius: '10px'}}
                 fill
+                className='h-full w-full object-cover'
                 sizes={'(max-width: 768px) 50px, 20px'}
                 src={product.Images[0]?.Image?.src as string}
                 alt={product.title}
