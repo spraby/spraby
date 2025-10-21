@@ -284,7 +284,10 @@ export default function ProductPage({product, informationSettings}: Props) {
               </span>
             }}
           >
-            <div dangerouslySetInnerHTML={{__html: (informationSettings?.description ?? '') as string}}/>
+            <div
+              className="text-xs leading-relaxed"
+              dangerouslySetInnerHTML={{__html: (informationSettings?.description ?? '') as string}}
+            />
           </AccordionItem>
         </Accordion>
 

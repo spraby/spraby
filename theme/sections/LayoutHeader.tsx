@@ -15,8 +15,8 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
             className='bg-gray-800 p-2 text-center text-gray-200 text-xs rounded-bl-md rounded-br-md'>{'SPRABY'}</div>
 
           <div className='flex items-center flex-col gap-4 lg:flex-row lg:gap-10 py-2'>
-            <div className='text-purple-600 text-2xl font-semibold'>
-              <Link href={'/'}>SPRA.BY</Link>
+            <div className='text-purple-600 text-2xl font-bold'>
+              <Link href={'/'} className='lowercase tracking-tight'>spraby</Link>
             </div>
 
             <div className='border-gray-300 grow border flex p-1 rounded-lg justify-center items-center gap-2'>

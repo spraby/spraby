@@ -1,5 +1,6 @@
 .sp-menu {
   padding: 0;
+  @apply w-full;
 
   a,
   span {
@@ -13,12 +14,14 @@
   //------------------- FIRST LINE
 
   & > ul {
-    @apply relative flex justify-start gap-8 m-0 p-0;
+    @apply relative flex w-full m-0 p-0 gap-6 justify-between;
 
     & > li {
+      @apply flex-1 min-w-0;
+
       & > a,
       & > span {
-        @apply relative block text-gray-800 font-semibold py-5 px-0 cursor-pointer
+        @apply relative flex justify-center items-center text-center text-gray-800 font-semibold py-5 px-4 cursor-pointer w-full
         before:absolute before:bottom-1 before:w-full before:h-1 before:rounded before:bg-purple-500 before:opacity-0 before:transition-opacity before:duration-300
         hover:before:opacity-100;
       }

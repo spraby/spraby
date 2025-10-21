@@ -37,12 +37,12 @@ const ProductCart = ({product}: Props) => {
           <Link href={`/products/${product.id}`}> {product.title} </Link>
         </h3>
         {
-          <div className='flex gap-2 items-center'>
+          <div className='flex gap-2 items-baseline'>
+            <span className='text-base font-semibold text-purple-500'>{+product.final_price} BYN</span>
             {
               +product.price > +product.final_price &&
               <span className="text-xs text-gray-400 line-through">{+product.price}</span>
             }
-            <span className='text-base font-semibold text-purple-500'>{+product.final_price} BYN</span>
           </div>
         }
       </div>
