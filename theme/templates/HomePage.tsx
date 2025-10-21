@@ -72,7 +72,7 @@ const HERO_CARDS: HeroCard[] = [
   {
     id: 'prints-drop',
     eyebrow: 'Новинка',
-    title: 'Актуальные принты',
+    title: 'Актуальные товары',
     subtitle: 'Взгляни на принты по‑новому',
     description: 'Коллаборации с художниками и лимитированные капсулы — успей выбрать до распродажи.',
     cta: {label: 'Исследовать', href: '/collections/prints'},
