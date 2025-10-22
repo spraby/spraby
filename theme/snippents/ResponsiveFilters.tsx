@@ -11,11 +11,17 @@ type ResponsiveFiltersProps = {
   options: FilterItem[];
   searchParams?: Record<string, any>;
   onChange: (params: Record<string, string>) => void | Promise<void>;
+  title?: string;
 };
 
 type QueryMap = Record<string, string>;
 
-export default function ResponsiveFilters({options, searchParams: defaultSearchParams, onChange}: ResponsiveFiltersProps) {
+export default function ResponsiveFilters({
+                                            options,
+                                            searchParams: defaultSearchParams,
+                                            onChange,
+                                            title,
+                                          }: ResponsiveFiltersProps) {
   const routeSearchParams = useSearchParams();
   const filterKeys = useMemo(() => options.map((option) => option.key), [options]);
 
@@ -155,8 +161,10 @@ export default function ResponsiveFilters({options, searchParams: defaultSearchP
 
       <aside className="relative hidden lg:block">
         <div className="sticky top-24 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Фильтр подбора</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="max-w-[70%] truncate text-base font-semibold text-gray-900">
+              {title?.trim() || 'Фильтры'}
+            </p>
             {hasActiveFilters && (
               <button
                 type="button"

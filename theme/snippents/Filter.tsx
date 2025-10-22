@@ -18,6 +18,7 @@ type FilterValue = {
 
 export default function Filter({filter, onChange, selected = [], onReset}: FilterProps) {
   const [expanded, setExpanded] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState('');
 
   const filterValues = useMemo(() => {
@@ -27,10 +28,12 @@ export default function Filter({filter, onChange, selected = [], onReset}: Filte
   }, [filter.values, query]);
 
   const selectedCount = selected.length;
-  const enableSearch = filter.values.length > 8;
+  const enableSearch = filter.values.length > 12;
+  const shouldClamp = !showAll && !query && filterValues.length > 8;
+  const visibleValues = shouldClamp ? filterValues.slice(0, 8) : filterValues;
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:shadow-md sm:p-4">
+    <section className="rounded-xl bg-white p-3 sm:p-4">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 text-left"
@@ -71,24 +74,28 @@ export default function Filter({filter, onChange, selected = [], onReset}: Filte
           </div>
         )}
 
-        <ul className="flex max-h-60 flex-col gap-2 overflow-y-auto pr-1">
-          {filterValues.map((item, index) => (
-            <li key={`${filter.key}-${index}`} title={item.value}>
-              <Checkbox
-                color="default"
-                radius="sm"
-                classNames={{
-                  base: "items-start gap-2 py-1",
-                  wrapper: "border-0 shadow-none before:border before:border-gray-300 before:bg-white group-data-[hover=true]:before:border-purple-400 group-data-[selected=true]:before:border-purple-500",
-                  label: "text-sm text-gray-700",
-                }}
-                checked={selected.includes(item.value)}
-                onValueChange={(active: boolean) => onChange(active, item)}
-              >
-                {item.value}
-              </Checkbox>
-            </li>
-          ))}
+        <ul className="flex flex-col gap-2">
+          {visibleValues.map((item, index) => {
+            const isSelected = selected.includes(item.value);
+            return (
+              <li key={`${filter.key}-${index}`} title={item.value}>
+                <Checkbox
+                  value={item.value}
+                  color="default"
+                  radius="sm"
+                  classNames={{
+                    base: "items-start gap-2 py-1",
+                    wrapper: "border-0 shadow-none before:border before:border-gray-300 before:bg-white group-data-[hover=true]:before:border-purple-400 group-data-[selected=true]:before:border-purple-500",
+                    label: "text-sm text-gray-700",
+                  }}
+                  isSelected={isSelected}
+                  onValueChange={(active: boolean) => onChange(active, item)}
+                >
+                  {item.value}
+                </Checkbox>
+              </li>
+            );
+          })}
 
           {filterValues.length === 0 && (
             <li className="rounded-md border border-dashed border-gray-200 p-3 text-center text-xs text-gray-400">
@@ -96,6 +103,17 @@ export default function Filter({filter, onChange, selected = [], onReset}: Filte
             </li>
           )}
         </ul>
+
+        {shouldClamp && (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="inline-flex items-center gap-1 text-sm font-semibold text-gray-900 transition hover:text-purple-600"
+          >
+            Показать все
+            <ArrowRightIcon/>
+          </button>
+        )}
 
         {selectedCount > 0 && onReset && (
           <button
@@ -126,5 +144,11 @@ const SearchIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+  </svg>
+);
+
+const ArrowRightIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+    <path d="M6 3l4 5-4 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );

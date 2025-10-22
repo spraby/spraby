@@ -21,6 +21,7 @@ export default function CollectionPage({
                                        }: Props) {
   const [loading, setLoading] = useState(defaultLoading);
   const [products, setProducts] = useState<ProductModel[]>(defaultProducts);
+  const pageTitle = collection?.header ?? category?.header ?? '';
 
   const onChange = useCallback(async (params: any) => {
     setLoading(true);
@@ -64,15 +65,19 @@ export default function CollectionPage({
             </ol>
           </nav>
         }
-        {
-          (!!collection || !!category) &&
+        {pageTitle && (
           <h1 className='text-left text-2xl font-bold text-gray-900 sm:text-3xl'>
-            {collection?.header ?? (category?.header ?? '')}
+            {pageTitle}
           </h1>
-        }
+        )}
 
         <div className='flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(230px,260px)_minmax(0,1fr)] lg:items-start lg:gap-8'>
-          <ResponsiveFilters options={filter} searchParams={searchParams} onChange={onChange}/>
+          <ResponsiveFilters
+            options={filter}
+            searchParams={searchParams}
+            onChange={onChange}
+            title={pageTitle}
+          />
 
           <section className='flex-1'>
             <div className='relative'>
