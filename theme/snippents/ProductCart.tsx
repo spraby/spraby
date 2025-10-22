@@ -14,10 +14,15 @@ const ProductCart = ({product}: Props) => {
     setStatistic(product.id, 'click').then();
   }
 
+  const hasDiscount = Number(product.price) > Number(product.final_price);
+  const discountPercent = hasDiscount
+    ? Math.round((1 - Number(product.final_price) / Number(product.price)) * 100)
+    : 0;
+
   return (
     <div className='flex flex-col gap-2 p-2' onClick={onClick}>
       <Link href={`/products/${product.id}`}>
-        <div className='aspect-square overflow-hidden rounded-xl border border-gray-200/60 bg-white'>
+        <div className='relative aspect-square overflow-hidden rounded-xl border border-gray-200/60 bg-white'>
           {
             product.Images?.length &&
             <div className='relative h-full w-full'>
@@ -29,6 +34,13 @@ const ProductCart = ({product}: Props) => {
                 alt={product.title}
               />
             </div>
+          }
+          {
+            hasDiscount && discountPercent > 0 && (
+              <span className='absolute right-2 top-2 inline-flex items-center rounded-lg bg-purple-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm'>
+                -{discountPercent}%
+              </span>
+            )
           }
         </div>
       </Link>

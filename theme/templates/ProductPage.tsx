@@ -34,6 +34,11 @@ export default function ProductPage({product, informationSettings}: Props) {
   const [orderNumber, setOrderNumber] = useState<string>();
   const [submiting, setSubmiting] = useState(false);
 
+  const hasDiscount = Number(product.price) > Number(product.final_price);
+  const discountPercent = hasDiscount
+    ? Math.round((1 - Number(product.final_price) / Number(product.price)) * 100)
+    : 0;
+
   const {
     register,
     handleSubmit,
@@ -237,7 +242,14 @@ export default function ProductPage({product, informationSettings}: Props) {
   return !!product && <main className='px-4 pt-6 pb-12 sm:px-6 lg:px-8'>
     <div className='mx-auto flex max-w-6xl flex-col gap-8 lg:grid lg:grid-cols-12 lg:gap-10'>
       <div className='flex flex-col gap-7 lg:col-span-7 xl:col-span-7'>
-        <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
+        <div className='relative'>
+          <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
+          {hasDiscount && discountPercent > 0 && (
+            <span className='absolute right-4 top-4 inline-flex items-center rounded-lg bg-purple-500 px-3 py-1.5 text-sm font-semibold text-white shadow-md'>
+              -{discountPercent}%
+            </span>
+          )}
+        </div>
         <Tabs
           tabs={[
             {
