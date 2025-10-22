@@ -110,15 +110,15 @@ export default function CollectionPage({
       <div className='mx-auto flex max-w-6xl flex-col gap-4 lg:gap-6'>
         {
           !!breadcrumbs?.length &&
-          <nav aria-label="breadcrumb">
-            <ol className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
+          <nav aria-label="breadcrumb" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 no-scrollbar">
+            <ol className="flex items-center gap-1.5 whitespace-nowrap pr-5 pe-8 text-sm font-medium text-gray-500 lg:pr-0 lg:pe-0">
               {
                 breadcrumbs.map((i: BreadcrumbItem, index: number) => (
                   <li key={index} className='flex items-center'>
                     {
                       (!!breadcrumbs?.length && breadcrumbs?.length > index + 1) ?
                         <>
-                          <a href={i.url} className="text-gray-600 transition hover:text-purple-600">
+                          <a href={i.url} className="inline-flex items-center gap-1 text-gray-600 transition hover:text-purple-600">
                             {i.title}
                           </a>
                           <BreadcrumbSeparatorIcon/>

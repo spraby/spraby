@@ -50,6 +50,15 @@ body {
 //COMPONENTS
 @import 'components/sp-menu.scss';
 
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .default {
   li {
     list-style-type: disc;
