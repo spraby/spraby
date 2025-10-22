@@ -78,8 +78,9 @@ export default function Filter({filter, onChange, selected = [], onReset}: Filte
                 color="default"
                 radius="sm"
                 classNames={{
+                  base: "items-start gap-2 py-1",
+                  wrapper: "border-0 shadow-none before:border before:border-gray-300 before:bg-white group-data-[hover=true]:before:border-purple-400 group-data-[selected=true]:before:border-purple-500",
                   label: "text-sm text-gray-700",
-                  wrapper: "border border-gray-200",
                 }}
                 checked={selected.includes(item.value)}
                 onValueChange={(active: boolean) => onChange(active, item)}
