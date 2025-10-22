@@ -18,3 +18,5 @@ export type MenuItem = {
   title: string;
   children?: MenuItem[];
 }
+
+export type ProductSort = 'newest' | 'oldest' | 'price_asc' | 'price_desc';

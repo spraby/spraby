@@ -1,6 +1,7 @@
 'use server'
 import db from "@/prisma/db.client";
 import Prisma, {ProductModel} from "@/prisma/types";
+import type {ProductSort} from "@/types";
 
 /**
  *
@@ -116,6 +117,20 @@ export async function getFilteredProducts(filter: Filter): Promise<(ProductModel
   final_price: string
 })[]> {
 
+  const orderBy: Prisma.productsOrderByWithRelationInput = (() => {
+    switch (filter.sort) {
+      case 'oldest':
+        return {created_at: 'asc'};
+      case 'price_asc':
+        return {final_price: 'asc'};
+      case 'price_desc':
+        return {final_price: 'desc'};
+      case 'newest':
+      default:
+        return {created_at: 'desc'};
+    }
+  })();
+
   const products = await findMany({
     where: {
       enabled: true,
@@ -202,9 +217,7 @@ export async function getFilteredProducts(filter: Filter): Promise<(ProductModel
         }
       }
     },
-    orderBy: {
-      created_at: 'asc'
-    }
+    orderBy
   });
 
   return products.map(product => {
@@ -234,5 +247,6 @@ type Filter = {
   options?: {
     optionId: number,
     values: string[]
-  }[]
+  }[],
+  sort?: ProductSort
 }

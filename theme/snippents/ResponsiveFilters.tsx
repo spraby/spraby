@@ -148,7 +148,7 @@ export default function ResponsiveFilters({
                   key={`${chip.filterKey}-${chip.value}`}
                   type="button"
                   onClick={() => handleChipRemove(chip.filterKey, chip.value)}
-                  className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:text-purple-700"
+                  className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-[0.275rem] text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:text-purple-700"
                 >
                   {chip.label}
                   <CloseIcon className="h-3 w-3 text-gray-400 transition group-hover:text-purple-600"/>
@@ -183,7 +183,7 @@ export default function ResponsiveFilters({
                   <button
                     type="button"
                     onClick={() => handleChipRemove(chip.filterKey, chip.value)}
-                    className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:text-purple-700"
+                    className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-[0.275rem] text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:text-purple-700"
                   >
                     {chip.label}
                     <CloseIcon className="h-3 w-3 text-gray-400 transition group-hover:text-purple-600"/>

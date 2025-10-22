@@ -10,11 +10,13 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
   return (
     <div className='shadow-lg shadow-slate-200'>
-      <div className='mx-auto max-w-6xl px-4 sm:px-6 lg:px-8'>
+      <div className='mx-auto max-w-6xl'>
         <div className='flex flex-col gap-3 lg:gap-0'>
-          <div className='bg-gray-800 p-2 text-center text-gray-200 text-xs rounded-bl-md rounded-br-md'>SPRABY</div>
+          <div className='bg-gray-800 mx-4 sm:mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-2 text-center text-gray-200 text-xs rounded-bl-md rounded-br-md'>
+            spraby — маркетплейс по продаже товаров мастеров и ремесленников
+          </div>
 
-          <div className='flex items-center justify-between gap-3 py-3 lg:py-5'>
+          <div className='flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-0 py-3 lg:py-5'>
             <div className='flex items-center gap-3'>
               <Link href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight'>
                 spraby
