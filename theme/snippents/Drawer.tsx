@@ -24,13 +24,13 @@ const Drawer = ({children, open: openDefault = false, onClose, useCloseBtn = tru
   return (
     <>
       {open && <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"></div>}
-      <div className="absolute t-0 l-0 z-50">
+      <div className="absolute t-0 l-0 z-50 w-full">
         <motion.div
           ref={drawerRef}
           initial={{x: '100%'}}
           animate={{x: open ? 0 : '100%'}}
           transition={{type: 'spring', stiffness: 200, damping: 30}}
-          className="fixed top-0 right-0 h-full w-1/3 w-min-300 bg-gray-100 shadow-lg"
+          className="fixed top-0 right-0 flex h-full w-full max-w-full flex-col bg-gray-100 shadow-lg sm:max-w-[24rem] sm:rounded-l-3xl md:max-w-[26rem] lg:max-w-[28rem]"
         >
           {
             useCloseBtn &&

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
@@ -12,13 +13,30 @@ import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
-import {Accordion, AccordionItem, Button, Snippet} from "@nextui-org/react";
+import {Accordion, AccordionItem, Snippet} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
 import Price from "@/theme/snippents/Price";
 import {create} from "@/services/Orders";
 import {setStatistic} from "@/services/ProductStatistics";
 import {differenceInMonths, format} from "date-fns";
 import {BreadcrumbItem} from "@/types";
+
+const normalizeImageSrc = (raw?: string | null) => {
+  if (!raw) return null;
+  const value = raw.trim();
+  if (!value.length) return null;
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+  if (value.startsWith('/')) return value;
+  const stripped = value.replace(/^\.?\//, '');
+  return `/${stripped}`;
+};
+
+const toIdString = (value: unknown) => {
+  if (typeof value === 'bigint') return value.toString();
+  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'string') return value;
+  return '';
+};
 
 const BreadcrumbSeparatorIcon = () => (
   <svg viewBox="0 0 16 16" fill="none" className="mx-1 h-3.5 w-3.5 text-gray-400" aria-hidden="true">
@@ -46,10 +64,10 @@ const CalendarIcon = () => (
 
 const schema = yup
   .object({
-    name: yup.string().required(),
-    phone: yup.number().positive().integer().required(),
-    email: yup.string().email().required(),
-    description: yup.string()
+    name: yup.string().trim().required('Введите имя'),
+    phone: yup.string().trim().required('Добавьте телефон'),
+    email: yup.string().trim().email('Проверьте email').required('Укажите email'),
+    description: yup.string().trim()
   })
   .required()
 
@@ -187,7 +205,45 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return result;
   }, [product]);
 
-  const orderFormMarkup = <form className={'relative flex flex-col p-5 gap-5 h-screen'}
+  const variantDetails = useMemo(() => {
+    return (variant?.VariantValue ?? []).map(i => {
+      const optionTitle = i?.Value?.Option?.title;
+      const optionValue = i?.Value?.value;
+      if (!optionTitle || !optionValue) return null;
+      return {
+        label: optionTitle,
+        value: optionValue
+      };
+    }).filter(Boolean) as { label: string, value: string }[];
+  }, [variant]);
+
+  const variantSummary = useMemo(() => {
+    return variantDetails.map(detail => `${detail.label}: ${detail.value}`).join(', ');
+  }, [variantDetails]);
+
+  const productPreviewImage = useMemo(() => {
+    if (variant) {
+      const matchedGalleryImage = (product.Images ?? []).find(image => {
+        const variantId = toIdString(variant.image_id);
+        if (!variantId) return false;
+        const galleryIds = [image.image_id, image.id].map(toIdString).filter(Boolean);
+        return galleryIds.includes(variantId);
+      })?.Image?.src;
+      if (matchedGalleryImage) return normalizeImageSrc(matchedGalleryImage);
+      if (variant.Image?.Image?.src?.length) return normalizeImageSrc(variant.Image.Image.src);
+    }
+    const productImage = (product.Images ?? []).find(image => image.Image?.src?.length)?.Image?.src;
+    if (productImage) return normalizeImageSrc(productImage);
+    const variantImage = (product.Variants ?? []).find(v => v.Image?.Image?.src?.length)?.Image?.Image?.src;
+    return normalizeImageSrc(variantImage);
+  }, [variant, product]);
+
+  const compactInputClassNames = useMemo(() => ({
+    input: "text-sm",
+    label: "text-xs font-medium text-gray-500"
+  }), []);
+
+  const orderFormMarkup = <form className={'relative flex h-full max-h-[100vh] min-h-0 flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-6'}
                                 onSubmit={
                                   handleSubmit((data) => {
                                     if (variant && product) {
@@ -222,7 +278,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                                 variant_id: variant.id,
                                                 quantity: 1,
                                                 title: product.title,
-                                                variant_title: (variant?.VariantValue ?? []).map(i => `${i?.Value?.Option?.title}: ${i?.Value?.value}`).join(', ')
+                                                variant_title: variantSummary
                                               }
                                             }
                                           },
@@ -242,79 +298,159 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                     }
                                   })
                                 }>
-    <div
-      className={'p-5 -mx-5 -mt-5 bg-gray-800 min-h-[120px] text-white text-2xl flex justify-between items-center'}>
-      <h3>Заказ товара</h3>
-      <span role={"button"} onClick={() => setOpen(false)}> <AiOutlineClose/></span>
+    <div className="flex items-start justify-between px-1 pt-1">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-lg font-semibold tracking-wide sm:text-xl">Заказ товара</h3>
+        <p className="text-xs text-gray-500 sm:text-sm">Заполните данные, и мы свяжемся с вами</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        aria-label="Закрыть окно заказа"
+        className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
+      >
+        <AiOutlineClose className="h-5 w-5"/>
+      </button>
     </div>
-    <div className={'flex flex-col gap-5 justify-between overflow-auto flex-grow'}>
-      <div className={'flex flex-col gap-5 overflow-auto'}>
-        <span>Данные покупателя</span>
-        <Input {...register("name")} disabled={submiting} variant="bordered" label="Name"
-               errorMessage={errors.name?.message}
-               isInvalid={false}/>
-        <Input {...register("phone")} disabled={submiting} variant="bordered" label="Phone"
-               errorMessage={errors.phone?.message}
-               isInvalid={!!errors.phone?.message?.length}/>
-        <Input {...register("email")} disabled={submiting} variant="bordered" label="Email"
-               errorMessage={errors.email?.message}
-               isInvalid={!!errors.email?.message?.length}/>
+    <div className="flex flex-1 min-h-0 flex-col gap-6 overflow-y-auto pb-3 sm:pb-2">
+      <div className="flex flex-col gap-4">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:text-sm">Данные покупателя</span>
+        <Input
+          {...register("name")}
+          disabled={submiting}
+          variant="bordered"
+          label="Name"
+          size="sm"
+          errorMessage={errors.name?.message}
+          isInvalid={!!errors.name?.message?.length}
+          classNames={compactInputClassNames}
+        />
+        <Input
+          {...register("phone")}
+          disabled={submiting}
+          variant="bordered"
+          label="Phone"
+          size="sm"
+          errorMessage={errors.phone?.message}
+          isInvalid={!!errors.phone?.message?.length}
+          classNames={compactInputClassNames}
+        />
+        <Input
+          {...register("email")}
+          disabled={submiting}
+          variant="bordered"
+          label="Email"
+          size="sm"
+          errorMessage={errors.email?.message}
+          isInvalid={!!errors.email?.message?.length}
+          classNames={compactInputClassNames}
+        />
         <Textarea
           {...register('description')}
           disabled={submiting}
-          label="Description"
-          variant={'bordered'}
+          label="Комментарий к заказу"
+          variant="bordered"
+          size="sm"
+          minRows={2}
+          classNames={compactInputClassNames}
         />
       </div>
-      <div className={'bg-gray-800 text-white text-xl rounded-2xl'}>
-        <div className={'p-5 flex flex-col '}>
-          <span className={'text-2xl font-black'}>{product.title}</span>
-          <span className={'max-h-[100px] overflow-auto'}>
-              {
-                (variant?.VariantValue ?? []).map(i => {
-                  return `${i.Value?.Option?.title}: ${i.Value?.value}`
-                }).join(', ')
-              }
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+          <div className="relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-gray-100 sm:h-[80px] sm:w-[80px]">
+            {productPreviewImage ? (
+              <Image
+                src={productPreviewImage}
+                alt={product.title}
+                fill
+                sizes="80px"
+                className="object-cover object-center transition-transform duration-300"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-[0.65rem] font-semibold text-gray-400">
+                Нет фото
               </span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2 text-sm sm:text-base">
+            <span className="text-sm font-semibold leading-tight text-gray-900 sm:text-base">{product.title}</span>
+            {variantDetails.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {variantDetails.map(({label, value}) => (
+                  <span
+                    key={`${label}-${value}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[0.68rem] font-medium text-gray-700 ring-1 ring-gray-200 sm:text-xs"
+                  >
+                    <span className="uppercase tracking-wide text-[0.55rem] text-gray-400">{label}</span>
+                    <span className="text-gray-900">{value}</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-xs text-gray-500 sm:text-sm">Параметры не выбраны</span>
+            )}
+          </div>
         </div>
-        <div className={'flex gap-2 p-5'}>
-          <span className={'text-gray-400'}>Стоимость товара: </span>
-          <Price finalPrice={+product.final_price}/>
+        <div className="h-px bg-gray-100"></div>
+        <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-wide text-gray-500 sm:text-sm">
+          <span>Стоимость товара</span>
+          <span className="flex items-center gap-2">
+            <Price finalPrice={+product.final_price} price={+product.price} size="lg"/>
+            {hasDiscount && (
+              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold text-rose-600 sm:text-xs">
+                -{discountPercent}%
+              </span>
+            )}
+          </span>
         </div>
-        <div className={'p-5 bg-purple-900 text-3xl rounded-b-2xl'}>
-          <span className={'flex gap-2'}>Итого: <Price size={'3xl'} finalPrice={+product.final_price}/></span>
+        <div className="flex items-center justify-between text-base font-semibold text-gray-900 sm:text-lg">
+          <span>Итого</span>
+          <span className="flex items-baseline gap-1.5 sm:gap-2 text-purple-600">
+            <Price finalPrice={+product.final_price} size="lg"/>
+          </span>
         </div>
       </div>
     </div>
-    <div className={'flex gap-5 justify-between'}>
-      <Button isLoading={submiting} type={'submit'} className={'bg-gray-800 rounded-2xl text-white p-5 w-full'}
-              size={'lg'}>
-        Оформить
-      </Button>
-      <Button className={'border border-solid border-gray-800 rounded-2xl w-full'} size={'lg'}
-              onClick={() => setOpen(false)}>
+    <div className="flex flex-row gap-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <button
+        type="submit"
+        disabled={submiting}
+        className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-purple-700 hover:to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submiting ? 'Отправляем...' : 'Оформить'}
+      </button>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100"
+      >
         Отмена
-      </Button>
+      </button>
     </div>
   </form>;
 
-  const thankYouMarkup = <div className={'relative flex flex-col p-5 gap-5 h-screen'}>
-    <div
-      className={'p-5 -mx-5 -mt-5 bg-gray-800 min-h-[120px] text-white text-2xl flex justify-between items-center'}>
-      <h3>Заказ товара</h3>
-      <span role={"button"} onClick={() => setOpen(false)}> <AiOutlineClose/></span>
+  const thankYouMarkup = <div className={'relative flex h-screen flex-col gap-6 p-5 sm:p-6'}>
+    <div className="flex items-start justify-between px-1 pt-1">
+      <h3 className="text-lg font-semibold tracking-wide text-gray-900 sm:text-xl">Заказ оформлен</h3>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        aria-label="Закрыть окно заказа"
+        className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
+      >
+        <AiOutlineClose className="h-5 w-5"/>
+      </button>
     </div>
-    <div className={'text-center mx-28'}>
-      <span className={'block'}>Спасибо 🖤</span>
-      <br/>
-      <p>Заказ № {orderNumber} успешно отправлен!</p>
-      <br/>
-      <p>Ожидайте, представитель "{product?.Brand?.name ?? 'брэнда'}" свяжется с вами для подтверждления заказа.</p>
-      <br/>
+    <div className="mx-auto max-w-md text-center text-sm text-gray-700 sm:text-base">
+      <span className="mt-2 block text-base font-semibold text-gray-900 sm:text-lg">Спасибо 🖤</span>
+      <p className="mt-3">Заказ № {orderNumber} успешно отправлен!</p>
+      <p className="mt-3">
+        Ожидайте, представитель "{product?.Brand?.name ?? 'брэнда'}" свяжется с вами для подтверждения заказа.
+      </p>
       {
         orderLink && <>
-          <p>Вот ссылка для остлеживания статуса заказа</p>
-          <Snippet hideSymbol size="sm">
+          <p className="mt-4">Вот ссылка для отслеживания статуса заказа</p>
+          <Snippet hideSymbol size="sm" className="mt-2">
             <a href={orderLink} className={'text-purple-700 hover:underline'}>{orderLink}</a>
           </Snippet>
         </>
@@ -400,17 +536,22 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           )}
 
           <div className='grid grid-cols-2 gap-3'>
-            <label
-              className={`${!!variant ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-200'} transition-colors duration-300 text-center text-white p-3 rounded-md`}>
-              <button disabled={!variant} onClick={() => {
+            <button
+              disabled={!variant}
+              onClick={() => {
+                if (!variant) return;
                 setOpen(true);
                 setStatistic(product.id, 'add_to_cart').then();
-              }}>Заказать</button>
-            </label>
-            <label
-              className='bg-white text-center text-purple-600 hover:bg-purple-700 hover:text-white transition-colors duration-300 p-3 rounded-md border border-purple-600'>
-              <button>Контакты</button>
-            </label>
+              }}
+              className={`w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              Заказать
+            </button>
+            <button
+              className='w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100'
+            >
+              Контакты
+            </button>
           </div>
           <VariantSelector
             variants={product?.Variants ?? []}
