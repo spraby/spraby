@@ -1,7 +1,8 @@
 import ProductPage from "@/theme/templates/ProductPage";
 import {findFirst} from "@/services/Products";
-import {getInformationSettings} from "@/services/Settings";
+import {getBreadcrumbs, getInformationSettings} from "@/services/Settings";
 import {serializeObject} from "@/services/utilits";
+import {BreadcrumbItem} from "@/types";
 
 // export const revalidate = 120
 
@@ -70,7 +71,19 @@ export default async function (props: any) {
 
 
   const informationSettings = await getInformationSettings() as any;
+
+  let breadcrumbs: BreadcrumbItem[] = [];
+  if (productData?.Category?.handle) {
+    breadcrumbs = await getBreadcrumbs(`/categories/${productData.Category.handle}`) ?? [];
+  } else {
+    breadcrumbs = await getBreadcrumbs('/') ?? [];
+  }
+
   return !!productData ?
-    <ProductPage product={serializeObject(productData)} informationSettings={informationSettings}/> :
+    <ProductPage
+      product={serializeObject(productData)}
+      informationSettings={informationSettings}
+      breadcrumbs={breadcrumbs}
+    /> :
     <div>no product</div>
 }

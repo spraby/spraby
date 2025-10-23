@@ -1,5 +1,6 @@
 'use client'
 
+import Link from "next/link";
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
@@ -16,7 +17,32 @@ import ChevronIcon from "@/theme/assets/ChevronIcon";
 import Price from "@/theme/snippents/Price";
 import {create} from "@/services/Orders";
 import {setStatistic} from "@/services/ProductStatistics";
-import {format} from "date-fns";
+import {differenceInMonths, format} from "date-fns";
+import {BreadcrumbItem} from "@/types";
+
+const BreadcrumbSeparatorIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" className="mx-1 h-3.5 w-3.5 text-gray-400" aria-hidden="true">
+    <path d="M6 3.5L10 8l-4 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const ChevronDownMiniIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+    <path d="M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const LocationIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" className="mt-0.5 h-4 w-4 text-gray-400" aria-hidden="true">
+    <path d="M8 1.333c2.577 0 4.667 2.09 4.667 4.667 0 3.5-4.667 8.667-4.667 8.667S3.333 9.5 3.333 6c0-2.577 2.09-4.667 4.667-4.667zm0 2.667a2 2 0 100 4 2 2 0 000-4z" fill="currentColor"/>
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" className="mt-0.5 h-4 w-4 text-gray-400" aria-hidden="true">
+    <path d="M5.333 1.333V3M10.667 1.333V3M2.667 5.333h10.666M3.333 3h9.334c.368 0 .666.298.666.667v8.666c0 .368-.298.667-.666.667H3.333a.667.667 0 01-.666-.667V3.667c0-.369.298-.667.666-.667z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
 
 const schema = yup
   .object({
@@ -27,7 +53,7 @@ const schema = yup
   })
   .required()
 
-export default function ProductPage({product, informationSettings}: Props) {
+export default function ProductPage({product, informationSettings, breadcrumbs = []}: Props) {
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -88,6 +114,27 @@ export default function ProductPage({product, informationSettings}: Props) {
     return [];
   }, [product]);
 
+  const tags = useMemo(() => {
+    const unique = new Set<string>();
+    if (product.Category?.title) unique.add(product.Category.title);
+    if (product.Brand?.name) unique.add(product.Brand.name);
+    options?.forEach(option => {
+      option.options.forEach(item => {
+        if (item.label) unique.add(item.label);
+      });
+    });
+    return Array.from(unique);
+  }, [options, product]);
+  const [showAllTags, setShowAllTags] = useState(false);
+  const COLLAPSED_TAG_COUNT = 8;
+  const visibleTags = useMemo(
+    () => (showAllTags ? tags : tags.slice(0, COLLAPSED_TAG_COUNT)),
+    [showAllTags, tags]
+  );
+  useEffect(() => {
+    setShowAllTags(false);
+  }, [product.id]);
+
   /**
    *
    */
@@ -102,6 +149,42 @@ export default function ProductPage({product, informationSettings}: Props) {
   const refund = useMemo(() => {
     const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'refund')
     return (settings?.data as any)?.description ?? '';
+  }, [product]);
+
+  const brandLocation = useMemo(() => {
+    const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'addresses');
+    if (!settings?.data?.length) return null;
+    const raw = Array.isArray(settings.data) ? settings.data.find(Boolean) : settings.data;
+    if (!raw) return null;
+    return String(raw).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() || null;
+  }, [product]);
+
+  const pluralize = (value: number, forms: [string, string, string]) => {
+    const n = Math.abs(value) % 100;
+    const n1 = n % 10;
+    if (n > 10 && n < 20) return forms[2];
+    if (n1 > 1 && n1 < 5) return forms[1];
+    if (n1 === 1) return forms[0];
+    return forms[2];
+  };
+
+  const brandSinceText = useMemo(() => {
+    const createdValue = (product.Brand as any)?.created_at ?? (product.Brand as any)?.createdAt;
+    if (!createdValue) return null;
+    const createdDate = new Date(createdValue);
+    if (Number.isNaN(createdDate.getTime())) return null;
+    const months = differenceInMonths(new Date(), createdDate);
+    if (months <= 0) return 'На Spraby менее месяца';
+    if (months < 12) {
+      return `На Spraby ${months} ${pluralize(months, ['месяц', 'месяца', 'месяцев'])}`;
+    }
+    const years = Math.floor(months / 12);
+    const restMonths = months % 12;
+    let result = `На Spraby ${years} ${pluralize(years, ['год', 'года', 'лет'])}`;
+    if (restMonths > 0) {
+      result += ` ${restMonths} ${pluralize(restMonths, ['месяц', 'месяца', 'месяцев'])}`;
+    }
+    return result;
   }, [product]);
 
   const orderFormMarkup = <form className={'relative flex flex-col p-5 gap-5 h-screen'}
@@ -240,77 +323,174 @@ export default function ProductPage({product, informationSettings}: Props) {
   </div>
 
   return !!product && <main className='px-4 pt-6 pb-12 sm:px-6 lg:px-8'>
-    <div className='mx-auto flex max-w-6xl flex-col gap-8 lg:grid lg:grid-cols-12 lg:gap-10'>
-      <div className='flex flex-col gap-7 lg:col-span-7 xl:col-span-7'>
-        <div className='relative'>
-          <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
-          {hasDiscount && discountPercent > 0 && (
-            <span className='absolute right-4 top-4 inline-flex items-center rounded-lg bg-purple-500 px-3 py-1.5 text-sm font-semibold text-white shadow-md'>
-              -{discountPercent}%
-            </span>
-          )}
-        </div>
-        <Tabs
-          tabs={[
-            {
-              label: 'Описание',
-              value: product.description
-            },
-            {
-              label: 'Способы доставки',
-              value: delivery
-            },
-            {
-              label: 'Условия возврата',
-              value: refund
-            },
-          ]}
-        />
-        <div className='h-px bg-gray-200'></div>
-      </div>
-      <div className='flex flex-col gap-7 lg:col-span-5 xl:col-span-5'>
-        <h2 className='text-2xl font-semibold text-gray-900 sm:text-3xl'>{product.title}</h2>
-        <Price finalPrice={+product.final_price} price={+product.price}/>
-        <div className='grid grid-cols-2 gap-3'>
-          <label
-            className={`${!!variant ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-200'} transition-colors duration-300 text-center text-white p-3 rounded-md`}>
-            <button disabled={!variant} onClick={() => {
-              setOpen(true)
-              setStatistic(product.id, 'add_to_cart').then();
-            }}>Заказать</button>
-          </label>
-          <label
-            className='bg-white text-center text-purple-600 hover:bg-purple-700 hover:text-white transition-colors duration-300 p-3 rounded-md border border-purple-600'>
-            <button>Контакты</button>
-          </label>
-        </div>
+    <div className='mx-auto flex max-w-6xl flex-col gap-4 lg:gap-8'>
+      {breadcrumbs.length > 0 && (
+        <nav aria-label="breadcrumb" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 no-scrollbar">
+          <ol className="flex items-center gap-1.5 whitespace-nowrap pr-5 pe-8 text-sm font-medium text-gray-500 lg:pr-0 lg:pe-0">
+            {breadcrumbs.map((crumb, index) => (
+              <li key={`${crumb.title}-${index}`} className="flex items-center">
+                {crumb.url && index !== breadcrumbs.length - 1 ? (
+                  <>
+                    <Link href={crumb.url} className="inline-flex items-center gap-1 text-gray-600 transition hover:text-purple-600">
+                      {crumb.title}
+                    </Link>
+                    <BreadcrumbSeparatorIcon/>
+                  </>
+                ) : (
+                  <span className="text-gray-800 font-semibold">{crumb.title}</span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
 
-        <Accordion>
-          <AccordionItem
-            key="info"
-            aria-label="Дополнительная информация"
-            title="Дополнительная информация"
-            indicator={isOpen => {
-              return <span className={`block border border-gray-300 rounded-full p-1 ${!isOpen ? 'rotate-180' : ''}`}>
-                <ChevronIcon width={20} height={20}/>
+      <div className='flex w-full flex-col gap-8 lg:grid lg:grid-cols-12 lg:gap-10'>
+        <div className='order-1 lg:order-1 flex flex-col gap-7 lg:col-span-7 xl:col-span-7'>
+          <div className='relative'>
+            <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
+            {hasDiscount && discountPercent > 0 && (
+              <span className='absolute right-4 top-4 inline-flex items-center rounded-lg bg-purple-500 px-3 py-1.5 text-sm font-semibold text-white shadow-md'>
+                -{discountPercent}%
               </span>
-            }}
-          >
-            <div
-              className="text-xs leading-relaxed"
-              dangerouslySetInnerHTML={{__html: (informationSettings?.description ?? '') as string}}
+            )}
+          </div>
+          <div className='hidden lg:flex flex-col gap-7'>
+            <Tabs
+              tabs={[
+                {
+                  label: 'Описание',
+                  value: product.description
+                },
+                {
+                  label: 'Способы доставки',
+                  value: delivery
+                },
+                {
+                  label: 'Условия возврата',
+                  value: refund
+                },
+              ]}
             />
-          </AccordionItem>
-        </Accordion>
+            <div className='h-px bg-gray-200'></div>
+          </div>
+        </div>
+        <div className='order-2 lg:order-2 flex flex-col gap-7 lg:col-span-5 xl:col-span-5'>
+          <h2 className='text-2xl font-semibold text-gray-900 sm:text-3xl'>{product.title}</h2>
+          <Price finalPrice={+product.final_price} price={+product.price}/>
+          {tags.length > 0 && (
+            <div className='flex flex-col gap-2'>
+              <div className='flex flex-wrap gap-2'>
+                {visibleTags.map((tag) => (
+                  <span key={tag} className='inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-gray-600'>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              {tags.length > COLLAPSED_TAG_COUNT && (
+                <button
+                  type='button'
+                  onClick={() => setShowAllTags((prev) => !prev)}
+                  className='self-end text-xs font-semibold text-purple-600 transition hover:text-purple-700'
+                >
+                  {showAllTags ? 'Скрыть теги' : `Показать все (${tags.length})`}
+                </button>
+              )}
+            </div>
+          )}
 
-        <div className='h-px bg-gray-200'></div>
-        <VariantSelector variants={product?.Variants ?? []}
-                         options={options}
-                         onChange={v => {
-                           if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src)
-                           setVariant(v);
-                         }}/>
-        <div className='h-px bg-gray-200'></div>
+          <div className='grid grid-cols-2 gap-3'>
+            <label
+              className={`${!!variant ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-200'} transition-colors duration-300 text-center text-white p-3 rounded-md`}>
+              <button disabled={!variant} onClick={() => {
+                setOpen(true);
+                setStatistic(product.id, 'add_to_cart').then();
+              }}>Заказать</button>
+            </label>
+            <label
+              className='bg-white text-center text-purple-600 hover:bg-purple-700 hover:text-white transition-colors duration-300 p-3 rounded-md border border-purple-600'>
+              <button>Контакты</button>
+            </label>
+          </div>
+          <VariantSelector
+            variants={product?.Variants ?? []}
+            options={options}
+            onChange={v => {
+              if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src);
+              setVariant(v);
+            }}
+          />
+          <div className='h-px bg-gray-200'></div>
+          <Accordion className='pb-0'>
+            <AccordionItem
+              key="info"
+              aria-label="Дополнительная информация"
+              title="Дополнительная информация"
+              indicator={isOpen => {
+                return <span className={`block border border-gray-300 rounded-full p-1 ${!isOpen ? 'rotate-180' : ''}`}>
+                  <ChevronIcon width={20} height={20}/>
+                </span>;
+              }}
+              classNames={{
+                base: 'py-0',
+                trigger: 'py-1 px-0 data-[open=true]:pb-1 data-[open=true]:pt-1',
+                title: 'text-sm font-normal text-gray-700',
+                content: 'text-xs text-gray-600'
+              }}
+            >
+              <div
+                className="text-xs leading-relaxed"
+                dangerouslySetInnerHTML={{__html: (informationSettings?.description ?? '') as string}}
+              />
+            </AccordionItem>
+          </Accordion>
+
+          <div className='h-px bg-gray-200'></div>
+          {(product.Brand?.name || brandLocation || brandSinceText) && (
+            <div className='flex items-start gap-4 rounded-2xl bg-white py-4'>
+              <div className='flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-gray-500 uppercase'>
+                {(product.Brand?.name ?? product.Brand?.User?.firstName ?? 'S').toString().trim().slice(0, 2)}
+              </div>
+              <div className='flex flex-col gap-2 text-sm text-gray-600'>
+                {product.Brand?.name && (
+                  <span className='text-base font-semibold text-gray-900'>{product.Brand.name}</span>
+                )}
+                {brandLocation && (
+                  <div className='flex items-start gap-2'>
+                    <LocationIcon/>
+                    <span className='leading-snug'>{brandLocation}</span>
+                  </div>
+                )}
+                {brandSinceText && (
+                  <div className='flex items-start gap-2'>
+                    <CalendarIcon/>
+                    <span className='leading-snug'>{brandSinceText}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <div className='h-px bg-gray-200'></div>
+        </div>
+        <div className='order-3 flex flex-col gap-7 lg:hidden'>
+          <Tabs
+            tabs={[
+              {
+                label: 'Описание',
+                value: product.description
+              },
+              {
+                label: 'Способы доставки',
+                value: delivery
+              },
+              {
+                label: 'Условия возврата',
+                value: refund
+              },
+            ]}
+          />
+          <div className='h-px bg-gray-200'></div>
+        </div>
       </div>
     </div>
     <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
@@ -325,6 +505,7 @@ type Props = {
   informationSettings?: {
     description: string
   }
+  breadcrumbs?: BreadcrumbItem[]
 }
 
 type Options = {
