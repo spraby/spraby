@@ -4,11 +4,13 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import ResponsiveFilters from "@/theme/snippents/ResponsiveFilters";
 import {BreadcrumbItem, FilterItem} from "@/types";
 import {getFilteredProducts} from "@/services/Products";
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {CategoryModel, CollectionModel, ProductModel} from "@/prisma/types";
 import {Spin} from "antd";
 import {convertSearchParamsToQueryParams} from "@/services/Options";
 import type {ProductSort} from "@/types";
+
+const DEFAULT_PAGE_SIZE = 20;
 
 const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
   {value: 'newest', label: 'Актуальности'},
@@ -43,48 +45,109 @@ export default function CollectionPage({
                                          products: defaultProducts,
                                          filter,
                                          loading: defaultLoading,
+                                         total: defaultTotal = defaultProducts.length,
+                                         pageSize = DEFAULT_PAGE_SIZE,
                                        }: Props) {
-  const [loading, setLoading] = useState(defaultLoading);
+  const [loading, setLoading] = useState(!!defaultLoading);
   const [products, setProducts] = useState<ProductModel[]>(defaultProducts);
+  const [total, setTotal] = useState<number>(defaultTotal);
+  const [page, setPage] = useState<number>(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [sort, setSort] = useState<ProductSort>('newest');
   const [activeParams, setActiveParams] = useState<Record<string, string>>(() => toSearchRecord(searchParams));
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const pageTitle = collection?.header ?? category?.header ?? '';
+  const hasMore = products.length < total;
+  const normalizedPageSize = pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+
+  useEffect(() => {
+    setLoading(!!defaultLoading);
+  }, [defaultLoading]);
 
   useEffect(() => {
     setActiveParams(toSearchRecord(searchParams));
   }, [searchParams]);
 
-  const fetchProducts = useCallback(async (params: Record<string, string>, sortValue: ProductSort) => {
+  useEffect(() => {
+    setProducts(defaultProducts);
+    setTotal(defaultTotal);
+    setPage(1);
+  }, [defaultProducts, defaultTotal]);
+
+  const performFetch = useCallback(async (params: Record<string, string>, sortValue: ProductSort, pageToLoad: number) => {
+    const data: any = await convertSearchParamsToQueryParams(params, filter);
+    return await getFilteredProducts({
+      options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
+      ...(collection?.handle ? {collectionHandles: [collection.handle]} : {}),
+      ...(category?.handle ? {categoryHandles: [category.handle]} : {}),
+      sort: sortValue,
+      limit: normalizedPageSize,
+      page: pageToLoad,
+    });
+  }, [filter, collection?.handle, category?.handle, normalizedPageSize]);
+
+  const reloadProducts = useCallback(async (params: Record<string, string>, sortValue: ProductSort) => {
     setLoading(true);
     try {
-      const data: any = await convertSearchParamsToQueryParams(params, filter);
-      const productsResponse = await getFilteredProducts({
-        options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
-        ...(collection?.handle ? {collectionHandles: [collection.handle]} : {}),
-        ...(category?.handle ? {categoryHandles: [category.handle]} : {}),
-        sort: sortValue,
-      });
-      setProducts(productsResponse);
+      const response = await performFetch(params, sortValue, 1);
+      setProducts(response.items);
+      setTotal(response.total);
+      setPage(response.page);
     } catch (error) {
       console.error('Failed to load products', error);
     } finally {
       setLoading(false);
     }
-  }, [filter, collection?.handle, category?.handle]);
+  }, [performFetch]);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (!hasMore || isLoadingMore || loading) return;
+
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      const response = await performFetch(activeParams, sort, nextPage);
+      setProducts((prev) => [...prev, ...response.items]);
+      setTotal(response.total);
+      setPage(nextPage);
+    } catch (error) {
+      console.error('Failed to load more products', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [activeParams, hasMore, isLoadingMore, loading, page, performFetch, sort]);
 
   const handleFiltersChange = useCallback(async (params: Record<string, string>) => {
     setActiveParams(params);
-    await fetchProducts(params, sort);
-  }, [fetchProducts, sort]);
+    await reloadProducts(params, sort);
+  }, [reloadProducts, sort]);
 
   const handleSortChange = useCallback((value: ProductSort) => {
     setSort(value);
-    void fetchProducts(activeParams, value);
-  }, [activeParams, fetchProducts]);
+    void reloadProducts(activeParams, value);
+  }, [activeParams, reloadProducts]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry?.isIntersecting) {
+        void loadMoreProducts();
+      }
+    }, {rootMargin: '300px'});
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hasMore, loadMoreProducts]);
 
   const headerTitle = pageTitle || collection?.name || category?.title || 'Каталог';
-  const formattedCount = useMemo(() => new Intl.NumberFormat('ru-RU').format(products.length), [products.length]);
-  const resultsWord = useMemo(() => getResultsWord(products.length), [products.length]);
+  const formattedCount = useMemo(() => new Intl.NumberFormat('ru-RU').format(total), [total]);
+  const resultsWord = useMemo(() => getResultsWord(total), [total]);
+  const formattedLoadedCount = useMemo(() => new Intl.NumberFormat('ru-RU').format(products.length), [products.length]);
   const sortControl = (
     <div className='relative inline-flex items-center'>
       <select
@@ -148,6 +211,11 @@ export default function CollectionPage({
               <span className='font-semibold text-purple-600'>
                 {formattedCount} {resultsWord}
               </span>
+              {total > 0 && (
+                <span className='text-xs font-medium text-gray-400'>
+                  Показано {formattedLoadedCount} из {formattedCount}
+                </span>
+              )}
               <div className='flex items-center gap-3 text-gray-500'>
                 <span className='font-medium'>Сортировка по:</span>
                 {sortControl}
@@ -175,10 +243,15 @@ export default function CollectionPage({
               }
 
               <div className='flex flex-col gap-5'>
-                <div className='flex flex-col gap-3 sm:items-end sm:self-end lg:hidden'>
+                <div className='flex flex-col gap-3 items-end self-end sm:items-end sm:self-end lg:hidden text-right'>
                   <div className='text-right text-sm font-semibold text-purple-600 sm:text-base'>
                     {formattedCount} {resultsWord}
                   </div>
+                  {total > 0 && (
+                    <div className='text-xs font-medium text-gray-400'>
+                      Показано {formattedLoadedCount} из {formattedCount}
+                    </div>
+                  )}
                   <div className='flex items-center justify-end gap-3 text-sm text-gray-500'>
                     <span className='font-medium text-gray-500 whitespace-nowrap'>Сортировка по:</span>
                     <div className='min-w-[12rem] sm:w-auto'>
@@ -194,6 +267,26 @@ export default function CollectionPage({
                     })
                   }
                 </div>
+
+                {!loading && !products.length && (
+                  <div className='py-12 text-center text-sm text-gray-500'>
+                    Товары не найдены по выбранным фильтрам
+                  </div>
+                )}
+
+                <div ref={sentinelRef} className='h-1 w-full'/>
+
+                {isLoadingMore && (
+                  <div className='flex justify-center py-6'>
+                    <Spin size='large'/>
+                  </div>
+                )}
+
+                {!loading && !isLoadingMore && !hasMore && products.length > 0 && (
+                  <div className='pb-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-400'>
+                    Вы просмотрели все товары
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -211,6 +304,8 @@ type Props = {
   searchParams?: any,
   loading?: boolean,
   breadcrumbs?: BreadcrumbItem[],
+  total?: number,
+  pageSize?: number,
 }
 
 const ChevronDownMiniIcon = () => (

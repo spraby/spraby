@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: any) {
 }
 
 export default async function (props: any) {
+  const PAGE_SIZE = 20;
   const collection = await findFirst({where: {handle: props.params.handle}}) as CollectionModel;
   const options = await getCollectionOptions({handle: props.params.handle});
   const filter = await convertOptionsToFilter(options);
@@ -22,15 +23,19 @@ export default async function (props: any) {
   const data: any = await convertSearchParamsToQueryParams(params, filter);
   const breadcrumbs = await getBreadcrumbs(`/collections/${props.params.handle}`);
 
-  const products = await getFilteredProducts({
+  const {items: products, total} = await getFilteredProducts({
     options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
-    collectionHandles: [props.params.handle]
+    collectionHandles: [props.params.handle],
+    limit: PAGE_SIZE,
+    page: 1,
   });
 
   return <CollectionPage
     breadcrumbs={breadcrumbs}
     collection={collection}
     products={products}
+    total={total}
+    pageSize={PAGE_SIZE}
     filter={filter}
     searchParams={params}
   />

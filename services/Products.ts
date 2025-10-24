@@ -112,10 +112,14 @@ export async function getProductsOnTrend() {
  *
  * @param filter
  */
-export async function getFilteredProducts(filter: Filter): Promise<(ProductModel & {
-  price: string;
-  final_price: string
-})[]> {
+export type PaginatedProducts = {
+  items: (ProductModel & { price: string; final_price: string })[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export async function getFilteredProducts(filter: Filter): Promise<PaginatedProducts> {
 
   const orderBy: Prisma.productsOrderByWithRelationInput = (() => {
     switch (filter.sort) {
@@ -131,96 +135,105 @@ export async function getFilteredProducts(filter: Filter): Promise<(ProductModel
     }
   })();
 
-  const products = await findMany({
-    where: {
-      enabled: true,
+  const page = filter.page && filter.page > 0 ? filter.page : 1;
+  const take = filter.limit && filter.limit > 0 ? filter.limit : undefined;
 
-      Category: {
-        ...(!!filter?.categoryHandles?.length ? {
-          handle: {
-            in: filter.categoryHandles
-          }
-        } : {}),
-        ...(!!filter?.collectionHandles?.length ? {
-          CategoryCollection: {
-            some: {
-              Collection: {
-                handle: {
-                  in: filter.collectionHandles,
-                },
+  const where: Prisma.productsWhereInput = {
+    enabled: true,
+
+    Category: {
+      ...(!!filter?.categoryHandles?.length ? {
+        handle: {
+          in: filter.categoryHandles
+        }
+      } : {}),
+      ...(!!filter?.collectionHandles?.length ? {
+        CategoryCollection: {
+          some: {
+            Collection: {
+              handle: {
+                in: filter.collectionHandles,
               },
-            }
-          },
-        } : {}),
-        ...(!!filter?.options?.length ? {
-          CategoryOption: {
-            some: {
-              Option: {
-                id: {
-                  in: filter.options.map(i => +i.optionId)
-                }
+            },
+          }
+        },
+      } : {}),
+      ...(!!filter?.options?.length ? {
+        CategoryOption: {
+          some: {
+            Option: {
+              id: {
+                in: filter.options.map(i => +i.optionId)
               }
             }
           }
-        } : {}),
-      },
+        }
+      } : {}),
+    },
 
-      ...(!!filter?.options?.length ? {
-        Variants: {
-          some: {
-            AND: filter.options.map(i => ({
-              VariantValue: {
-                some: {
-                  Value: {
-                    option_id: +i.optionId,
-                    value: {
-                      in: i.values
-                    }
+    ...(!!filter?.options?.length ? {
+      Variants: {
+        some: {
+          AND: filter.options.map(i => ({
+            VariantValue: {
+              some: {
+                Value: {
+                  option_id: +i.optionId,
+                  value: {
+                    in: i.values
                   }
                 }
-              },
-              enabled: true,
-            }))
-          }
-        }
-      } : {})
-    },
-    include: {
-      Brand: {
-        include: {
-          User: true
-        }
-      },
-      Category: {
-        include: {
-          CategoryOption: {
-            include: {
-              Option: true
-            }
-          }
-        }
-      },
-      Variants: {
-        include: {
-          Image: true,
-          VariantValue: {
-            include: {
-              Value: true,
-              Option: true
-            }
-          }
-        }
-      },
-      Images: {
-        include: {
-          Image: true
+              }
+            },
+            enabled: true,
+          }))
         }
       }
-    },
-    orderBy
-  });
+    } : {})
+  };
 
-  return products.map(product => {
+  const [products, total] = await Promise.all([
+    findMany({
+      where,
+      include: {
+        Brand: {
+          include: {
+            User: true
+          }
+        },
+        Category: {
+          include: {
+            CategoryOption: {
+              include: {
+                Option: true
+              }
+            }
+          }
+        },
+        Variants: {
+          include: {
+            Image: true,
+            VariantValue: {
+              include: {
+                Value: true,
+                Option: true
+              }
+            }
+          }
+        },
+        Images: {
+          include: {
+            Image: true
+          }
+        }
+      },
+      orderBy,
+      ...(take ? {skip: (page - 1) * take, take} : {}),
+    }),
+    db.products.count({where}),
+  ]);
+
+  const mappedProducts = products.map(product => {
     return {
       ...product,
       price: `${product.price}`,
@@ -237,8 +250,15 @@ export async function getFilteredProducts(filter: Filter): Promise<(ProductModel
           src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
         }
       }))
-    }
-  }) as (ProductModel & { price: string; final_price: string })[]
+    };
+  }) as (ProductModel & { price: string; final_price: string })[];
+
+  return {
+    items: mappedProducts,
+    total,
+    page,
+    pageSize: take ?? mappedProducts.length,
+  };
 }
 
 type Filter = {
@@ -248,5 +268,7 @@ type Filter = {
     optionId: number,
     values: string[]
   }[],
-  sort?: ProductSort
+  sort?: ProductSort,
+  limit?: number,
+  page?: number
 }
