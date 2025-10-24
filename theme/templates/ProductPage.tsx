@@ -71,12 +71,88 @@ const schema = yup
   })
   .required()
 
+const flattenStrings = (value: unknown): string[] => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap(item => flattenStrings(item));
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length ? [trimmed] : [];
+  }
+  if (typeof value === 'number') {
+    return [String(value)];
+  }
+  return [];
+};
+
+const SOCIAL_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  telegram: 'Telegram',
+  whatsapp: 'WhatsApp'
+};
+
+const normalizeSocialUrl = (type: string, raw: string): string => {
+  const value = raw.trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  if (type === 'instagram') {
+    const username = value.replace(/^@/, '');
+    return `https://instagram.com/${username}`;
+  }
+  if (type === 'telegram') {
+    const username = value.replace(/^@/, '');
+    return `https://t.me/${username}`;
+  }
+  if (type === 'whatsapp') {
+    const digitsOnly = value.replace(/[^\d]/g, '');
+    return digitsOnly.length ? `https://wa.me/${digitsOnly}` : value;
+  }
+  if (value.includes('.')) {
+    const sanitized = value.replace(/^https?:\/\//i, '');
+    return `https://${sanitized}`;
+  }
+  return value;
+};
+
+const getSocialDisplayValue = (type: string, raw: string): string => {
+  const value = raw.trim();
+  if (!value) return '';
+  if (type === 'instagram' || type === 'telegram') {
+    const username = value.replace(/^@/, '');
+    return `@${username}`;
+  }
+  return value;
+};
+
+const normalizePhoneHref = (value: string): string => {
+  const clean = value.replace(/[^\d+]/g, '');
+  return clean.length ? `tel:${clean}` : `tel:${value}`;
+};
+
+const normalizeEmailHref = (value: string): string => `mailto:${value.trim()}`;
+
+type ContactSocial = {
+  type: string
+  label: string
+  value: string
+  url: string
+  display: string
+};
+
 export default function ProductPage({product, informationSettings, breadcrumbs = []}: Props) {
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<'order' | 'contacts'>('order');
   const [orderNumber, setOrderNumber] = useState<string>();
   const [submiting, setSubmiting] = useState(false);
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+    setOrderNumber(undefined);
+    setDrawerMode('order');
+  };
 
   const hasDiscount = Number(product.price) > Number(product.final_price);
   const discountPercent = hasDiscount
@@ -205,6 +281,41 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return result;
   }, [product]);
 
+  const brandContacts = useMemo(() => {
+    const settings = product.Brand?.Settings ?? [];
+    const getSetting = (type: string) => settings.find(item => item.type === type)?.data;
+    const phones = Array.from(new Set(flattenStrings(getSetting('phones'))));
+    const emails = Array.from(new Set(flattenStrings(getSetting('emails'))));
+    const socialsRaw = getSetting('socials');
+    const socials: ContactSocial[] = Array.isArray(socialsRaw)
+      ? (socialsRaw as any[]).reduce((acc, item) => {
+        if (!item || typeof item !== 'object') return acc;
+        const {type, link} = item as { type?: string, link?: string };
+        if (typeof type !== 'string' || typeof link !== 'string') return acc;
+        const normalizedType = type.trim().toLowerCase();
+        const normalizedValue = link.trim();
+        if (!normalizedType.length || !normalizedValue.length) return acc;
+        const label = SOCIAL_LABELS[normalizedType] ?? normalizedType;
+        const url = normalizeSocialUrl(normalizedType, normalizedValue);
+        const display = getSocialDisplayValue(normalizedType, normalizedValue) || normalizedValue;
+        acc.push({
+          type: normalizedType,
+          label,
+          value: normalizedValue,
+          url,
+          display
+        });
+        return acc;
+      }, [] as ContactSocial[]) : [];
+
+    return {
+      phones,
+      emails,
+      socials,
+      hasAny: Boolean(phones.length || emails.length || socials.length)
+    };
+  }, [product]);
+
   const variantDetails = useMemo(() => {
     return (variant?.VariantValue ?? []).map(i => {
       const optionTitle = i?.Value?.Option?.title;
@@ -305,7 +416,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       </div>
       <button
         type="button"
-        onClick={() => setOpen(false)}
+        onClick={handleDrawerClose}
         aria-label="Закрыть окно заказа"
         className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
       >
@@ -421,7 +532,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       </button>
       <button
         type="button"
-        onClick={() => setOpen(false)}
+        onClick={handleDrawerClose}
         className="w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100"
       >
         Отмена
@@ -434,7 +545,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       <h3 className="text-lg font-semibold tracking-wide text-gray-900 sm:text-xl">Заказ оформлен</h3>
       <button
         type="button"
-        onClick={() => setOpen(false)}
+        onClick={handleDrawerClose}
         aria-label="Закрыть окно заказа"
         className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
       >
@@ -455,6 +566,97 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           </Snippet>
         </>
       }
+    </div>
+  </div>
+
+  const contactMarkup = <div className={'relative flex h-full max-h-[100vh] min-h-0 flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-6'}>
+    <div className="flex items-start justify-between px-1 pt-1">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-lg font-semibold tracking-wide sm:text-xl">Контакты продавца</h3>
+        <p className="text-xs text-gray-500 sm:text-sm">
+          Свяжитесь {product.Brand?.name ? `с ${product.Brand.name}` : 'с продавцом'} удобным способом
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handleDrawerClose}
+        aria-label="Закрыть окно контактов"
+        className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
+      >
+        <AiOutlineClose className="h-5 w-5"/>
+      </button>
+    </div>
+    <div className="flex flex-1 min-h-0 flex-col gap-6 overflow-y-auto pb-3 sm:pb-2">
+      {brandContacts.hasAny ? (
+        <>
+          {brandContacts.phones.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:text-sm">Телефон</span>
+              <div className="flex flex-col gap-2">
+                {brandContacts.phones.map(phone => (
+                  <a
+                    key={phone}
+                    href={normalizePhoneHref(phone)}
+                    className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                  >
+                    <span>{phone}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {brandContacts.emails.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:text-sm">Email</span>
+              <div className="flex flex-col gap-2">
+                {brandContacts.emails.map(email => (
+                  <a
+                    key={email}
+                    href={normalizeEmailHref(email)}
+                    className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                  >
+                    <span>{email}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {brandContacts.socials.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:text-sm">Социальные сети</span>
+              <div className="flex flex-col gap-2">
+                {brandContacts.socials.map(social => (
+                  <a
+                    key={`${social.type}-${social.value}`}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                  >
+                    <span className="text-[0.68rem] uppercase tracking-wide text-gray-400">{social.label}</span>
+                    <span className="text-base text-purple-600">{social.display || social.value}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="rounded-2xl bg-gray-50 px-4 py-5 text-sm text-gray-600">
+          Контактные данные продавца появятся здесь, как только он их добавит.
+        </div>
+      )}
+    </div>
+    <div className="pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <button
+        type="button"
+        onClick={handleDrawerClose}
+        className="w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100"
+      >
+        Закрыть
+      </button>
     </div>
   </div>
 
@@ -540,6 +742,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               disabled={!variant}
               onClick={() => {
                 if (!variant) return;
+                setDrawerMode('order');
+                setOrderNumber(undefined);
                 setOpen(true);
                 setStatistic(product.id, 'add_to_cart').then();
               }}
@@ -548,6 +752,11 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               Заказать
             </button>
             <button
+              onClick={() => {
+                setDrawerMode('contacts');
+                setOrderNumber(undefined);
+                setOpen(true);
+              }}
               className='w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100'
             >
               Контакты
@@ -634,9 +843,10 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         </div>
       </div>
     </div>
-    <Drawer open={open} onClose={() => setOpen(false)} useCloseBtn={false}>
-      {!orderNumber && orderFormMarkup}
-      {!!orderNumber && thankYouMarkup}
+    <Drawer open={open} onClose={handleDrawerClose} useCloseBtn={false}>
+      {drawerMode === 'contacts' && contactMarkup}
+      {drawerMode === 'order' && !orderNumber && orderFormMarkup}
+      {drawerMode === 'order' && !!orderNumber && thankYouMarkup}
     </Drawer>
   </main>
 }
