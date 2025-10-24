@@ -5,7 +5,7 @@ import Image from "next/image";
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
-import {useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {ProductModel, VariantModel} from "@/prisma/types";
 import Drawer from "@/theme/snippents/Drawer";
 import {AiOutlineClose} from "react-icons/ai";
@@ -20,6 +20,26 @@ import {create} from "@/services/Orders";
 import {setStatistic} from "@/services/ProductStatistics";
 import {differenceInMonths, format} from "date-fns";
 import {BreadcrumbItem} from "@/types";
+import ProductCart from "@/theme/snippents/ProductCart";
+import {Splide, SplideSlide} from "react-splide-ts";
+import '@splidejs/react-splide/css';
+
+const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    className={`h-6 w-6 ${direction === 'left' ? 'rotate-180' : ''}`}
+    aria-hidden="true"
+  >
+    <path
+      d="M9 5l6 7-6 7"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const normalizeImageSrc = (raw?: string | null) => {
   if (!raw) return null;
@@ -140,7 +160,7 @@ type ContactSocial = {
   display: string
 };
 
-export default function ProductPage({product, informationSettings, breadcrumbs = []}: Props) {
+export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = []}: Props) {
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -247,10 +267,17 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 
   const brandLocation = useMemo(() => {
     const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'addresses');
-    if (!settings?.data?.length) return null;
-    const raw = Array.isArray(settings.data) ? settings.data.find(Boolean) : settings.data;
-    if (!raw) return null;
-    return String(raw).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() || null;
+    if (!settings?.data) return null;
+    const data = settings.data;
+    let raw: unknown = null;
+    if (Array.isArray(data)) {
+      raw = data.find(item => typeof item === 'string' && item.trim().length);
+    } else if (typeof data === 'string') {
+      raw = data;
+    }
+    if (typeof raw !== 'string') return null;
+    const normalized = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return normalized.length ? normalized : null;
   }, [product]);
 
   const pluralize = (value: number, forms: [string, string, string]) => {
@@ -348,6 +375,46 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     const variantImage = (product.Variants ?? []).find(v => v.Image?.Image?.src?.length)?.Image?.Image?.src;
     return normalizeImageSrc(variantImage);
   }, [variant, product]);
+
+  const otherProductsToDisplay = useMemo(() => {
+    return (otherProducts ?? []).filter(item => item.Images?.some(image => image?.Image?.src));
+  }, [otherProducts]);
+
+  const sellerName = useMemo(() => {
+    const brandName = typeof product.Brand?.name === 'string' ? product.Brand.name.trim() : '';
+    if (brandName.length) return brandName;
+    const user = product.Brand?.User as Record<string, unknown> | undefined;
+    if (user) {
+      const candidate = user['firstName'] ?? user['first_name'];
+      if (typeof candidate === 'string') {
+        const normalized = candidate.trim();
+        if (normalized.length) return normalized;
+      }
+    }
+    return '';
+  }, [product]);
+
+  const sellerInitials = useMemo(() => {
+    return sellerName.length ? sellerName.slice(0, 2).toUpperCase() : 'S';
+  }, [sellerName]);
+
+  const totalRelatedProducts = otherProductsToDisplay.length;
+  const relatedPerPage = totalRelatedProducts ? Math.min(5, totalRelatedProducts) : 1;
+  const canScrollRelated = totalRelatedProducts > relatedPerPage;
+  const relatedBreakpoints = useMemo(() => ({
+    1440: {perPage: Math.min(5, Math.max(1, totalRelatedProducts))},
+    1100: {perPage: Math.min(3, Math.max(1, totalRelatedProducts)), gap: '1.25rem'},
+    768: {perPage: Math.min(2, Math.max(1, totalRelatedProducts)), gap: '1rem'},
+    520: {perPage: Math.min(2, Math.max(1, totalRelatedProducts)), gap: '0.75rem'},
+  }), [totalRelatedProducts]);
+
+  const relatedCarouselRef = useRef<InstanceType<typeof Splide> | null>(null);
+  const handleRelatedPrev = useCallback(() => {
+    relatedCarouselRef.current?.go('<');
+  }, []);
+  const handleRelatedNext = useCallback(() => {
+    relatedCarouselRef.current?.go('>');
+  }, []);
 
   const compactInputClassNames = useMemo(() => ({
     input: "text-sm",
@@ -799,7 +866,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           {(product.Brand?.name || brandLocation || brandSinceText) && (
             <div className='flex items-start gap-4 rounded-2xl bg-white py-4'>
               <div className='flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-gray-500 uppercase'>
-                {(product.Brand?.name ?? product.Brand?.User?.firstName ?? 'S').toString().trim().slice(0, 2)}
+                {sellerInitials}
               </div>
               <div className='flex flex-col gap-2 text-sm text-gray-600'>
                 {product.Brand?.name && (
@@ -842,6 +909,64 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <div className='h-px bg-gray-200'></div>
         </div>
       </div>
+
+      {otherProductsToDisplay.length > 0 && (
+        <section className='flex flex-col gap-5 pt-4 lg:pt-6'>
+          <div className='flex flex-col gap-1'>
+            <h2 className='text-2xl font-semibold text-gray-900'>Другие работы продавца</h2>
+            {sellerName && (
+              <span className='text-sm text-gray-500'>{sellerName}</span>
+            )}
+          </div>
+          <div className='relative'>
+            <Splide
+              ref={relatedCarouselRef}
+              options={{
+                perPage: relatedPerPage,
+                perMove: 1,
+                gap: '1.5rem',
+                rewind: canScrollRelated,
+                pagination: false,
+                drag: canScrollRelated ? 'free' : false,
+                arrows: false,
+                speed: 600,
+                easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)',
+                breakpoints: relatedBreakpoints
+              }}
+              aria-label="Другие товары продавца"
+              className="group/related-slider px-2 sm:px-4 lg:px-6"
+            >
+              {otherProductsToDisplay.map(item => (
+                <SplideSlide key={String(item.id)}>
+                  <ProductCart product={item}/>
+                </SplideSlide>
+              ))}
+            </Splide>
+            <button
+              type="button"
+              onClick={handleRelatedPrev}
+              aria-label="Предыдущие работы продавца"
+              className={`absolute left-0 top-[38%] -translate-y-1/2 -translate-x-1/2 sm:-translate-x-2 inline-flex h-12 w-12 items-center justify-center text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${canScrollRelated ? 'pointer-events-auto hover:text-purple-600' : 'opacity-30 pointer-events-none'}`}
+              disabled={!canScrollRelated}
+              tabIndex={canScrollRelated ? 0 : -1}
+              aria-hidden={!canScrollRelated}
+            >
+              <ArrowIcon direction="left"/>
+            </button>
+            <button
+              type="button"
+              onClick={handleRelatedNext}
+              aria-label="Следующие работы продавца"
+              className={`absolute right-0 top-[38%] -translate-y-1/2 translate-x-1/2 sm:translate-x-2 inline-flex h-12 w-12 items-center justify-center text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${canScrollRelated ? 'pointer-events-auto hover:text-purple-600' : 'opacity-30 pointer-events-none'}`}
+              disabled={!canScrollRelated}
+              tabIndex={canScrollRelated ? 0 : -1}
+              aria-hidden={!canScrollRelated}
+            >
+              <ArrowIcon direction="right"/>
+            </button>
+          </div>
+        </section>
+      )}
     </div>
     <Drawer open={open} onClose={handleDrawerClose} useCloseBtn={false}>
       {drawerMode === 'contacts' && contactMarkup}
@@ -851,12 +976,18 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   </main>
 }
 
+type RelatedProduct = ProductModel & {
+  price: string
+  final_price: string
+}
+
 type Props = {
   product: ProductModel
   informationSettings?: {
     description: string
   }
   breadcrumbs?: BreadcrumbItem[]
+  otherProducts?: RelatedProduct[]
 }
 
 type Options = {

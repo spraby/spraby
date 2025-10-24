@@ -49,7 +49,7 @@ function List({items = [], deep = 1}: { items: MenuItem[], deep: number }) {
                   {content}
                 </span>
               )}
-              {hasChildren && <List items={item.children} deep={deep + 1}/>}
+              {hasChildren && <List items={item.children ?? []} deep={deep + 1}/>}
             </li>
           );
         })

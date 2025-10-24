@@ -1,5 +1,5 @@
 import ProductPage from "@/theme/templates/ProductPage";
-import {findFirst} from "@/services/Products";
+import {findFirst, findMany} from "@/services/Products";
 import {getBreadcrumbs, getInformationSettings} from "@/services/Settings";
 import {serializeObject} from "@/services/utilits";
 import {BreadcrumbItem} from "@/types";
@@ -69,6 +69,42 @@ export default async function (props: any) {
     }))
   }
 
+  const rawOtherProducts = product?.brand_id ? await findMany({
+    where: {
+      brand_id: product.brand_id,
+      enabled: true,
+      NOT: {
+        id: product.id
+      }
+    },
+    include: {
+      Images: {
+        include: {
+          Image: true
+        }
+      }
+    },
+    orderBy: {
+      created_at: 'desc'
+    },
+    take: 12
+  }) : [];
+
+  const otherProducts = (rawOtherProducts ?? [])
+    .map(item => ({
+      ...item,
+      price: `${item.price}`,
+      final_price: `${item.final_price}`,
+      Images: (item.Images ?? []).map(image => ({
+        ...image,
+        Image: image.Image ? {
+          ...image.Image,
+          src: image.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${image.Image.src}` : image.Image?.src
+        } : null
+      }))
+    }))
+    .filter(productItem => productItem.Images?.some(image => image?.Image?.src));
+
 
   const informationSettings = await getInformationSettings() as any;
 
@@ -82,6 +118,7 @@ export default async function (props: any) {
   return !!productData ?
     <ProductPage
       product={serializeObject(productData)}
+      otherProducts={serializeObject(otherProducts)}
       informationSettings={informationSettings}
       breadcrumbs={breadcrumbs}
     /> :
