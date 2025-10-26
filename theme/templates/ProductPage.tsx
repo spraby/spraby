@@ -5,7 +5,7 @@ import Image from "next/image";
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject} from "react";
 import {ProductModel, VariantModel} from "@/prisma/types";
 import Drawer from "@/theme/snippents/Drawer";
 import {AiOutlineClose} from "react-icons/ai";
@@ -40,6 +40,17 @@ const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
     />
   </svg>
 );
+
+const RECENT_PRODUCTS_STORAGE_KEY = 'spraby_recent_products';
+const MAX_RECENT_PRODUCTS = 12;
+
+const hasValidPrice = (raw?: string | null) => {
+  if (typeof raw !== 'string') return false;
+  const trimmed = raw.trim();
+  if (!trimmed.length) return false;
+  const value = Number(trimmed);
+  return Number.isFinite(value);
+};
 
 const normalizeImageSrc = (raw?: string | null) => {
   if (!raw) return null;
@@ -167,6 +178,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const [drawerMode, setDrawerMode] = useState<'order' | 'contacts'>('order');
   const [orderNumber, setOrderNumber] = useState<string>();
   const [submiting, setSubmiting] = useState(false);
+  const [recentProducts, setRecentProducts] = useState<RelatedProduct[]>([]);
 
   const handleDrawerClose = () => {
     setOpen(false);
@@ -398,15 +410,107 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return sellerName.length ? sellerName.slice(0, 2).toUpperCase() : 'S';
   }, [sellerName]);
 
-  const totalRelatedProducts = otherProductsToDisplay.length;
-  const relatedPerPage = totalRelatedProducts ? Math.min(5, totalRelatedProducts) : 1;
-  const canScrollRelated = totalRelatedProducts > relatedPerPage;
-  const relatedBreakpoints = useMemo(() => ({
-    1440: {perPage: Math.min(5, Math.max(1, totalRelatedProducts))},
-    1100: {perPage: Math.min(3, Math.max(1, totalRelatedProducts)), gap: '1.25rem'},
-    768: {perPage: Math.min(2, Math.max(1, totalRelatedProducts)), gap: '1rem'},
-    520: {perPage: Math.min(2, Math.max(1, totalRelatedProducts)), gap: '0.75rem'},
-  }), [totalRelatedProducts]);
+  const primaryImageSrc = useMemo(() => {
+    const imageFromGallery = (product.Images ?? []).find(image => image.Image?.src)?.Image?.src;
+    if (imageFromGallery) return imageFromGallery;
+    return productPreviewImage ?? '';
+  }, [product, productPreviewImage]);
+
+  const toRelatedRecentProduct = useCallback((item: RecentProductStorage): RelatedProduct | null => {
+    if (!item?.id || !item.title) return null;
+    if (!item.image) return null;
+    if (!hasValidPrice(item.final_price)) return null;
+    const normalizedSrc = normalizeImageSrc(item.image);
+    if (!normalizedSrc) return null;
+    const priceValue = hasValidPrice(item.price) ? item.price : item.final_price;
+    return {
+      id: item.id,
+      title: item.title,
+      price: priceValue,
+      final_price: item.final_price,
+      Images: [{Image: {src: normalizedSrc}}],
+    } as unknown as RelatedProduct;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(RECENT_PRODUCTS_STORAGE_KEY);
+      const stored = raw ? JSON.parse(raw) : [];
+      const entries: RecentProductStorage[] = Array.isArray(stored) ? stored.filter(Boolean) : [];
+      const currentId = String(product.id);
+      const filtered = entries.filter(item => item?.id && item.id !== currentId && item.image && hasValidPrice(item.final_price));
+
+      const finalPriceString = `${product.final_price ?? ''}`;
+      const priceString = `${product.price ?? ''}`;
+
+      const currentEntry: RecentProductStorage | null = (product?.title && primaryImageSrc && hasValidPrice(finalPriceString)) ? {
+        id: currentId,
+        title: product.title,
+        price: hasValidPrice(priceString) ? priceString : finalPriceString,
+        final_price: finalPriceString,
+        image: primaryImageSrc
+      } : null;
+
+      const nextEntries = (currentEntry ? [currentEntry, ...filtered] : filtered).slice(0, MAX_RECENT_PRODUCTS);
+      const dedupedEntries: RecentProductStorage[] = [];
+      const seenIds = new Set<string>();
+      nextEntries.forEach(entry => {
+        if (!entry?.id) return;
+        if (seenIds.has(entry.id)) return;
+        seenIds.add(entry.id);
+        dedupedEntries.push(entry);
+      });
+      window.localStorage.setItem(RECENT_PRODUCTS_STORAGE_KEY, JSON.stringify(dedupedEntries));
+      const viewable = dedupedEntries.filter(item => item.id !== currentId && item.image && hasValidPrice(item.final_price));
+      const normalized = viewable
+        .map(toRelatedRecentProduct)
+        .filter((item): item is RelatedProduct => item !== null);
+      setRecentProducts(normalized);
+    } catch (error) {
+      console.error('Failed to update recent products', error);
+    }
+  }, [product.id, product.title, product.price, product.final_price, primaryImageSrc, toRelatedRecentProduct]);
+
+  const createCarouselLayout = useCallback((total: number, minimums: CarouselMinimums = {}): CarouselLayout => {
+    const targetDesktop = Math.max(1, minimums.desktop ?? 5);
+    const targetLarge = Math.max(1, minimums.large ?? 3);
+    const targetTablet = Math.max(1, minimums.tablet ?? 2);
+    const targetMobile = Math.max(1, minimums.mobile ?? 2);
+
+    const safeTotal = Math.max(0, total);
+    const autoWidth = safeTotal > 0 && safeTotal < targetDesktop;
+
+    const desktopPerPage = autoWidth ? Math.max(1, safeTotal) : targetDesktop;
+    const largePerPage = autoWidth ? Math.max(1, Math.min(safeTotal, targetLarge)) : targetLarge;
+    const tabletPerPage = autoWidth ? Math.max(1, Math.min(safeTotal, targetTablet)) : targetTablet;
+    const mobilePerPage = autoWidth ? Math.max(1, Math.min(safeTotal, targetMobile)) : targetMobile;
+
+    const minVisible = Math.min(desktopPerPage, largePerPage, tabletPerPage, mobilePerPage);
+
+    return {
+      perPage: Math.max(1, Math.min(desktopPerPage, 5)),
+      breakpoints: {
+        1440: {perPage: Math.max(1, Math.min(desktopPerPage, 5))},
+        1100: {perPage: Math.max(1, Math.min(largePerPage, 3)), gap: '1.25rem'},
+        768: {perPage: Math.max(1, Math.min(tabletPerPage, 2)), gap: '1rem'},
+        520: {perPage: Math.max(1, Math.min(mobilePerPage, 2)), gap: '0.75rem'},
+      },
+      canScroll: safeTotal > Math.max(1, Math.min(desktopPerPage, 5)),
+      canDrag: autoWidth ? safeTotal > 1 : safeTotal > minVisible,
+      autoWidth
+    };
+  }, []);
+
+  const relatedLayout = useMemo(
+    () => createCarouselLayout(otherProductsToDisplay.length, {desktop: 5, large: 3, tablet: 2, mobile: 2}),
+    [createCarouselLayout, otherProductsToDisplay.length]
+  );
+
+  const recentLayout = useMemo(
+    () => createCarouselLayout(recentProducts.length, {desktop: 5, large: 3, tablet: 2, mobile: 2}),
+    [createCarouselLayout, recentProducts.length]
+  );
 
   const relatedCarouselRef = useRef<InstanceType<typeof Splide> | null>(null);
   const handleRelatedPrev = useCallback(() => {
@@ -415,6 +519,96 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const handleRelatedNext = useCallback(() => {
     relatedCarouselRef.current?.go('>');
   }, []);
+
+  const recentCarouselRef = useRef<InstanceType<typeof Splide> | null>(null);
+  const handleRecentPrev = useCallback(() => {
+    recentCarouselRef.current?.go('<');
+  }, []);
+  const handleRecentNext = useCallback(() => {
+    recentCarouselRef.current?.go('>');
+  }, []);
+
+  const renderProductCarousel = ({
+    title,
+    subtitle,
+    products,
+    carouselRef,
+    onPrev,
+    onNext,
+    layout,
+    groupSuffix,
+    slideKeyPrefix,
+    ariaLabel
+  }: RenderCarouselConfig) => {
+    if (!products.length) return null;
+    const canDrag = layout.canDrag;
+    const slideClassName = layout.autoWidth ? 'w-auto !basis-auto flex justify-start' : '';
+    const cardWrapperClass = layout.autoWidth
+      ? 'w-[clamp(10.25rem,16vw,12.75rem)] max-w-[12.75rem] shrink-0'
+      : 'w-full';
+    const containerPaddingClass = layout.autoWidth ? 'px-2 sm:px-4 lg:px-6' : 'px-2 sm:px-4 lg:px-6';
+    return (
+      <section className='flex flex-col gap-5 pt-4 lg:pt-6'>
+        <div className='flex flex-col gap-1'>
+          <h2 className='text-2xl font-semibold text-gray-900'>{title}</h2>
+          {subtitle && <span className='text-sm text-gray-500'>{subtitle}</span>}
+        </div>
+        <div className='relative'>
+          <Splide
+            ref={carouselRef}
+            options={{
+              perPage: layout.perPage,
+              perMove: 1,
+              gap: '1.5rem',
+              rewind: layout.canScroll,
+              pagination: false,
+              drag: canDrag ? 'free' : false,
+              arrows: false,
+              speed: 600,
+              easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)',
+              breakpoints: layout.breakpoints,
+              autoWidth: layout.autoWidth,
+              focus: layout.autoWidth ? 0 : undefined,
+              trimSpace: false,
+              padding: layout.autoWidth ? '0 0.75rem' : undefined
+            }}
+            aria-label={ariaLabel}
+            className={`group/${groupSuffix} ${containerPaddingClass}`}
+          >
+            {products.map(item => (
+              <SplideSlide key={`${slideKeyPrefix}-${String(item.id)}`} className={slideClassName}>
+                <div className={cardWrapperClass}>
+                  <ProductCart product={item}/>
+                </div>
+              </SplideSlide>
+            ))}
+          </Splide>
+          <button
+            type='button'
+            onClick={onPrev}
+            aria-label={`Предыдущие элементы раздела ${title}`}
+            className={`absolute left-0 top-[38%] -translate-y-1/2 -translate-x-1/2 sm:-translate-x-2 inline-flex h-12 w-12 items-center justify-center text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${layout.canScroll ? 'pointer-events-auto hover:text-purple-600' : 'opacity-30 pointer-events-none'}`}
+            disabled={!layout.canScroll}
+            tabIndex={layout.canScroll ? 0 : -1}
+            aria-hidden={!layout.canScroll}
+          >
+            <ArrowIcon direction='left'/>
+          </button>
+          <button
+            type='button'
+            onClick={onNext}
+            aria-label={`Следующие элементы раздела ${title}`}
+            className={`absolute right-0 top-[38%] -translate-y-1/2 translate-x-1/2 sm:translate-x-2 inline-flex h-12 w-12 items-center justify-center text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${layout.canScroll ? 'pointer-events-auto hover:text-purple-600' : 'opacity-30 pointer-events-none'}`}
+            disabled={!layout.canScroll}
+            tabIndex={layout.canScroll ? 0 : -1}
+            aria-hidden={!layout.canScroll}
+          >
+            <ArrowIcon direction='right'/>
+          </button>
+        </div>
+      </section>
+    );
+  };
 
   const compactInputClassNames = useMemo(() => ({
     input: "text-sm",
@@ -910,63 +1104,31 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         </div>
       </div>
 
-      {otherProductsToDisplay.length > 0 && (
-        <section className='flex flex-col gap-5 pt-4 lg:pt-6'>
-          <div className='flex flex-col gap-1'>
-            <h2 className='text-2xl font-semibold text-gray-900'>Другие работы продавца</h2>
-            {sellerName && (
-              <span className='text-sm text-gray-500'>{sellerName}</span>
-            )}
-          </div>
-          <div className='relative'>
-            <Splide
-              ref={relatedCarouselRef}
-              options={{
-                perPage: relatedPerPage,
-                perMove: 1,
-                gap: '1.5rem',
-                rewind: canScrollRelated,
-                pagination: false,
-                drag: canScrollRelated ? 'free' : false,
-                arrows: false,
-                speed: 600,
-                easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)',
-                breakpoints: relatedBreakpoints
-              }}
-              aria-label="Другие товары продавца"
-              className="group/related-slider px-2 sm:px-4 lg:px-6"
-            >
-              {otherProductsToDisplay.map(item => (
-                <SplideSlide key={String(item.id)}>
-                  <ProductCart product={item}/>
-                </SplideSlide>
-              ))}
-            </Splide>
-            <button
-              type="button"
-              onClick={handleRelatedPrev}
-              aria-label="Предыдущие работы продавца"
-              className={`absolute left-0 top-[38%] -translate-y-1/2 -translate-x-1/2 sm:-translate-x-2 inline-flex h-12 w-12 items-center justify-center text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${canScrollRelated ? 'pointer-events-auto hover:text-purple-600' : 'opacity-30 pointer-events-none'}`}
-              disabled={!canScrollRelated}
-              tabIndex={canScrollRelated ? 0 : -1}
-              aria-hidden={!canScrollRelated}
-            >
-              <ArrowIcon direction="left"/>
-            </button>
-            <button
-              type="button"
-              onClick={handleRelatedNext}
-              aria-label="Следующие работы продавца"
-              className={`absolute right-0 top-[38%] -translate-y-1/2 translate-x-1/2 sm:translate-x-2 inline-flex h-12 w-12 items-center justify-center text-gray-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 ${canScrollRelated ? 'pointer-events-auto hover:text-purple-600' : 'opacity-30 pointer-events-none'}`}
-              disabled={!canScrollRelated}
-              tabIndex={canScrollRelated ? 0 : -1}
-              aria-hidden={!canScrollRelated}
-            >
-              <ArrowIcon direction="right"/>
-            </button>
-          </div>
-        </section>
-      )}
+      {renderProductCarousel({
+        title: 'Другие работы продавца',
+        subtitle: sellerName || undefined,
+        products: otherProductsToDisplay,
+        carouselRef: relatedCarouselRef,
+        onPrev: handleRelatedPrev,
+        onNext: handleRelatedNext,
+        layout: relatedLayout,
+        groupSuffix: 'related-slider',
+        slideKeyPrefix: 'related',
+        ariaLabel: 'Другие товары продавца'
+      })}
+
+      {renderProductCarousel({
+        title: 'Недавно смотрели',
+        subtitle: 'Продолжите просмотр понравившихся товаров',
+        products: recentProducts,
+        carouselRef: recentCarouselRef,
+        onPrev: handleRecentPrev,
+        onNext: handleRecentNext,
+        layout: recentLayout,
+        groupSuffix: 'recent-slider',
+        slideKeyPrefix: 'recent',
+        ariaLabel: 'Недавно просмотренные товары'
+      })}
     </div>
     <Drawer open={open} onClose={handleDrawerClose} useCloseBtn={false}>
       {drawerMode === 'contacts' && contactMarkup}
@@ -979,6 +1141,44 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 type RelatedProduct = ProductModel & {
   price: string
   final_price: string
+}
+
+type RecentProductStorage = {
+  id: string
+  title: string
+  price: string
+  final_price: string
+  image?: string | null
+}
+
+type CarouselBreakpoints = Record<number, { perPage: number; gap?: string }>
+
+type CarouselMinimums = {
+  desktop?: number
+  large?: number
+  tablet?: number
+  mobile?: number
+}
+
+type CarouselLayout = {
+  perPage: number
+  breakpoints: CarouselBreakpoints
+  canScroll: boolean
+  canDrag: boolean
+  autoWidth: boolean
+}
+
+type RenderCarouselConfig = {
+  title: string
+  subtitle?: string
+  products: ProductModel[]
+  carouselRef: MutableRefObject<InstanceType<typeof Splide> | null>
+  onPrev: () => void
+  onNext: () => void
+  layout: CarouselLayout
+  groupSuffix: string
+  slideKeyPrefix: string
+  ariaLabel: string
 }
 
 type Props = {
