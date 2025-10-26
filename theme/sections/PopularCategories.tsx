@@ -13,7 +13,7 @@ type Props = {
 };
 
 const PLACEHOLDER = (
-  <div className="pointer-events-none relative mt-6 flex h-[140px] w-[70%] max-w-[180px] items-center justify-center rounded-[24px] bg-[#eceaf9] text-xs font-semibold uppercase tracking-[0.3em] text-[#d3d0ed] md:mt-10 md:h-[160px]">
+  <div className="pointer-events-none relative mt-6 flex h-[140px] w-[70%] max-w-[180px] items-center justify-center rounded-[0.375rem] bg-[#eceaf9] text-xs font-semibold uppercase tracking-[0.3em] text-[#d3d0ed] md:mt-10 md:h-[160px]">
     изображение
   </div>
 );
@@ -28,7 +28,7 @@ export default function PopularCategories({items}: Props) {
         {items.map((item) => (
           <article
             key={item.id}
-            className="group relative flex h-full min-h-[220px] flex-col justify-between rounded-[28px] bg-[#f2f1ff] px-6 py-6 text-gray-900 shadow-[0_20px_40px_-45px_rgba(118,67,212,0.35)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_25px_45px_-40px_rgba(118,67,212,0.45)] md:min-h-[240px] md:px-8 md:py-8"
+            className="group relative flex h-full min-h-[220px] flex-col justify-between rounded-[0.375rem] bg-[#f2f1ff] px-6 py-6 text-gray-900 md:min-h-[240px] md:px-8 md:py-8"
           >
             <header className="flex items-start justify-between gap-4">
               <h3 className="text-lg font-semibold md:text-xl">{item.title}</h3>

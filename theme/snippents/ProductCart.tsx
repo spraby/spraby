@@ -22,7 +22,7 @@ const ProductCart = ({product}: Props) => {
   return (
     <div className='flex flex-col gap-2 p-2' onClick={onClick}>
       <Link href={`/products/${product.id}`}>
-        <div className='relative aspect-square overflow-hidden rounded-xl border border-gray-200/60 bg-white'>
+        <div className='relative aspect-square overflow-hidden rounded-[0.375rem] border border-gray-200/60 bg-white'>
           {
             product.Images?.length &&
             <div className='relative h-full w-full'>
@@ -37,7 +37,7 @@ const ProductCart = ({product}: Props) => {
           }
           {
             hasDiscount && discountPercent > 0 && (
-              <span className='absolute right-2 top-2 inline-flex items-center rounded-lg bg-purple-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm'>
+              <span className='absolute right-2 top-2 inline-flex items-center rounded-[0.375rem] bg-purple-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm'>
                 -{discountPercent}%
               </span>
             )

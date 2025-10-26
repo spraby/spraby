@@ -68,7 +68,7 @@ export async function getProductsOnTrend() {
         _count: 'desc'
       }
     },
-    take: 12
+    take: 32
   });
 
   const topProductIds = productViewCounts.map(i => i.id);
@@ -91,7 +91,34 @@ export async function getProductsOnTrend() {
 
   const productsMap = new Map(products.map(p => [p.id, p]));
   const sortedProducts = topProductIds.map(id => productsMap.get(id)).filter(Boolean) as ProductModel[];
-  return sortedProducts.map(product => {
+
+  let limitedProducts = sortedProducts.slice(0, 14);
+
+  if (limitedProducts.length < 14) {
+    const fallbackProducts = await findMany({
+      where: {
+        enabled: true,
+        id: {
+          notIn: limitedProducts.map(product => product.id)
+        }
+      },
+      include: {
+        Images: {
+          include: {
+            Image: true
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      },
+      take: 14 - limitedProducts.length
+    });
+
+    limitedProducts = [...limitedProducts, ...fallbackProducts];
+  }
+
+  return limitedProducts.slice(0, 14).map(product => {
     return {
       ...product,
       price: `${product.price}`,
@@ -105,6 +132,38 @@ export async function getProductsOnTrend() {
       }))
     }
   }) as (ProductModel & { price: string; final_price: string })[]
+}
+
+export async function getLatestProducts(limit = 15) {
+  const products = await findMany({
+    where: {
+      enabled: true
+    },
+    orderBy: {
+      created_at: 'desc'
+    },
+    take: limit + 20,
+    include: {
+      Images: {
+        include: {
+          Image: true
+        }
+      }
+    }
+  });
+
+  return products.map(product => ({
+    ...product,
+    price: `${product.price}`,
+    final_price: `${product.final_price}`,
+    Images: product.Images?.map(i => ({
+      ...i,
+      Image: {
+        ...i.Image,
+        src: i.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${i.Image.src}` : i.Image?.src
+      }
+    }))
+  })).slice(0, limit) as (ProductModel & { price: string; final_price: string })[];
 }
 
 
