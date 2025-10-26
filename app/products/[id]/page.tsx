@@ -78,6 +78,11 @@ export default async function (props: any) {
       }
     },
     include: {
+      Brand: {
+        include: {
+          User: true
+        }
+      },
       Images: {
         include: {
           Image: true

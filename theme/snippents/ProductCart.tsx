@@ -18,6 +18,12 @@ const ProductCart = ({product}: Props) => {
   const discountPercent = hasDiscount
     ? Math.round((1 - Number(product.final_price) / Number(product.price)) * 100)
     : 0;
+  const brandName =
+    (product.Brand?.name && product.Brand.name.trim()) ||
+    [product.Brand?.User?.first_name, product.Brand?.User?.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
 
   return (
     <div className='flex flex-col gap-2 p-2' onClick={onClick}>
@@ -44,12 +50,16 @@ const ProductCart = ({product}: Props) => {
           }
         </div>
       </Link>
-      <div className='flex flex-col'>
-        <h3 className='text-sm'>
-          <Link href={`/products/${product.id}`}> {product.title} </Link>
+      <div className='flex flex-col gap-1'>
+        <h3 className='text-sm font-medium text-gray-900'>
+          <Link className='block truncate' href={`/products/${product.id}`}>{product.title}</Link>
         </h3>
         {
-          <div className='flex gap-2 items-baseline'>
+          !!brandName &&
+          <p className='text-xs text-gray-500 truncate'>{brandName}</p>
+        }
+        {
+          <div className='mt-1 flex items-baseline gap-2'>
             <span className='text-base font-semibold text-purple-500'>{+product.final_price} BYN</span>
             {
               +product.price > +product.final_price &&

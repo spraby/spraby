@@ -81,6 +81,11 @@ export async function getProductsOnTrend() {
       }
     },
     include: {
+      Brand: {
+        include: {
+          User: true
+        }
+      },
       Images: {
         include: {
           Image: true
@@ -103,6 +108,11 @@ export async function getProductsOnTrend() {
         }
       },
       include: {
+        Brand: {
+          include: {
+            User: true
+          }
+        },
         Images: {
           include: {
             Image: true
@@ -144,6 +154,11 @@ export async function getLatestProducts(limit = 15) {
     },
     take: limit + 20,
     include: {
+      Brand: {
+        include: {
+          User: true
+        }
+      },
       Images: {
         include: {
           Image: true
