@@ -191,6 +191,15 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     ? Math.round((1 - Number(product.final_price) / Number(product.price)) * 100)
     : 0;
 
+  const brandDisplayName = useMemo(() => {
+    const rawBrandName = typeof product.Brand?.name === 'string' ? product.Brand.name.trim() : '';
+    if (rawBrandName.length) return rawBrandName;
+    const firstName = typeof product.Brand?.User?.first_name === 'string' ? product.Brand.User.first_name.trim() : '';
+    const lastName = typeof product.Brand?.User?.last_name === 'string' ? product.Brand.User.last_name.trim() : '';
+    const combined = [firstName, lastName].filter(Boolean).join(' ').trim();
+    return combined.length ? combined : null;
+  }, [product.Brand?.User?.first_name, product.Brand?.User?.last_name, product.Brand?.name]);
+
   const {
     register,
     handleSubmit,
@@ -423,12 +432,18 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     const normalizedSrc = normalizeImageSrc(item.image);
     if (!normalizedSrc) return null;
     const priceValue = hasValidPrice(item.price) ? item.price : item.final_price;
+    const normalizedBrand = typeof item.brand === 'string' ? item.brand.trim() : '';
     return {
       id: item.id,
       title: item.title,
       price: priceValue,
       final_price: item.final_price,
       Images: [{Image: {src: normalizedSrc}}],
+      ...(normalizedBrand.length ? {
+        Brand: {
+          name: normalizedBrand
+        }
+      } : {})
     } as unknown as RelatedProduct;
   }, []);
 
@@ -449,7 +464,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         title: product.title,
         price: hasValidPrice(priceString) ? priceString : finalPriceString,
         final_price: finalPriceString,
-        image: primaryImageSrc
+        image: primaryImageSrc,
+        brand: brandDisplayName ?? null
       } : null;
 
       const nextEntries = (currentEntry ? [currentEntry, ...filtered] : filtered).slice(0, MAX_RECENT_PRODUCTS);
@@ -470,7 +486,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     } catch (error) {
       console.error('Failed to update recent products', error);
     }
-  }, [product.id, product.title, product.price, product.final_price, primaryImageSrc, toRelatedRecentProduct]);
+  }, [brandDisplayName, product.id, product.title, product.price, product.final_price, primaryImageSrc, toRelatedRecentProduct]);
 
   const createCarouselLayout = useCallback((total: number, minimums: CarouselMinimums = {}): CarouselLayout => {
     const targetDesktop = Math.max(1, minimums.desktop ?? 5);
@@ -1149,6 +1165,7 @@ type RecentProductStorage = {
   price: string
   final_price: string
   image?: string | null
+  brand?: string | null
 }
 
 type CarouselBreakpoints = Record<number, { perPage: number; gap?: string }>
