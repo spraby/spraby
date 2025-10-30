@@ -1,5 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
+import {handlePrismaError} from "@/prisma/safeCall";
 import {cookies} from "next/headers";
 
 /**
@@ -10,18 +11,24 @@ const setEvent = async (params: {
   product_id: bigint,
   client_id: string,
   type: 'view' | 'click' | 'add_to_cart'
-}) => db.productStatistics.upsert({
-  where: {
-    statistics: params
-  },
-  create: {
-    ...params,
-    geo: {}
-  },
-  update: {
-    geo: {},
+}) => {
+  try {
+    await db.productStatistics.upsert({
+      where: {
+        statistics: params
+      },
+      create: {
+        ...params,
+        geo: {}
+      },
+      update: {
+        geo: {},
+      }
+    });
+  } catch (error) {
+    handlePrismaError<void>(error, undefined, 'productStatistics.setEvent');
   }
-});
+};
 
 
 export async function setStatistic(productId: bigint, type: 'view' | 'click' | 'add_to_cart') {

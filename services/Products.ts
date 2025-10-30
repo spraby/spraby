@@ -1,5 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
+import {handlePrismaError, safePrismaCall} from "@/prisma/safeCall";
 import Prisma, {ProductModel} from "@/prisma/types";
 import type {ProductSort} from "@/types";
 
@@ -8,7 +9,11 @@ import type {ProductSort} from "@/types";
  * @param params
  */
 export async function findFirst(params?: Prisma.productsFindFirstArgs): Promise<ProductModel | null> {
-  return db.products.findFirst(params)
+  try {
+    return await db.products.findFirst(params);
+  } catch (error) {
+    return handlePrismaError<ProductModel | null>(error, null, 'products.findFirst');
+  }
 }
 
 /**
@@ -16,7 +21,11 @@ export async function findFirst(params?: Prisma.productsFindFirstArgs): Promise<
  * @param params
  */
 export async function findMany(params?: Prisma.productsFindManyArgs): Promise<ProductModel[]> {
-  return db.products.findMany(params)
+  try {
+    return await db.products.findMany(params);
+  } catch (error) {
+    return handlePrismaError<ProductModel[]>(error, [], 'products.findMany');
+  }
 }
 
 /**
@@ -25,86 +34,95 @@ export async function findMany(params?: Prisma.productsFindManyArgs): Promise<Pr
  * @param conditions
  */
 export async function getPage(params = {limit: 10, page: 1, search: ''}, conditions?: Prisma.productsFindManyArgs) {
-  const where = {
-    ...(conditions?.where ?? {}),
-    ...(params?.search?.length ? {title: {contains: params.search, mode: 'insensitive'}} : {})
-  } as Prisma.productsWhereInput
+  const normalized = {
+    limit: params?.limit ?? 10,
+    page: params?.page ?? 1,
+    search: params?.search ?? ''
+  };
 
-  conditions = conditions ? {...conditions, ...(Object.keys(where).length ? {where} : {})} : (Object.keys(where).length ? {where} : {})
+  const fallback = {
+    items: [] as ProductModel[],
+    paginator: {
+      pageSize: normalized.limit,
+      current: normalized.page,
+      total: 0,
+      pages: 0
+    }
+  };
 
-  const total = await db.products.count({where: where})
+  try {
+    const where = {
+      ...(conditions?.where ?? {}),
+      ...(normalized.search.length ? {title: {contains: normalized.search, mode: 'insensitive'}} : {})
+    } as Prisma.productsWhereInput;
 
-  const items = await db.products.findMany({
-    orderBy: {
-      created_at: 'desc',
-    },
-    ...conditions,
-    skip: (params.page - 1) * params.limit,
-    take: params.limit,
-  })
+    const mergedConditions = conditions
+      ? {...conditions, ...(Object.keys(where).length ? {where} : {})}
+      : (Object.keys(where).length ? {where} : {});
 
-  return {
-    items,
-    paginator: {pageSize: params.limit, current: params.page, total, pages: Math.ceil(total / params.limit)},
+    const total = await safePrismaCall(
+      () => db.products.count({where}),
+      0,
+      'products.getPage.count'
+    );
+
+    const items = await findMany({
+      orderBy: {
+        created_at: 'desc',
+      },
+      ...mergedConditions,
+      skip: (normalized.page - 1) * normalized.limit,
+      take: normalized.limit,
+    });
+
+    return {
+      items,
+      paginator: {
+        pageSize: normalized.limit,
+        current: normalized.page,
+        total,
+        pages: normalized.limit ? Math.ceil(total / normalized.limit) : 0
+      },
+    };
+  } catch (error) {
+    return handlePrismaError(error, fallback, 'products.getPage');
   }
 }
 
 export async function getProductsOnTrend() {
-  const productViewCounts = await db.products.findMany({
-    select: {
-      id: true,
-      _count: {
+  try {
+    const productViewCounts = await safePrismaCall(
+      () => db.products.findMany({
         select: {
-          Statistics: {
-            where: {
-              type: 'view'
+          id: true,
+          _count: {
+            select: {
+              Statistics: {
+                where: {
+                  type: 'view'
+                }
+              }
             }
           }
-        }
-      }
-    },
-    orderBy: {
-      Statistics: {
-        _count: 'desc'
-      }
-    },
-    take: 32
-  });
+        },
+        orderBy: {
+          Statistics: {
+            _count: 'desc'
+          }
+        },
+        take: 32
+      }),
+      [],
+      'products.getProductsOnTrend.viewCounts'
+    );
 
-  const topProductIds = productViewCounts.map(i => i.id);
+    const topProductIds = productViewCounts.map(i => i.id);
 
-  const products = await findMany({
-    where: {
-      enabled: true,
-      id: {
-        in: topProductIds
-      }
-    },
-    include: {
-      Brand: {
-        include: {
-          User: true
-        }
-      },
-      Images: {
-        include: {
-          Image: true
-        }
-      },
-    },
-  });
-
-  const productsMap = new Map(products.map(p => [p.id, p]));
-  const sortedProducts = topProductIds.map(id => productsMap.get(id)).filter(Boolean) as ProductModel[];
-
-  let limitedProducts = sortedProducts.slice(0, 14);
-
-  if (limitedProducts.length < 14) {
-    const fallbackProducts = await findMany({
+    const products = await findMany({
       where: {
         enabled: true,
         id: {
-          notIn: limitedProducts.map(product => product.id)
+          in: topProductIds
         }
       },
       include: {
@@ -117,19 +135,88 @@ export async function getProductsOnTrend() {
           include: {
             Image: true
           }
-        }
+        },
+      },
+    });
+
+    const productsMap = new Map(products.map(p => [p.id, p]));
+    const sortedProducts = topProductIds.map(id => productsMap.get(id)).filter(Boolean) as ProductModel[];
+
+    let limitedProducts = sortedProducts.slice(0, 14);
+
+    if (limitedProducts.length < 14) {
+      const fallbackProducts = await findMany({
+        where: {
+          enabled: true,
+          id: {
+            notIn: limitedProducts.map(product => product.id)
+          }
+        },
+        include: {
+          Brand: {
+            include: {
+              User: true
+            }
+          },
+          Images: {
+            include: {
+              Image: true
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        },
+        take: 14 - limitedProducts.length
+      });
+
+      limitedProducts = [...limitedProducts, ...fallbackProducts];
+    }
+
+    return limitedProducts.slice(0, 14).map(product => {
+      return {
+        ...product,
+        price: `${product.price}`,
+        final_price: `${product.final_price}`,
+        Images: product.Images?.map(i => ({
+          ...i,
+          Image: {
+            ...i.Image,
+            src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
+          }
+        }))
+      };
+    }) as (ProductModel & { price: string; final_price: string })[];
+  } catch (error) {
+    return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getProductsOnTrend');
+  }
+}
+
+export async function getLatestProducts(limit = 15) {
+  try {
+    const products = await findMany({
+      where: {
+        enabled: true
       },
       orderBy: {
         created_at: 'desc'
       },
-      take: 14 - limitedProducts.length
+      take: limit + 20,
+      include: {
+        Brand: {
+          include: {
+            User: true
+          }
+        },
+        Images: {
+          include: {
+            Image: true
+          }
+        }
+      }
     });
 
-    limitedProducts = [...limitedProducts, ...fallbackProducts];
-  }
-
-  return limitedProducts.slice(0, 14).map(product => {
-    return {
+    return products.map(product => ({
       ...product,
       price: `${product.price}`,
       final_price: `${product.final_price}`,
@@ -137,48 +224,13 @@ export async function getProductsOnTrend() {
         ...i,
         Image: {
           ...i.Image,
-          src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
+          src: i.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${i.Image.src}` : i.Image?.src
         }
       }))
-    }
-  }) as (ProductModel & { price: string; final_price: string })[]
-}
-
-export async function getLatestProducts(limit = 15) {
-  const products = await findMany({
-    where: {
-      enabled: true
-    },
-    orderBy: {
-      created_at: 'desc'
-    },
-    take: limit + 20,
-    include: {
-      Brand: {
-        include: {
-          User: true
-        }
-      },
-      Images: {
-        include: {
-          Image: true
-        }
-      }
-    }
-  });
-
-  return products.map(product => ({
-    ...product,
-    price: `${product.price}`,
-    final_price: `${product.final_price}`,
-    Images: product.Images?.map(i => ({
-      ...i,
-      Image: {
-        ...i.Image,
-        src: i.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${i.Image.src}` : i.Image?.src
-      }
-    }))
-  })).slice(0, limit) as (ProductModel & { price: string; final_price: string })[];
+    })).slice(0, limit) as (ProductModel & { price: string; final_price: string })[];
+  } catch (error) {
+    return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getLatestProducts');
+  }
 }
 
 
@@ -194,7 +246,6 @@ export type PaginatedProducts = {
 };
 
 export async function getFilteredProducts(filter: Filter): Promise<PaginatedProducts> {
-
   const orderBy: Prisma.productsOrderByWithRelationInput = (() => {
     switch (filter.sort) {
       case 'oldest':
@@ -212,127 +263,136 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
   const page = filter.page && filter.page > 0 ? filter.page : 1;
   const take = filter.limit && filter.limit > 0 ? filter.limit : undefined;
 
-  const where: Prisma.productsWhereInput = {
-    enabled: true,
+  const fallback: PaginatedProducts = {
+    items: [],
+    total: 0,
+    page,
+    pageSize: take ?? 0,
+  };
 
-    Category: {
-      ...(!!filter?.categoryHandles?.length ? {
-        handle: {
-          in: filter.categoryHandles
-        }
-      } : {}),
-      ...(!!filter?.collectionHandles?.length ? {
-        CategoryCollection: {
-          some: {
-            Collection: {
-              handle: {
-                in: filter.collectionHandles,
-              },
-            },
+  try {
+    const where: Prisma.productsWhereInput = {
+      enabled: true,
+      Category: {
+        ...(filter?.categoryHandles?.length ? {
+          handle: {
+            in: filter.categoryHandles
           }
-        },
-      } : {}),
-      ...(!!filter?.options?.length ? {
-        CategoryOption: {
-          some: {
-            Option: {
-              id: {
-                in: filter.options.map(i => +i.optionId)
+        } : {}),
+        ...(filter?.collectionHandles?.length ? {
+          CategoryCollection: {
+            some: {
+              Collection: {
+                handle: {
+                  in: filter.collectionHandles,
+                },
+              },
+            }
+          },
+        } : {}),
+        ...(filter?.options?.length ? {
+          CategoryOption: {
+            some: {
+              Option: {
+                id: {
+                  in: filter.options.map(i => +i.optionId)
+                }
               }
             }
           }
-        }
-      } : {}),
-    },
-
-    ...(!!filter?.options?.length ? {
-      Variants: {
-        some: {
-          AND: filter.options.map(i => ({
-            VariantValue: {
-              some: {
-                Value: {
-                  option_id: +i.optionId,
-                  value: {
-                    in: i.values
+        } : {}),
+      },
+      ...(filter?.options?.length ? {
+        Variants: {
+          some: {
+            enabled: true,
+            AND: filter.options.map(option => ({
+              VariantValue: {
+                some: {
+                  Value: {
+                    option_id: +option.optionId,
+                    value: {
+                      in: option.values
+                    }
                   }
                 }
               }
-            },
-            enabled: true,
-          }))
-        }
-      }
-    } : {})
-  };
-
-  const [products, total] = await Promise.all([
-    findMany({
-      where,
-      include: {
-        Brand: {
-          include: {
-            User: true
-          }
-        },
-        Category: {
-          include: {
-            CategoryOption: {
-              include: {
-                Option: true
-              }
-            }
-          }
-        },
-        Variants: {
-          include: {
-            Image: true,
-            VariantValue: {
-              include: {
-                Value: true,
-                Option: true
-              }
-            }
-          }
-        },
-        Images: {
-          include: {
-            Image: true
+            }))
           }
         }
-      },
-      orderBy,
-      ...(take ? {skip: (page - 1) * take, take} : {}),
-    }),
-    db.products.count({where}),
-  ]);
-
-  const mappedProducts = products.map(product => {
-    return {
-      ...product,
-      price: `${product.price}`,
-      final_price: `${product.final_price}`,
-      Variants: product.Variants?.map(v => ({
-        ...v,
-        price: `${v.price}`,
-        final_price: `${v.final_price}`
-      })),
-      Images: product.Images?.map(i => ({
-        ...i,
-        Image: {
-          ...i.Image,
-          src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
-        }
-      }))
+      } : {}),
     };
-  }) as (ProductModel & { price: string; final_price: string })[];
 
-  return {
-    items: mappedProducts,
-    total,
-    page,
-    pageSize: take ?? mappedProducts.length,
-  };
+    const [products, total] = await Promise.all([
+      findMany({
+        where,
+        include: {
+          Brand: {
+            include: {
+              User: true
+            }
+          },
+          Category: {
+            include: {
+              CategoryOption: {
+                include: {
+                  Option: true
+                }
+              }
+            }
+          },
+          Variants: {
+            include: {
+              Image: true,
+              VariantValue: {
+                include: {
+                  Value: true,
+                  Option: true
+                }
+              }
+            }
+          },
+          Images: {
+            include: {
+              Image: true
+            }
+          }
+        },
+        orderBy,
+        ...(take ? {skip: (page - 1) * take, take} : {}),
+      }),
+      safePrismaCall(() => db.products.count({where}), 0, 'products.getFilteredProducts.count'),
+    ]);
+
+    const mappedProducts = products.map(product => {
+      return {
+        ...product,
+        price: `${product.price}`,
+        final_price: `${product.final_price}`,
+        Variants: product.Variants?.map(v => ({
+          ...v,
+          price: `${v.price}`,
+          final_price: `${v.final_price}`
+        })),
+        Images: product.Images?.map(i => ({
+          ...i,
+          Image: {
+            ...i.Image,
+            src: process.env.AWS_IMAGE_DOMAIN + '/' + i.Image?.src
+          }
+        }))
+      };
+    }) as (ProductModel & { price: string; final_price: string })[];
+
+    return {
+      items: mappedProducts,
+      total,
+      page,
+      pageSize: take ?? mappedProducts.length,
+    };
+  } catch (error) {
+    return handlePrismaError(error, fallback, 'products.getFilteredProducts');
+  }
 }
 
 type Filter = {
