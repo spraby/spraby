@@ -1,12 +1,22 @@
+'use client'
+
 import Link from "next/link";
+import {useMemo} from "react";
 import SearchIcon from "@/theme/assets/SearchIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
 import CartIcon from "@/theme/assets/CartIcon";
 import Menu from "@/theme/snippents/Menu";
 import {MenuItem} from "@/types";
 import MobileMenu from "@/theme/snippents/MobileMenu";
+import {useFavorites} from "@/theme/hooks/useFavorites";
 
 const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
+  const {count, ready} = useFavorites();
+  const showBadge = ready && count > 0;
+  const displayCount = useMemo(() => {
+    if (!showBadge) return '';
+    return count > 99 ? '99+' : String(count);
+  }, [count, showBadge]);
 
   return (
     <div className='shadow-lg shadow-slate-200'>
@@ -44,11 +54,18 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
               </div>
 
               <div className='flex items-center gap-4 text-gray-500'>
-                <button
+                <Link
+                  href='/favorites'
                   aria-label='Открыть избранное'
-                  className='h-10 w-10 rounded-full border border-gray-200 p-2 transition hover:border-purple-200 hover:text-purple-600'>
-                  <HeardIcon/>
-                </button>
+                  className='relative flex h-10 w-10 items-center justify-center rounded-full p-2 transition hover:bg-gray-100 hover:text-purple-600'
+                >
+                  <HeardIcon color={showBadge ? '#db2777' : undefined} filled={showBadge}/>
+                  {showBadge && (
+                    <span className='absolute -top-1 -right-1 inline-flex min-h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full bg-purple-600 px-1 text-[0.65rem] font-semibold text-white'>
+                      {displayCount}
+                    </span>
+                  )}
+                </Link>
                 <button
                   aria-label='Открыть корзину'
                   className='h-10 w-10 rounded-full border border-gray-200 p-2 transition hover:border-purple-200 hover:text-purple-600'>

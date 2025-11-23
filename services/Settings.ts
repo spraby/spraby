@@ -1,21 +1,30 @@
 'use server'
 import db from "@/prisma/db.client";
+import {handlePrismaError} from "@/prisma/safeCall";
 import {BreadcrumbItem, MenuItem} from "@/types";
 
 /**
  *
  */
-export async function getMainMenu(): Promise<any | null> {
-  const settings = await db.settings.findUnique({where: {key: 'menu'}});
-  return settings?.data ?? [];
+export async function getMainMenu(): Promise<MenuItem[]> {
+  try {
+    const settings = await db.settings.findUnique({where: {key: 'menu'}});
+    return (settings?.data as MenuItem[]) ?? [];
+  } catch (error) {
+    return handlePrismaError<MenuItem[]>(error, [], 'settings.getMainMenu');
+  }
 }
 
 /**
  *
  */
-export async function getInformationSettings(): Promise<any | null> {
-  const settings = await db.settings.findUnique({where: {key:'information'}});
-  return settings?.data ?? {};
+export async function getInformationSettings(): Promise<Record<string, unknown>> {
+  try {
+    const settings = await db.settings.findUnique({where: {key: 'information'}});
+    return (settings?.data as Record<string, unknown>) ?? {};
+  } catch (error) {
+    return handlePrismaError<Record<string, unknown>>(error, {}, 'settings.getInformationSettings');
+  }
 }
 
 export async function getBreadcrumbs(currentUrl: string): Promise<any | null> {
@@ -42,4 +51,3 @@ export async function getBreadcrumbs(currentUrl: string): Promise<any | null> {
 
   return [homeCrumb, ...breadcrumbs];
 }
-

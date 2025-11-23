@@ -15,6 +15,7 @@ import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
 import {Accordion, AccordionItem, Snippet} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
+import HeardIcon from "@/theme/assets/HeardIcon";
 import Price from "@/theme/snippents/Price";
 import {create} from "@/services/Orders";
 import {setStatistic} from "@/services/ProductStatistics";
@@ -22,6 +23,7 @@ import {differenceInMonths, format} from "date-fns";
 import {BreadcrumbItem} from "@/types";
 import ProductCart from "@/theme/snippents/ProductCart";
 import {Splide, SplideSlide} from "react-splide-ts";
+import {useFavorites} from "@/theme/hooks/useFavorites";
 import '@splidejs/react-splide/css';
 
 const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
@@ -179,6 +181,11 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const [orderNumber, setOrderNumber] = useState<string>();
   const [submiting, setSubmiting] = useState(false);
   const [recentProducts, setRecentProducts] = useState<RelatedProduct[]>([]);
+  const {
+    toggleFavorite,
+    isFavorite: isFavoriteProduct,
+    ready: favoritesReady
+  } = useFavorites();
 
   const handleDrawerClose = () => {
     setOpen(false);
@@ -424,6 +431,38 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     if (imageFromGallery) return imageFromGallery;
     return productPreviewImage ?? '';
   }, [product, productPreviewImage]);
+
+  const favoriteProductData = useMemo(() => {
+    const id = toIdString(product.id);
+    const title = typeof product.title === 'string' ? product.title.trim() : '';
+    const rawFinalPrice = `${product.final_price ?? ''}`.trim();
+    const rawPrice = `${product.price ?? ''}`.trim();
+    const finalPrice = rawFinalPrice.length ? rawFinalPrice : rawPrice;
+    if (!id || !title.length || !finalPrice.length) return null;
+    const imageCandidate = productPreviewImage ?? primaryImageSrc ?? null;
+    return {
+      id,
+      title,
+      finalPrice,
+      price: rawPrice.length ? rawPrice : null,
+      image: imageCandidate,
+      brand: brandDisplayName ?? null,
+      productUrl: `/products/${id}`
+    };
+  }, [brandDisplayName, primaryImageSrc, product.final_price, product.id, product.price, product.title, productPreviewImage]);
+
+  const isInFavorites = useMemo(() => {
+    if (!favoriteProductData) return false;
+    return isFavoriteProduct(favoriteProductData.id);
+  }, [favoriteProductData, isFavoriteProduct]);
+
+  const favoriteButtonLabel = isInFavorites ? 'Убрать из избранного' : 'Добавить в избранное';
+  const favoriteButtonDisabled = !favoriteProductData || !favoritesReady;
+
+  const handleToggleFavorite = useCallback(() => {
+    if (!favoriteProductData) return;
+    toggleFavorite(favoriteProductData);
+  }, [favoriteProductData, toggleFavorite]);
 
   const toRelatedRecentProduct = useCallback((item: RecentProductStorage): RelatedProduct | null => {
     if (!item?.id || !item.title) return null;
@@ -991,7 +1030,20 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           </div>
         </div>
         <div className='order-2 lg:order-2 flex flex-col gap-7 lg:col-span-5 xl:col-span-5'>
-          <h2 className='text-2xl font-semibold text-gray-900 sm:text-3xl'>{product.title}</h2>
+          <div className='flex items-start justify-between gap-4'>
+            <h2 className='text-2xl font-semibold text-gray-900 sm:text-3xl'>{product.title}</h2>
+            <button
+              type='button'
+              onClick={handleToggleFavorite}
+              disabled={favoriteButtonDisabled}
+              aria-label={favoriteButtonLabel}
+              aria-pressed={isInFavorites}
+              title={favoriteButtonLabel}
+              className='flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 p-2 text-gray-500 transition hover:bg-gray-200 hover:text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              <HeardIcon color={isInFavorites ? '#db2777' : '#272738'} filled={isInFavorites}/>
+            </button>
+          </div>
           <Price finalPrice={+product.final_price} price={+product.price}/>
           {tags.length > 0 && (
             <div className='flex flex-col gap-2'>
