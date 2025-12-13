@@ -44,8 +44,8 @@ export default function OrderPage({order}: Props) {
         </h1>
 
         <div className='w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6'>
-          <div className='flex flex-col gap-6 lg:flex-row'>
-            <div className='flex flex-col items-center justify-between gap-5 md:h-auto md:w-full md:flex-row lg:flex-col'>
+          <div className='flex flex-col gap-6'>
+            <div className='flex flex-row items-center justify-between gap-3'>
               {
                 statuses.map(({isActive}, index) => {
                   const color = isActive ? 'bg-blue-500' : 'bg-gray-300';
@@ -54,25 +54,25 @@ export default function OrderPage({order}: Props) {
                   return (
                     <div
                       key={`status-node-${index}`}
-                      className='flex h-full w-[15px] flex-col items-center justify-center md:h-auto md:w-full md:flex-row lg:w-[18px]'>
+                      className='flex w-full flex-row items-center justify-center'>
                       <div
-                        className={`mb-2 h-1/2 w-[5px] md:mb-0 md:mr-2 md:h-[5px] md:w-1/2 ${showFirstHalf ? color : 'bg-transparent'}`}/>
-                      <div className={`h-[15px] w-[15px] min-h-[15px] min-w-[15px] rounded-full ${color}`}/>
+                        className={`h-[3px] w-full ${showFirstHalf ? color : 'bg-transparent'}`}/>
+                      <div className={`h-[18px] w-[18px] min-h-[18px] min-w-[18px] rounded-full ${color}`}/>
                       <div
-                        className={`mt-2 h-1/2 w-[5px] md:ml-2 md:mt-0 md:h-[5px] md:w-1/2 ${showSecondHalf ? color : 'bg-transparent'}`}/>
+                        className={`h-[3px] w-full ${showSecondHalf ? color : 'bg-transparent'}`}/>
                     </div>
                   );
                 })
               }
             </div>
             <div
-              className='mt-6 flex flex-col gap-5 md:h-auto md:w-full md:flex-row md:items-start md:justify-between md:gap-6 lg:mt-0'>
+              className='flex flex-col gap-4 sm:flex-row sm:justify-between'>
               {
                 statuses.map(status => {
                   return (
                     <div
                       key={status.name}
-                      className='flex min-h-[90px] flex-1 flex-col items-start justify-center gap-2 text-left md:min-h-min md:items-center md:text-center'>
+                      className='flex flex-1 flex-col items-start gap-1 sm:items-center sm:text-center'>
                       <div className='text-base font-semibold text-gray-900'>{status.name}</div>
                       <p className='text-sm text-gray-500'>{status.description}</p>
                     </div>
