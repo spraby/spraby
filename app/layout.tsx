@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 import '../styles/index.scss';
-import ThemeLayout from "@/theme/layouts/ThemeLayout";
 import {getMainMenu} from "@/services/Settings";
+import AppShell from "@/theme/layouts/AppShell";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -14,9 +14,9 @@ export default async function RootLayout({children}: Readonly<{ children: React.
   return (
     <html lang="en">
     <body>
-    <ThemeLayout menu={menu}>
+    <AppShell menu={menu}>
       {children}
-    </ThemeLayout>
+    </AppShell>
     </body>
     </html>
   );

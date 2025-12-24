@@ -44,11 +44,11 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
             <div className='flex items-center gap-4 lg:gap-8'>
               <div className='hidden items-center gap-2 text-sm font-semibold text-gray-700 lg:flex'>
-                <Link href='#' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
+                <Link href='/register' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
                   Регистрация
                 </Link>
                 <div className='h-4 w-px bg-gray-200'/>
-                <Link href='#' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
+                <Link href='/login' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
                   Войти
                 </Link>
               </div>
