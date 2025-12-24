@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import {MenuItem} from "@/types";
-import {Fragment, useMemo, useState} from "react";
+import {Fragment, useEffect, useMemo, useState} from "react";
 import {useBodyScrollLock} from "@/theme/hooks/useBodyScrollLock";
+import {useRouter} from "next/navigation";
 
 type MobileMenuProps = {
   menu: MenuItem[];
@@ -12,6 +13,10 @@ type MobileMenuProps = {
 export default function MobileMenu({menu}: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [trail, setTrail] = useState<MenuItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [openSuggest, setOpenSuggest] = useState(false);
+  const [suggestions, setSuggestions] = useState<{loading: boolean; items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>}>({loading: false, items: []});
+  const router = useRouter();
 
   const currentItems = useMemo(() => {
     if (!trail.length) return menu;
@@ -28,6 +33,7 @@ export default function MobileMenu({menu}: MobileMenuProps) {
   const handleClose = () => {
     setTrail([]);
     setIsOpen(false);
+    setOpenSuggest(false);
   };
 
   const handleBack = () => {
@@ -39,6 +45,46 @@ export default function MobileMenu({menu}: MobileMenuProps) {
       setTrail((prev) => [...prev, item]);
     }
   };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = search.trim();
+    router.push(query ? `/search?q=${encodeURIComponent(query)}` : '/search');
+    setOpenSuggest(false);
+    handleClose();
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const query = search.trim();
+    if (query.length < 2) {
+      setSuggestions((prev) => ({...prev, items: []}));
+      setOpenSuggest(false);
+      return;
+    }
+    let isActive = true;
+    setSuggestions((prev) => ({...prev, loading: true}));
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=12`, {signal: controller.signal});
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: {items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>} = await res.json();
+        if (!isActive) return;
+        setSuggestions({loading: false, items: data.items ?? []});
+        setOpenSuggest(true);
+      } catch (err) {
+        if (!isActive || (err instanceof DOMException && err.name === "AbortError")) return;
+        setSuggestions({loading: false, items: []});
+        setOpenSuggest(false);
+      }
+    }, 200);
+
+    return () => {
+      isActive = false;
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [search]);
 
   const activeCategory = trail[trail.length - 1];
   const isRoot = !trail.length;
@@ -67,7 +113,7 @@ export default function MobileMenu({menu}: MobileMenuProps) {
           aria-modal="true"
           aria-label="Навигация по каталогу"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
+          <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-4 py-3">
             <div className="flex items-center gap-1">
               {!isRoot && (
                 <button
@@ -96,14 +142,83 @@ export default function MobileMenu({menu}: MobileMenuProps) {
 
           <div className="border-b border-gray-100 px-4 py-3">
             <label className="sr-only" htmlFor="mobile-menu-search">Поиск по каталогу</label>
-            <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3">
-              <SearchIcon/>
-              <input
-                id="mobile-menu-search"
-                placeholder="Найти товар или категорию"
-                className="ml-2 h-10 flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
-                type="search"
-              />
+            <div className="relative">
+              <form
+                onSubmit={handleSearchSubmit}
+                className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3"
+              >
+                <SearchIcon/>
+                <input
+                  id="mobile-menu-search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => suggestions.items.length && setOpenSuggest(true)}
+                  placeholder="Найти товар или категорию"
+                  className="ml-2 h-10 flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
+                  type="search"
+                />
+                <button
+                  type="submit"
+                  className="ml-2 rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-purple-700"
+                >
+                  Найти
+                </button>
+              </form>
+
+              {openSuggest && (suggestions.loading || suggestions.items.length > 0) && (
+                <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl shadow-slate-300/30">
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {suggestions.loading && (
+                      <div className="px-4 py-3 text-sm text-gray-500">Ищем…</div>
+                    )}
+                    {!suggestions.loading && suggestions.items.map((item) => {
+                      const hasDiscount = Number(item.final_price) < Number(item.price);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            router.push(`/products/${item.id}`);
+                            setOpenSuggest(false);
+                            handleClose();
+                          }}
+                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-12 w-12 overflow-hidden rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center">
+                              {item.image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={item.image} alt={item.title} className="h-full w-full object-cover"/>
+                              ) : (
+                                <span className="text-[11px] text-gray-400">Нет фото</span>
+                              )}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-semibold text-gray-900 line-clamp-1">{item.title}</span>
+                              {item.brand && <span className="text-xs text-gray-500">{item.brand}</span>}
+                            </div>
+                          </div>
+                          <div className="text-xs font-semibold text-gray-900">
+                            {item.final_price} BYN {hasDiscount && <span className="text-[11px] text-gray-400 line-through ml-1">{item.price} BYN</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {!suggestions.loading && suggestions.items.length === 0 && (
+                      <div className="px-4 py-3 text-sm text-gray-500">Ничего не найдено</div>
+                    )}
+                  </div>
+                  <div className="border-t border-gray-100 px-4 py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={handleSearchSubmit}
+                      className="text-xs font-semibold text-purple-600 hover:text-purple-700"
+                    >
+                      Все результаты
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
