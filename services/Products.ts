@@ -192,6 +192,79 @@ export async function getProductsOnTrend() {
   }
 }
 
+export async function getTrendingProducts(limit = 100) {
+  try {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const productViewCounts = await safePrismaCall(
+      () => db.productStatistics.groupBy({
+        by: ['product_id'],
+        where: {
+          type: 'view',
+          created_at: {
+            gte: since
+          }
+        },
+        _count: {
+          product_id: true
+        },
+        orderBy: {
+          _count: {
+            product_id: 'desc'
+          }
+        },
+        take: limit
+      }),
+      [],
+      'products.getTrendingProducts.views'
+    );
+
+    const topIds = productViewCounts.map(view => typeof view.product_id === 'bigint' ? view.product_id : BigInt(view.product_id));
+    if (!topIds.length) return [];
+
+    const products = await findMany({
+      where: {
+        enabled: true,
+        id: {
+          in: topIds
+        }
+      },
+      include: {
+        Brand: {
+          include: {
+            User: true
+          }
+        },
+        Images: {
+          include: {
+            Image: true
+          }
+        }
+      }
+    });
+
+    const productMap = new Map(products.map(p => [p.id?.toString(), p]));
+    const sortedProducts = topIds
+      .map(id => productMap.get(id.toString()))
+      .filter(Boolean) as ProductModel[];
+
+    return sortedProducts.map(product => ({
+      ...product,
+      price: `${product.price}`,
+      final_price: `${product.final_price}`,
+      Images: product.Images?.map(i => ({
+        ...i,
+        Image: i.Image ? {
+          ...i.Image,
+          src: i.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${i.Image.src}` : i.Image?.src
+        } : null
+      }))
+    }));
+  } catch (error) {
+    return handlePrismaError<ProductModel[]>(error, [], 'products.getTrendingProducts');
+  }
+}
+
 export async function getLatestProducts(limit = 15) {
   try {
     const products = await findMany({

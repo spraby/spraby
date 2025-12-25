@@ -5,10 +5,12 @@ import {ProductModel} from "@/prisma/types";
 import HeroShowcase, {HeroCard} from "@/theme/sections/HeroShowcase";
 import PopularCategories, {PopularCategory} from "@/theme/sections/PopularCategories";
 import Link from "next/link";
+import {getPopularCategoriesByViews} from "@/services/Categories";
 
 type HomePageProps = {
   topProducts: ProductModel[]
   latestProducts: ProductModel[]
+  popularCategories: PopularCategory[]
 }
 
 const GRID_ITEM_COUNT = 14;
@@ -52,7 +54,7 @@ const EmptySlot = () => (
   </div>
 );
 
-export default function HomePage({topProducts, latestProducts}: HomePageProps) {
+export default function HomePage({topProducts, latestProducts, popularCategories}: HomePageProps) {
   const productsWithImages = normalizeProducts(topProducts);
   const latestProductsWithImages = normalizeProducts(latestProducts);
 
@@ -84,11 +86,11 @@ const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: st
             <h2 className="text-2xl font-semibold text-gray-900">В тренде прямо сейчас</h2>
             <p className="text-sm text-gray-500">Отобрали самые просматриваемые товары за последнюю неделю</p>
           </div>
-          {renderGrid(productsWithImages, '/collections?sort=trending', 'В тренде')}
+          {renderGrid(productsWithImages, '/trending', 'В тренде')}
         </section>
       )}
 
-      <PopularCategories items={POPULAR_CATEGORY_ITEMS}/>
+      <PopularCategories items={popularCategories.length ? popularCategories : POPULAR_CATEGORY_ITEMS}/>
 
       {latestProductsWithImages.length > 0 && (
         <section className="flex flex-col gap-6">
@@ -96,7 +98,7 @@ const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: st
             <h2 className="text-2xl font-semibold text-gray-900">Новинки</h2>
             <p className="text-sm text-gray-500">Последние 15 товаров, добавленные на площадку</p>
           </div>
-          {renderGrid(latestProductsWithImages, '/collections?sort=new', 'Новинки')}
+          {renderGrid(latestProductsWithImages, '/new', 'Новинки')}
         </section>
       )}
     </div>
