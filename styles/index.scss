@@ -86,3 +86,28 @@ body {
 .splide__track--nav > .splide__list > .splide__slide {
   border-radius: 10px;
 }
+
+/* Custom scrollbar to match brand style */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 rgba(124, 58, 237, 0.05);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+  border: 2px solid rgba(248, 247, 255, 0.8);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c0c4cc;
+}

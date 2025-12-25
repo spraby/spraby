@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import {type FormEvent, useEffect, useMemo, useState} from "react";
+import {type FormEvent, useEffect, useMemo, useRef, useState} from "react";
 import SearchIcon from "@/theme/assets/SearchIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
 import CartIcon from "@/theme/assets/CartIcon";
@@ -22,6 +22,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
   const [search, setSearch] = useState('');
   const [suggestions, setSuggestions] = useState<{loading: boolean; items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>}>({loading: false, items: []});
   const [openSuggest, setOpenSuggest] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -62,6 +63,17 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
     };
   }, [search]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (wrapperRef.current && !wrapperRef.current.contains(target)) {
+        setOpenSuggest(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className='shadow-lg shadow-slate-200'>
       <div className='mx-auto max-w-6xl'>
@@ -77,7 +89,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
               </Link>
             </div>
 
-            <div className='hidden w-full max-w-2xl lg:flex'>
+            <div className='hidden w-full max-w-2xl lg:flex' ref={wrapperRef}>
               <form
                 onSubmit={handleSearchSubmit}
                 className='relative flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5'

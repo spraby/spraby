@@ -97,84 +97,86 @@ export default function FavoritePage() {
               Смотреть каталог
             </Link>
           </div>
-        ) : (
-          <div className='grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
-            {preparedFavorites.map((item) => {
-              const hasDiscount = item.priceValue !== undefined && item.priceValue > item.finalPriceValue;
-              const discountPercent = hasDiscount
+          ) : (
+            <div className='grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
+              {preparedFavorites.map((item) => {
+                const hasDiscount = item.priceValue !== undefined && item.priceValue > item.finalPriceValue;
+                const discountPercent = hasDiscount
                 ? Math.round((1 - item.finalPriceValue / (item.priceValue ?? item.finalPriceValue)) * 100)
                 : 0;
 
-              return (
-                <div key={item.id} className='relative'>
-                  <div className='flex flex-col gap-2 p-2'>
-                    <div className='relative'>
-                      <Link href={item.productUrl}>
-                        <div className='relative aspect-square overflow-hidden rounded-[0.375rem] border border-gray-200/60 bg-white'>
-                          {item.image ? (
-                            <Image
-                              fill
-                              className='h-full w-full object-cover'
-                              sizes='(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 280px'
-                              src={item.image}
-                              alt={item.title}
-                            />
-                          ) : (
-                            <div className='flex h-full w-full items-center justify-center text-xs font-medium text-gray-400'>
-                              Нет фото
+                  return (
+                    <div key={item.id} className='relative'>
+                      <div className='flex flex-col gap-2 p-2'>
+                        <div className='relative'>
+                          <Link href={item.productUrl}>
+                            <div className='relative aspect-square overflow-hidden rounded-[0.375rem] border border-gray-200/60 bg-white'>
+                              {item.image ? (
+                                <Image
+                                  fill
+                                  className='h-full w-full object-cover'
+                                  sizes='(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 280px'
+                                  src={item.image}
+                                  alt={item.title}
+                                />
+                              ) : (
+                                <div className='flex h-full w-full items-center justify-center text-xs font-medium text-gray-400'>
+                                  Нет фото
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </Link>
+                          <div className='absolute right-2 top-2 flex flex-col items-end gap-2'>
+                            {hasDiscount && discountPercent > 0 && (
+                              <span className='inline-flex items-center rounded-[0.375rem] bg-purple-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm'>
+                                -{discountPercent}%
+                              </span>
+                            )}
+                            <button
+                              type='button'
+                              onClick={(event) => handleRemoveFavorite(event, item.id)}
+                              aria-label='Убрать из избранного'
+                              className='group relative flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-sm transition hover:bg-white hover:shadow'
+                            >
+                              <HeardIcon
+                                width={20}
+                                height={20}
+                                color='#e11d48'
+                                filled
+                                className='transition-opacity duration-150 group-hover:opacity-0'
+                              />
+                              <span className='pointer-events-none absolute inset-0 flex items-center justify-center text-rose-500 opacity-0 transition-opacity duration-150 group-hover:opacity-100'>
+                                <AiOutlineClose className='h-4 w-4'/>
+                              </span>
+                            </button>
+                          </div>
                         </div>
-                      </Link>
-                      <div className='absolute right-2 top-2 flex flex-col items-end gap-2'>
-                        {hasDiscount && discountPercent > 0 && (
-                          <span className='inline-flex items-center rounded-[0.375rem] bg-purple-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm'>
-                            -{discountPercent}%
-                          </span>
-                        )}
-                        <button
-                          type='button'
-                          onClick={(event) => handleRemoveFavorite(event, item.id)}
-                          aria-label='Убрать из избранного'
-                          className='group relative flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-sm transition hover:bg-white hover:shadow'
-                        >
-                          <HeardIcon
-                            width={20}
-                            height={20}
-                            color='#e11d48'
-                            filled
-                            className='transition-opacity duration-150 group-hover:opacity-0'
-                          />
-                          <span className='pointer-events-none absolute inset-0 flex items-center justify-center text-rose-500 opacity-0 transition-opacity duration-150 group-hover:opacity-100'>
-                            <AiOutlineClose className='h-4 w-4'/>
-                          </span>
-                        </button>
+                        <div className='flex flex-col gap-2'>
+                          <div>
+                            <h3 className='text-sm font-medium text-gray-900'>
+                              <Link className='block truncate transition hover:text-purple-600' href={item.productUrl}>
+                                {item.title}
+                              </Link>
+                            </h3>
+                            {item.brand && (
+                              <p className='truncate text-xs text-gray-500'>{item.brand}</p>
+                            )}
+                          </div>
+                          <div className='flex items-baseline gap-2'>
+                            <span className='text-base font-semibold text-purple-500'>{item.finalPriceValue} BYN</span>
+                            {hasDiscount && (
+                              <span className='text-xs text-gray-400 line-through'>
+                                {item.priceValue}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className='flex flex-col gap-1'>
-                      <h3 className='text-sm font-medium text-gray-900'>
-                        <Link className='block truncate transition hover:text-purple-600' href={item.productUrl}>
-                          {item.title}
-                        </Link>
-                      </h3>
-                      {item.brand && (
-                        <p className='truncate text-xs text-gray-500'>{item.brand}</p>
-                      )}
-                      <div className='mt-1 flex items-baseline gap-2'>
-                        <span className='text-base font-semibold text-purple-500'>{item.finalPriceValue} BYN</span>
-                        {hasDiscount && (
-                          <span className='text-xs text-gray-400 line-through'>
-                            {item.priceValue}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                  );
+                })}
+              </div>
+            )}
       </div>
     </main>
   );
