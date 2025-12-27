@@ -25,6 +25,7 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import {Splide, SplideSlide} from "react-splide-ts";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import '@splidejs/react-splide/css';
+import {useSearchParams} from "next/navigation";
 
 const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
   <svg
@@ -69,6 +70,31 @@ const toIdString = (value: unknown) => {
   if (typeof value === 'number') return value.toString();
   if (typeof value === 'string') return value;
   return '';
+};
+
+const sanitizeDescription = (value?: string | null) => {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const buildFavoriteEntryId = (
+  productId: string,
+  variantId: string | null,
+  variantOptions: {label: string; value: string}[]
+) => {
+  const parts = [productId];
+  if (variantId) {
+    parts.push(`v:${variantId}`);
+  } else if (variantOptions.length) {
+    const optionsKey = variantOptions
+      .map(opt => `${opt.label}:${opt.value}`)
+      .join('|');
+    if (optionsKey) parts.push(`o:${optionsKey}`);
+  }
+  return parts.join('::');
 };
 
 const BreadcrumbSeparatorIcon = () => (
@@ -186,6 +212,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     isFavorite: isFavoriteProduct,
     ready: favoritesReady
   } = useFavorites();
+  const searchParams = useSearchParams();
+  const variantIdFromQuery = (searchParams.get('variantId') ?? '').trim() || null;
 
   const handleDrawerClose = () => {
     setOpen(false);
@@ -372,15 +400,17 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   }, [product]);
 
   const variantDetails = useMemo(() => {
-    return (variant?.VariantValue ?? []).map(i => {
+    const details = (variant?.VariantValue ?? []).map(i => {
       const optionTitle = i?.Value?.Option?.title;
       const optionValue = i?.Value?.value;
       if (!optionTitle || !optionValue) return null;
       return {
-        label: optionTitle,
-        value: optionValue
+        label: optionTitle.trim(),
+        value: optionValue.trim()
       };
     }).filter(Boolean) as { label: string, value: string }[];
+
+    return details.sort((a, b) => a.label.localeCompare(b.label));
   }, [variant]);
 
   const variantSummary = useMemo(() => {
@@ -433,23 +463,33 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   }, [product, productPreviewImage]);
 
   const favoriteProductData = useMemo(() => {
-    const id = toIdString(product.id);
+    const productId = toIdString(product.id);
+    if (!productId) return null;
     const title = typeof product.title === 'string' ? product.title.trim() : '';
     const rawFinalPrice = `${product.final_price ?? ''}`.trim();
     const rawPrice = `${product.price ?? ''}`.trim();
     const finalPrice = rawFinalPrice.length ? rawFinalPrice : rawPrice;
-    if (!id || !title.length || !finalPrice.length) return null;
+    if (!title.length || !finalPrice.length) return null;
     const imageCandidate = productPreviewImage ?? primaryImageSrc ?? null;
+    const descriptionText = sanitizeDescription(product.description);
+    const variantId = variant ? toIdString(variant.id) : '';
+    const variantTitle = variantSummary.trim();
+    const entryId = buildFavoriteEntryId(productId, variantId || null, variantDetails);
     return {
-      id,
+      id: entryId,
+      productId,
       title,
       finalPrice,
       price: rawPrice.length ? rawPrice : null,
       image: imageCandidate,
       brand: brandDisplayName ?? null,
-      productUrl: `/products/${id}`
+      productUrl: `/products/${productId}`,
+      description: descriptionText || null,
+      variantId: variantId || null,
+      variantTitle: variantTitle.length ? variantTitle : null,
+      variantOptions: variantDetails,
     };
-  }, [brandDisplayName, primaryImageSrc, product.final_price, product.id, product.price, product.title, productPreviewImage]);
+  }, [brandDisplayName, primaryImageSrc, product.description, product.final_price, product.id, product.price, product.title, productPreviewImage, variant, variantDetails, variantSummary]);
 
   const isInFavorites = useMemo(() => {
     if (!favoriteProductData) return false;
@@ -1094,6 +1134,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <VariantSelector
             variants={product?.Variants ?? []}
             options={options}
+            initialVariantId={variantIdFromQuery}
             onChange={v => {
               if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src);
               setVariant(v);

@@ -9,12 +9,17 @@ import HeardIcon from "@/theme/assets/HeardIcon";
 
 type FavoriteViewModel = {
   id: string;
+  productId: string;
   title: string;
   brand: string | null;
   finalPriceValue: number;
   priceValue?: number;
   image: string | null;
   productUrl: string;
+  description: string | null;
+  variantId: string | null;
+  variantTitle: string | null;
+  variantOptions: {label: string; value: string}[];
 };
 
 const getFavoritesWord = (count: number) => {
@@ -32,6 +37,17 @@ const toNumberOrUndefined = (raw: string | null) => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const buildProductUrlWithVariant = (url: string, variantId?: string | null) => {
+  if (!variantId) return url;
+  try {
+    const parsed = new URL(url, 'http://dummy.local');
+    parsed.searchParams.set('variantId', variantId);
+    return parsed.pathname + parsed.search;
+  } catch {
+    return `${url}${url.includes('?') ? '&' : '?'}variantId=${encodeURIComponent(variantId)}`;
+  }
+};
+
 export default function FavoritePage() {
   const {favorites, removeFavorite, ready} = useFavorites();
 
@@ -40,14 +56,23 @@ export default function FavoritePage() {
       const finalPriceValue = Number(item.finalPrice);
       if (!Number.isFinite(finalPriceValue)) return acc;
       const priceValue = toNumberOrUndefined(item.price);
+      const baseProductUrl = item.productUrl && item.productUrl.trim().length
+        ? item.productUrl
+        : `/products/${item.productId || item.id}`;
+      const productUrl = buildProductUrlWithVariant(baseProductUrl, item.variantId);
       acc.push({
         id: item.id,
+        productId: item.productId,
         title: item.title,
         brand: item.brand,
         finalPriceValue,
         priceValue,
         image: item.image,
-        productUrl: item.productUrl,
+        productUrl,
+        description: item.description ?? null,
+        variantId: item.variantId ?? null,
+        variantTitle: item.variantTitle ?? null,
+        variantOptions: item.variantOptions ?? [],
       });
       return acc;
     }, []);
@@ -160,6 +185,30 @@ export default function FavoritePage() {
                             </h3>
                             {item.brand && (
                               <p className='truncate text-xs text-gray-500'>{item.brand}</p>
+                            )}
+                            {(item.variantTitle || item.variantOptions.length > 0) && (
+                              <div className='mt-2 flex flex-wrap gap-1.5'>
+                                {item.variantOptions.length > 0 ? (
+                                  item.variantOptions.map((opt) => (
+                                    <span
+                                      key={`${opt.label}-${opt.value}`}
+                                      className='inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-semibold text-gray-700 shadow-[0_4px_12px_-8px_rgba(0,0,0,0.2)]'
+                                    >
+                                      <span className='text-gray-400'>{opt.label}:</span>
+                                      <span className='text-gray-900'>{opt.value}</span>
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className='inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-semibold text-gray-700 shadow-[0_4px_12px_-8px_rgba(0,0,0,0.2)]'>
+                                    <span className='text-gray-900'>{item.variantTitle}</span>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {item.description && (
+                              <p className='mt-2 text-xs text-gray-500 leading-relaxed line-clamp-3'>
+                                {item.description}
+                              </p>
                             )}
                           </div>
                           <div className='flex items-baseline gap-2'>

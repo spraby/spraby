@@ -5,23 +5,33 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useState, ty
 const FAVORITES_STORAGE_KEY = 'spraby_favorites';
 
 export type FavoriteProduct = {
-  id: string;
+  id: string; // entry key (product + variant)
+  productId: string;
   title: string;
   finalPrice: string;
   price: string | null;
   image: string | null;
   brand: string | null;
   productUrl: string;
+  description: string | null;
+  variantId: string | null;
+  variantTitle: string | null;
+  variantOptions: {label: string; value: string}[];
 };
 
 export type FavoriteCandidate = {
-  id: string | number | bigint;
+  id: string | number | bigint; // entry key (product + variant)
+  productId?: string | number | bigint | null;
   title?: string | null;
   finalPrice?: string | number | null;
   price?: string | number | null;
   image?: string | null;
   brand?: string | null;
   productUrl?: string | null;
+  description?: string | null;
+  variantId?: string | number | bigint | null;
+  variantTitle?: string | null;
+  variantOptions?: Array<{label?: string | null; value?: string | null}> | null;
 };
 
 type FavoritesContextValue = {
@@ -64,10 +74,25 @@ const normalizeImageSrc = (raw?: string | null): string | null => {
   return stripped.length ? `/${stripped}` : null;
 };
 
+const normalizeVariantOptions = (raw: FavoriteCandidate['variantOptions']): {label: string; value: string}[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.reduce<{label: string; value: string}[]>((acc, item) => {
+    if (!item || typeof item !== 'object') return acc;
+    const label = typeof item.label === 'string' ? item.label.trim() : '';
+    const value = typeof item.value === 'string' ? item.value.trim() : '';
+    if (!label || !value) return acc;
+    acc.push({label, value});
+    return acc;
+  }, []);
+};
+
 const normalizeFavoriteItem = (item: FavoriteCandidate): FavoriteProduct | null => {
   if (!item) return null;
-  const id = toIdString(item.id);
-  if (!id) return null;
+  const entryId = toIdString(item.id);
+  if (!entryId) return null;
+  const productIdCandidate = item.productId ?? (typeof item.id === 'string' ? item.id.split('::')[0] : item.id);
+  const productId = toIdString(productIdCandidate);
+  if (!productId) return null;
   const title = typeof item.title === 'string' ? item.title.trim() : '';
   if (!title.length) return null;
   const finalPrice = toPriceString(item.finalPrice);
@@ -77,15 +102,24 @@ const normalizeFavoriteItem = (item: FavoriteCandidate): FavoriteProduct | null 
   const normalizedImage = normalizeImageSrc(item.image ?? null);
   const normalizedBrand = typeof item.brand === 'string' ? item.brand.trim() : '';
   const productUrl = typeof item.productUrl === 'string' ? item.productUrl.trim() : '';
+  const normalizedDescription = typeof item.description === 'string' ? item.description.trim() : '';
+  const normalizedVariantId = toIdString(item.variantId ?? '');
+  const normalizedVariantTitle = typeof item.variantTitle === 'string' ? item.variantTitle.trim() : '';
+  const normalizedVariantOptions = normalizeVariantOptions(item.variantOptions);
 
   return {
-    id,
+    id: entryId,
+    productId,
     title,
     finalPrice,
     price,
     image: normalizedImage,
     brand: normalizedBrand.length ? normalizedBrand : null,
-    productUrl: productUrl.length ? productUrl : `/products/${id}`
+    productUrl: productUrl.length ? productUrl : `/products/${productId}`,
+    description: normalizedDescription.length ? normalizedDescription : null,
+    variantId: normalizedVariantId.length ? normalizedVariantId : null,
+    variantTitle: normalizedVariantTitle.length ? normalizedVariantTitle : null,
+    variantOptions: normalizedVariantOptions,
   };
 };
 
