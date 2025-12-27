@@ -48,11 +48,11 @@ export default function HeroShowcase({cards, initialIndex = 0}: Props) {
 
   return (
     <section className="relative">
-      <div className="relative mt-5 overflow-hidden rounded-[0.375rem] bg-[#f2f1ff] px-5 py-10 sm:px-6 md:mt-6 md:px-16 md:py-16">
+      <div className="relative mt-5 overflow-hidden rounded-[0.375rem] bg-[#f2f1ff] px-5 py-10 sm:px-6 md:mt-6 md:px-16 md:py-16 md:min-h-[520px] lg:min-h-[560px]">
         <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-gradient-to-br from-[#f0efff] via-[#edeafb] to-[#f6f4ff] md:block" />
 
-        <div className="relative grid gap-10 md:grid-cols-[1.05fr_0.95fr] md:gap-12">
-          <div className="flex flex-col justify-between gap-8 sm:gap-10">
+        <div className="relative grid gap-10 md:grid-cols-[1.05fr_0.95fr] md:gap-12 md:min-h-[360px] lg:min-h-[400px]">
+          <div className="flex h-full min-h-[260px] flex-col justify-between gap-8 sm:gap-10">
             <div className="flex flex-col gap-4">
               {activeCard.eyebrow && (
                 <span className="text-xs font-semibold uppercase tracking-[0.35em] text-purple-500/80 md:text-sm">
@@ -85,17 +85,19 @@ export default function HeroShowcase({cards, initialIndex = 0}: Props) {
             )}
           </div>
 
-          <div className="hidden min-h-[260px] md:flex md:items-center md:justify-center">
-            {activeCard.image?.src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={activeCard.image.src}
-                alt={activeCard.image?.alt ?? activeCard.title}
-                className="h-full w-full rounded-[0.375rem] object-cover shadow-[0_25px_45px_-35px_rgba(118,67,212,0.5)]"
-              />
-            ) : (
-              PLACEHOLDER_PATTERN
-            )}
+          <div className="hidden md:flex md:h-full md:items-center md:justify-center">
+            <div className="relative h-full w-full max-w-[620px] min-h-[320px] aspect-[16/9] overflow-hidden rounded-[0.375rem] shadow-[0_25px_45px_-35px_rgba(118,67,212,0.5)]">
+              {activeCard.image?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={activeCard.image.src}
+                  alt={activeCard.image?.alt ?? activeCard.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                PLACEHOLDER_PATTERN
+              )}
+            </div>
           </div>
         </div>
       </div>
