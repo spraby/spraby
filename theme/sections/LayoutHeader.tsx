@@ -79,7 +79,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
       <div className='mx-auto max-w-6xl'>
         <div className='flex flex-col gap-3 lg:gap-0'>
           <div className='bg-gray-800 mx-4 sm:mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-2 text-center text-gray-200 text-xs rounded-bl-md rounded-br-md'>
-            spraby — маркетплейс по продаже товаров мастеров и ремесленников
+            spraby — маркетплейс авторских товаров
           </div>
 
           <div className='flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-0 py-3 lg:py-5'>

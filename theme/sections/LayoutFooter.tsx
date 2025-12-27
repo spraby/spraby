@@ -33,15 +33,14 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
               <span className='text-2xl font-bold lowercase tracking-tight'>spraby</span>
             </Link>
             <p className='text-sm text-gray-600 leading-relaxed'>
-              spraby — маркетплейс изделий мастеров и ремесленников. Мы объединяем
-              уникальные товары, созданные с заботой, и покупателей, ценящих ручную работу.
+              spraby — маркетплейс изделий ручной работы от мастеров и ремесленников. Мы соединяем
+              авторов уникальных вещей и покупателей.
             </p>
             <div className='flex flex-wrap gap-3 text-xs text-gray-500'>
-              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Handmade</span>
-              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Local brands</span>
-              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Eco friendly</span>
-              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Limited edition</span>
               <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Made in Belarus</span>
+              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Limited edition</span>
+              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Local brands</span>
+              <span className='rounded-full bg-white/80 px-3 py-1 font-semibold text-purple-600 shadow-sm'>Handmade</span>
             </div>
           </div>
 
