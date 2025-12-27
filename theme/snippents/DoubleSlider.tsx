@@ -24,7 +24,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
   }, [images, startImage]);
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='product-gallery flex flex-col gap-4'>
       <Splide
         ref={main}
         options={{
@@ -33,6 +33,10 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
           pagination: false,
           arrows: false,
           cover: false,
+          speed: 500,
+          easing: 'ease',
+          focus: 'center',
+          rewind: false,
         }}
       >
         {
@@ -51,12 +55,15 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
         <Splide
           ref={thumbnails}
           options={{
-            rewind: true,
+            rewind: false,
             fixedWidth: 104,
             fixedHeight: 104,
             isNavigation: true,
             gap: 10,
-            focus: 'left',
+            focus: 'center',
+            speed: 500,
+            easing: 'ease',
+            trimSpace: true,
             pagination: false,
             cover: true,
             arrows: false,
