@@ -9,6 +9,8 @@ type AuthPageProps = {
   mode: "login" | "register";
 };
 
+type AccountType = "customer" | "seller";
+
 type FormState = {
   name: string;
   email: string;
@@ -16,6 +18,9 @@ type FormState = {
   password: string;
   confirmPassword: string;
   remember: boolean;
+  accountType: AccountType;
+  brandName: string;
+  instagram: string;
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -27,6 +32,9 @@ const initialFormState: FormState = {
   password: "",
   confirmPassword: "",
   remember: true,
+  accountType: "customer",
+  brandName: "",
+  instagram: "",
 };
 
 const COPY = {
@@ -137,6 +145,18 @@ export default function AuthPage({mode}: AuthPageProps) {
       } else if (form.confirmPassword.trim() !== form.password.trim()) {
         nextErrors.confirmPassword = "Пароли не совпадают";
       }
+
+      // Validate seller-specific fields
+      if (form.accountType === "seller") {
+        if (!form.brandName.trim()) {
+          nextErrors.brandName = "Укажите название бренда";
+        }
+        if (!form.instagram.trim()) {
+          nextErrors.instagram = "Укажите Instagram";
+        } else if (!form.instagram.trim().match(/^@?[\w.]+$/)) {
+          nextErrors.instagram = "Некорректный Instagram";
+        }
+      }
     }
     return nextErrors;
   };
@@ -196,6 +216,44 @@ export default function AuthPage({mode}: AuthPageProps) {
               <span className="h-px flex-1 bg-gray-200"/>
             </div>
 
+            {isRegister && (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-gray-700">Тип аккаунта</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleChange("accountType", "customer")}
+                    className={`flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition ${
+                      form.accountType === "customer"
+                        ? "border-purple-600 bg-purple-50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-2xl">🛍️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Покупатель</p>
+                      <p className="text-xs text-gray-500">Покупать товары</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange("accountType", "seller")}
+                    className={`flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition ${
+                      form.accountType === "seller"
+                        ? "border-purple-600 bg-purple-50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-2xl">🏪</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Продавец</p>
+                      <p className="text-xs text-gray-500">Продавать товары</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <Input
               type="tel"
               label={phoneLabel}
@@ -243,8 +301,44 @@ export default function AuthPage({mode}: AuthPageProps) {
                   label: "text-sm font-semibold text-gray-700",
                   inputWrapper: "bg-white",
                 }}
-                placeholder="hello@spraby.com"
+                placeholder="hello@spra.by"
               />
+            )}
+
+            {isRegister && form.accountType === "seller" && (
+              <>
+                <Input
+                  label="Название бренда"
+                  variant="bordered"
+                  radius="sm"
+                  value={form.brandName}
+                  onValueChange={(value) => handleChange("brandName", value)}
+                  isInvalid={!!errors.brandName}
+                  errorMessage={errors.brandName}
+                  classNames={{
+                    label: "text-sm font-semibold text-gray-700",
+                    inputWrapper: "bg-white",
+                  }}
+                  placeholder="spraby"
+                />
+                <Input
+                  label="Instagram"
+                  variant="bordered"
+                  radius="sm"
+                  value={form.instagram}
+                  onValueChange={(value) => handleChange("instagram", value)}
+                  isInvalid={!!errors.instagram}
+                  errorMessage={errors.instagram}
+                  classNames={{
+                    label: "text-sm font-semibold text-gray-700",
+                    inputWrapper: "bg-white",
+                  }}
+                  placeholder="spra.by"
+                  startContent={
+                    <span className="text-sm text-gray-400">@</span>
+                  }
+                />
+              </>
             )}
 
             <div className={passwordGridClass}>

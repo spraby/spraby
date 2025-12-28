@@ -32,14 +32,21 @@ enum financial_status {
   refunded
 }
 
+enum user_role {
+  customer
+  seller
+}
+
 model users {
-  id         BigInt   @id @default(autoincrement())
+  id         BigInt    @id @default(autoincrement())
   first_name String?
   last_name  String?
-  email      String   @unique
+  email      String    @unique
+  phone      String?
   password   String
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
+  role       user_role @default(customer)
+  updated_at DateTime  @updatedAt
+  created_at DateTime  @default(now())
   Brands     brands[]
 }
 
@@ -48,6 +55,7 @@ model brands {
   user_id     BigInt?
   name        String
   description String?
+  instagram   String?
   updated_at  DateTime         @updatedAt
   created_at  DateTime         @default(now())
   User        users?           @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
