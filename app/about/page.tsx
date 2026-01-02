@@ -47,7 +47,7 @@ export default function AboutPage() {
                     src="/team/mikhail.jpg"
                     alt="Михаил"
                     fill
-                    className="object-cover transition group-hover:scale-110"
+                    className="object-cover object-top transition group-hover:scale-110"
                     sizes="112px"
                   />
                 </div>
@@ -85,7 +85,7 @@ export default function AboutPage() {
                     src="/team/evgeniy.jpg"
                     alt="Евгений"
                     fill
-                    className="object-cover transition group-hover:scale-110"
+                    className="object-cover object-top transition group-hover:scale-110"
                     sizes="112px"
                   />
                 </div>
@@ -160,27 +160,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Призыв к действию */}
-        <div className="rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 p-12 text-center text-white shadow-xl">
-          <h2 className="mb-4 text-3xl font-bold">Присоединяйтесь к нам</h2>
-          <p className="mb-8 text-lg text-purple-100">
-            Станьте частью сообщества мастеров или найдите уникальные вещи, созданные с любовью
-          </p>
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/collections"
-              className="rounded-lg bg-white px-8 py-3 font-semibold text-purple-600 shadow-lg transition hover:bg-purple-50"
-            >
-              Смотреть товары
-            </Link>
-            <Link
-              href="/contacts"
-              className="rounded-lg border-2 border-white px-8 py-3 font-semibold text-white transition hover:bg-white/10"
-            >
-              Связаться с нами
-            </Link>
-          </div>
-        </div>
       </div>
     </main>
   );

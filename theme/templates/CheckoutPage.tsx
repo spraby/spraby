@@ -241,6 +241,8 @@ export default function CheckoutPage() {
                     <div className="pt-2">
                       <Link
                         href={orderLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="block w-full rounded-lg bg-white border border-gray-200 py-2.5 text-sm font-semibold text-purple-600 text-center transition hover:border-purple-200 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
                       >
                         Отслеживать этот заказ
@@ -272,7 +274,7 @@ export default function CheckoutPage() {
   if (cartItems.length === 0) {
     return (
       <main className='px-4 pt-6 pb-12 sm:px-6 lg:px-8'>
-        <div className='mx-auto flex max-w-3xl flex-col gap-8'>
+        <div className='mx-auto flex max-w-6xl flex-col gap-8'>
           <nav aria-label="breadcrumb" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 no-scrollbar">
             <ol className="flex items-center gap-1.5 whitespace-nowrap pr-5 pe-8 text-sm font-medium text-gray-500 lg:pr-0 lg:pe-0">
               <li className="flex items-center">

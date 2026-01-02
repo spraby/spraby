@@ -3,7 +3,7 @@
 import ProductCart from "@/theme/snippents/ProductCart";
 import {ProductModel} from "@/prisma/types";
 import HeroShowcase, {HeroCard} from "@/theme/sections/HeroShowcase";
-import PopularCategories, {PopularCategory} from "@/theme/sections/PopularCategories";
+import PopularCategories, {PopularCategory, CategoryPopularImage} from "@/theme/sections/PopularCategories";
 import Link from "next/link";
 import {getPopularCategoriesByViews} from "@/services/Categories";
 
@@ -11,6 +11,7 @@ type HomePageProps = {
   topProducts: ProductModel[]
   latestProducts: ProductModel[]
   popularCategories: PopularCategory[]
+  popularImages?: Record<string, CategoryPopularImage>
 }
 
 const GRID_ITEM_COUNT = 14;
@@ -54,7 +55,7 @@ const EmptySlot = () => (
   </div>
 );
 
-export default function HomePage({topProducts, latestProducts, popularCategories}: HomePageProps) {
+export default function HomePage({topProducts, latestProducts, popularCategories, popularImages}: HomePageProps) {
   const productsWithImages = normalizeProducts(topProducts);
   const latestProductsWithImages = normalizeProducts(latestProducts);
 
@@ -90,7 +91,10 @@ const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: st
         </section>
       )}
 
-      <PopularCategories items={popularCategories.length ? popularCategories : POPULAR_CATEGORY_ITEMS}/>
+      <PopularCategories
+        items={popularCategories.length ? popularCategories : POPULAR_CATEGORY_ITEMS}
+        popularImages={popularImages}
+      />
 
       {latestProductsWithImages.length > 0 && (
         <section className="flex flex-col gap-6">

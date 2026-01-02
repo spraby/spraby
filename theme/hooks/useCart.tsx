@@ -1,6 +1,6 @@
 'use client'
 
-import {useState, useEffect, useCallback} from 'react';
+import {createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode} from 'react';
 
 const CART_STORAGE_KEY = 'spraby_cart';
 
@@ -18,7 +18,20 @@ export type CartItem = {
   quantity: number
 }
 
-export function useCart() {
+type CartContextValue = {
+  items: CartItem[]
+  ready: boolean
+  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }, merge?: boolean) => void
+  removeItem: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
+  clearCart: () => void
+  totalItems: number
+  totalPrice: number
+}
+
+const CartContext = createContext<CartContextValue | undefined>(undefined);
+
+export const CartProvider = ({children}: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -40,14 +53,14 @@ export function useCart() {
     }
   }, []);
 
-  const saveToStorage = useCallback((newItems: CartItem[]) => {
-    if (typeof window === 'undefined') return;
+  useEffect(() => {
+    if (!ready || typeof window === 'undefined') return;
     try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newItems));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
     } catch (error) {
-      console.error('Failed to save cart', error);
+      console.error('Failed to persist cart', error);
     }
-  }, []);
+  }, [items, ready]);
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'> & { quantity?: number }, merge: boolean = true) => {
     setItems(currentItems => {
@@ -73,44 +86,40 @@ export function useCart() {
         newItems = [...currentItems, { ...item, quantity: item.quantity ?? 1 }];
       }
 
-      saveToStorage(newItems);
       return newItems;
     });
-  }, [saveToStorage]);
+  }, []);
 
   const removeItem = useCallback((id: string) => {
-    setItems(currentItems => {
-      const newItems = currentItems.filter(item => item.id !== id);
-      saveToStorage(newItems);
-      return newItems;
-    });
-  }, [saveToStorage]);
+    setItems(currentItems => currentItems.filter(item => item.id !== id));
+  }, []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
     setItems(currentItems => {
-      const newItems = currentItems.map(item => {
+      return currentItems.map(item => {
         if (item.id === id) {
           return { ...item, quantity: Math.max(1, quantity) };
         }
         return item;
       });
-      saveToStorage(newItems);
-      return newItems;
     });
-  }, [saveToStorage]);
+  }, []);
 
   const clearCart = useCallback(() => {
     setItems([]);
-    saveToStorage([]);
-  }, [saveToStorage]);
+  }, []);
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = useMemo(() =>
+    items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  );
 
-  const totalPrice = items.reduce((sum, item) => {
-    return sum + (Number(item.finalPrice) * item.quantity);
-  }, 0);
+  const totalPrice = useMemo(() =>
+    items.reduce((sum, item) => sum + (Number(item.finalPrice) * item.quantity), 0),
+    [items]
+  );
 
-  return {
+  const value = useMemo<CartContextValue>(() => ({
     items,
     ready,
     addItem,
@@ -119,5 +128,19 @@ export function useCart() {
     clearCart,
     totalItems,
     totalPrice
-  };
+  }), [items, ready, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice]);
+
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  );
+};
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart must be used within CartProvider');
+  }
+  return context;
 }
