@@ -9,15 +9,22 @@ import Menu from "@/theme/snippents/Menu";
 import {MenuItem} from "@/types";
 import MobileMenu from "@/theme/snippents/MobileMenu";
 import {useFavorites} from "@/theme/hooks/useFavorites";
+import {useCart} from "@/theme/hooks/useCart";
 import {useRouter} from "next/navigation";
 
 const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
   const {count, ready} = useFavorites();
+  const {totalItems, ready: cartReady} = useCart();
   const showBadge = ready && count > 0;
+  const showCartBadge = cartReady && totalItems > 0;
   const displayCount = useMemo(() => {
     if (!showBadge) return '';
     return count > 99 ? '99+' : String(count);
   }, [count, showBadge]);
+  const cartDisplayCount = useMemo(() => {
+    if (!showCartBadge) return '';
+    return totalItems > 99 ? '99+' : String(totalItems);
+  }, [totalItems, showCartBadge]);
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [suggestions, setSuggestions] = useState<{loading: boolean; items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>}>({loading: false, items: []});
@@ -189,11 +196,18 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
                       </span>
                     )}
                   </Link>
-                  {/*<button*/}
-                  {/*  aria-label='Открыть корзину'*/}
-                  {/*  className='h-10 w-10 rounded-full border border-gray-200 p-2 transition hover:border-purple-200 hover:text-purple-600'>*/}
-                  {/*  <CartIcon/>*/}
-                  {/*</button>*/}
+                  <Link
+                    href='/checkout'
+                    aria-label='Открыть корзину'
+                    className='relative flex h-10 w-10 items-center justify-center rounded-full p-2 transition hover:bg-gray-100 hover:text-purple-600'
+                  >
+                    <CartIcon/>
+                    {showCartBadge && (
+                      <span className='absolute -top-1 -right-1 inline-flex min-h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full bg-purple-600 px-1 text-[0.65rem] font-semibold text-white'>
+                        {cartDisplayCount}
+                      </span>
+                    )}
+                  </Link>
                   <MobileMenu menu={menu}/>
                 </div>
               </div>

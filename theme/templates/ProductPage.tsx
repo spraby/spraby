@@ -24,8 +24,9 @@ import {BreadcrumbItem} from "@/types";
 import ProductCart from "@/theme/snippents/ProductCart";
 import {Splide, SplideSlide} from "react-splide-ts";
 import {useFavorites} from "@/theme/hooks/useFavorites";
+import {useCart} from "@/theme/hooks/useCart";
 import '@splidejs/react-splide/css';
-import {useSearchParams} from "next/navigation";
+import {useSearchParams, useRouter} from "next/navigation";
 
 const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
   <svg
@@ -200,6 +201,7 @@ type ContactSocial = {
 };
 
 export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = []}: Props) {
+  const router = useRouter();
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -207,11 +209,13 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const [orderNumber, setOrderNumber] = useState<string>();
   const [submiting, setSubmiting] = useState(false);
   const [recentProducts, setRecentProducts] = useState<RelatedProduct[]>([]);
+  const [addedToCart, setAddedToCart] = useState(false);
   const {
     toggleFavorite,
     isFavorite: isFavoriteProduct,
     ready: favoritesReady
   } = useFavorites();
+  const { addItem, items: cartItems } = useCart();
   const searchParams = useSearchParams();
   const variantIdFromQuery = (searchParams.get('variantId') ?? '').trim() || null;
 
@@ -413,9 +417,38 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return details.sort((a, b) => a.label.localeCompare(b.label));
   }, [variant]);
 
+  // Генерируем уникальный ID для корзины на основе товара и всех его опций
+  const cartItemId = useMemo(() => {
+    if (!variant) return null;
+
+    // Создаем хэш из всех опций для уникальности
+    const optionsHash = variantDetails
+      .map(detail => `${detail.label}:${detail.value}`)
+      .join('|');
+
+    // Простая хэш-функция для работы с любыми символами (включая кириллицу)
+    let hash = 0;
+    for (let i = 0; i < optionsHash.length; i++) {
+      const char = optionsHash.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    const hashString = Math.abs(hash).toString(36);
+
+    // Формат: productId-variantId-hash
+    return `${product.id}-${variant.id}-${hashString}`;
+  }, [product.id, variant, variantDetails]);
+
   const variantSummary = useMemo(() => {
     return variantDetails.map(detail => `${detail.label}: ${detail.value}`).join(', ');
   }, [variantDetails]);
+
+  // Количество товара в корзине с текущим набором опций
+  const itemInCartQuantity = useMemo(() => {
+    if (!cartItemId) return 0;
+    const cartItem = cartItems.find(item => item.id === cartItemId);
+    return cartItem?.quantity ?? 0;
+  }, [cartItemId, cartItems]);
 
   const productPreviewImage = useMemo(() => {
     if (variant) {
@@ -1106,30 +1139,60 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             </div>
           )}
 
-          <div className='grid grid-cols-2 gap-3'>
-            <button
-              disabled={!variant}
-              onClick={() => {
-                if (!variant) return;
-                setDrawerMode('order');
-                setOrderNumber(undefined);
-                setOpen(true);
-                setStatistic(product.id, 'add_to_cart').then();
-              }}
-              className={`w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60`}
-            >
-              Заказать
-            </button>
-            <button
-              onClick={() => {
-                setDrawerMode('contacts');
-                setOrderNumber(undefined);
-                setOpen(true);
-              }}
-              className='w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100'
-            >
-              Контакты
-            </button>
+          <div className='flex flex-col gap-3'>
+            <div className='grid grid-cols-2 gap-3'>
+              <button
+                disabled={!variant}
+                onClick={() => {
+                  if (!variant) return;
+                  setDrawerMode('order');
+                  setOrderNumber(undefined);
+                  setOpen(true);
+                }}
+                className={`w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60`}
+              >
+                Быстрый заказ
+              </button>
+              <button
+                disabled={!variant}
+                onClick={() => {
+                  if (!variant || !cartItemId) return;
+                  addItem({
+                    id: cartItemId,
+                    productId: String(product.id),
+                    variantId: String(variant.id),
+                    brandId: String(product.brand_id),
+                    brandName: brandDisplayName || 'Продавец',
+                    title: product.title,
+                    variantTitle: variantSummary,
+                    image: productPreviewImage,
+                    price: String(product.price),
+                    finalPrice: String(product.final_price),
+                  });
+                  setStatistic(product.id, 'add_to_cart').then();
+
+                  // Показываем успешное добавление
+                  setAddedToCart(true);
+                  setTimeout(() => setAddedToCart(false), 2000);
+                }}
+                className="w-full rounded-xl border border-purple-600 py-3 text-sm font-semibold text-purple-600 shadow-sm transition hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  {addedToCart ? (
+                    <>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-green-500">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      </svg>
+                      Добавлен в корзину
+                    </>
+                  ) : (
+                    <>
+                      {itemInCartQuantity > 0 ? `В корзине (${itemInCartQuantity})` : 'В корзину'}
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
           </div>
           <VariantSelector
             variants={product?.Variants ?? []}
@@ -1190,6 +1253,16 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               </div>
             </div>
           )}
+          <button
+            onClick={() => {
+              setDrawerMode('contacts');
+              setOrderNumber(undefined);
+              setOpen(true);
+            }}
+            className='w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100'
+          >
+            Контакты продавца
+          </button>
           <div className='h-px bg-gray-200'></div>
         </div>
         <div className='order-3 flex flex-col gap-7 lg:hidden'>
