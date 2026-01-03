@@ -26,7 +26,7 @@ async function getCategoryPopularImages() {
 export default async function Page() {
   const [topProducts, latestProducts, popularCategories, popularImages] = await Promise.all([
     getProductsOnTrend(),
-    getLatestProducts(15),
+    getLatestProducts(19),
     getPopularCategoriesByViews(9),
     getCategoryPopularImages()
   ]);

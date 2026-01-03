@@ -10,11 +10,12 @@ export type PopularCategory = {
 };
 
 export type CategoryPopularImage = {
-  productId: string;
-  imageUrl: string;
-  rotationIndex: number;
-  cacheUntil: number;
+  images: Array<{
+    productId: string;
+    imageUrl: string;
+  }>;
   productsCount: number;
+  cacheUntil: number;
 };
 
 type Props = {
@@ -23,8 +24,13 @@ type Props = {
 };
 
 const PLACEHOLDER = (
-  <div className="pointer-events-none relative mt-5 flex w-[110px] md:w-[130px] aspect-square items-center justify-center rounded-[0.375rem] bg-[#eceaf9] text-[11px] font-semibold uppercase tracking-[0.3em] text-[#d3d0ed] md:mt-8">
-    изображение
+  <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <div
+        key={i}
+        className="aspect-square rounded-[0.25rem] bg-[#eceaf9] pointer-events-none"
+      />
+    ))}
   </div>
 );
 
@@ -46,12 +52,12 @@ export default function PopularCategories({items, popularImages}: Props) {
       <div className="grid gap-5 md:grid-cols-3">
         {items.map((item) => {
           const popularImage = popularImages?.[item.id];
-          const hasImage = popularImage?.imageUrl;
+          const hasImages = popularImage?.images && popularImage.images.length > 0;
 
           return (
             <article
               key={item.id}
-              className="group relative flex h-full min-h-[170px] flex-col justify-between rounded-[0.375rem] bg-[#f2f1ff] px-5 py-5 text-gray-900 md:min-h-[190px] md:px-6 md:py-6"
+              className="relative flex h-full min-h-[170px] flex-col justify-between rounded-[0.375rem] bg-[#f2f1ff] px-5 py-5 text-gray-900 md:min-h-[190px] md:px-6 md:py-6"
             >
               <header className="flex flex-col gap-1.5">
                 <h3 className="text-lg font-semibold md:text-lg">{item.title}</h3>
@@ -62,15 +68,22 @@ export default function PopularCategories({items, popularImages}: Props) {
                 )}
               </header>
 
-              {hasImage ? (
-                <div className="pointer-events-none relative mt-5 w-[110px] md:w-[130px] aspect-square overflow-hidden rounded-[0.375rem] bg-white md:mt-8">
-                  <Image
-                    src={popularImage.imageUrl}
-                    alt={item.title}
-                    fill
-                    sizes="(max-width: 768px) 110px, 130px"
-                    className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                  />
+              {hasImages ? (
+                <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8">
+                  {popularImage.images.slice(0, 6).map((img, idx) => (
+                    <div
+                      key={img.productId}
+                      className="pointer-events-none relative aspect-square overflow-hidden rounded-[0.25rem] bg-white"
+                    >
+                      <Image
+                        src={img.imageUrl}
+                        alt={`${item.title} ${idx + 1}`}
+                        fill
+                        sizes="(max-width: 768px) 55px, 65px"
+                        className="object-cover object-center"
+                      />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 PLACEHOLDER

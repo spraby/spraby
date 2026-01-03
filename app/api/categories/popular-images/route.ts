@@ -12,11 +12,12 @@ let memoryCache: {
 };
 
 type CategoryPopularImage = {
-  productId: string;
-  imageUrl: string;
-  rotationIndex: number;
-  cacheUntil: number;
+  images: Array<{
+    productId: string;
+    imageUrl: string;
+  }>;
   productsCount: number;
+  cacheUntil: number;
 };
 
 
@@ -157,16 +158,23 @@ async function generatePopularImages(): Promise<
   for (const [categoryHandle, categoryData] of categoryProductsMap.entries()) {
     if (categoryData.products.length === 0) continue;
 
-    // Выбираем товар по индексу ротации
-    const selectedIndex = rotationIndex % categoryData.products.length;
-    const selectedProduct = categoryData.products[selectedIndex];
+    // Берем первые 6 товаров с ротацией
+    const images = [];
+    for (let i = 0; i < 6 && i < categoryData.products.length; i++) {
+      const index = (rotationIndex + i) % categoryData.products.length;
+      const product = categoryData.products[index];
+      if (product.imageUrl) {
+        images.push({
+          productId: product.productId.toString(),
+          imageUrl: product.imageUrl,
+        });
+      }
+    }
 
     result[categoryHandle] = {
-      productId: selectedProduct.productId.toString(),
-      imageUrl: selectedProduct.imageUrl || "",
-      rotationIndex: selectedIndex,
-      cacheUntil,
+      images,
       productsCount: categoryData.productsCount,
+      cacheUntil,
     };
   }
 

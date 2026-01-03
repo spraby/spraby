@@ -123,6 +123,9 @@ export async function getProductsOnTrend() {
         enabled: true,
         id: {
           in: topProductIds
+        },
+        Images: {
+          some: {}
         }
       },
       include: {
@@ -142,9 +145,9 @@ export async function getProductsOnTrend() {
     const productsMap = new Map(products.map(p => [p.id, p]));
     const sortedProducts = topProductIds.map(id => productsMap.get(id)).filter(Boolean) as ProductModel[];
 
-    let limitedProducts = sortedProducts.slice(0, 14);
+    let limitedProducts = sortedProducts.slice(0, 19);
 
-    if (limitedProducts.length < 14) {
+    if (limitedProducts.length < 19) {
       const fallbackProducts = await findMany({
         where: {
           enabled: true,
@@ -167,13 +170,13 @@ export async function getProductsOnTrend() {
         orderBy: {
           created_at: 'desc'
         },
-        take: 14 - limitedProducts.length
+        take: 19 - limitedProducts.length
       });
 
       limitedProducts = [...limitedProducts, ...fallbackProducts];
     }
 
-    return limitedProducts.slice(0, 14).map(product => {
+    return limitedProducts.slice(0, 19).map(product => {
       return {
         ...product,
         price: `${product.price}`,
@@ -269,12 +272,15 @@ export async function getLatestProducts(limit = 15) {
   try {
     const products = await findMany({
       where: {
-        enabled: true
+        enabled: true,
+        Images: {
+          some: {}
+        }
       },
       orderBy: {
         created_at: 'desc'
       },
-      take: limit + 20,
+      take: limit,
       include: {
         Brand: {
           include: {
@@ -300,7 +306,7 @@ export async function getLatestProducts(limit = 15) {
           src: i.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${i.Image.src}` : i.Image?.src
         }
       }))
-    })).slice(0, limit) as (ProductModel & { price: string; final_price: string })[];
+    })) as (ProductModel & { price: string; final_price: string })[];
   } catch (error) {
     return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getLatestProducts');
   }

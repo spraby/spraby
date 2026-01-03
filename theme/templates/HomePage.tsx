@@ -14,8 +14,6 @@ type HomePageProps = {
   popularImages?: Record<string, CategoryPopularImage>
 }
 
-const GRID_ITEM_COUNT = 14;
-
 const normalizeProducts = (products: ProductModel[]) => {
   const result: ProductModel[] = [];
   const seen = new Set<string>();
@@ -27,7 +25,7 @@ const normalizeProducts = (products: ProductModel[]) => {
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(product);
-    if (result.length === GRID_ITEM_COUNT) break;
+    if (result.length === 19) break;
   }
 
   return result;
@@ -48,26 +46,17 @@ const ViewAllCard = ({href, label}: { href: string, label: string }) => (
   </div>
 );
 
-const EmptySlot = () => (
-  <div className="opacity-0 pointer-events-none select-none" aria-hidden="true">
-    <div className="aspect-square" />
-  </div>
-);
-
 export default function HomePage({topProducts, latestProducts, popularCategories, popularImages}: HomePageProps) {
   const productsWithImages = normalizeProducts(topProducts);
   const latestProductsWithImages = normalizeProducts(latestProducts);
 
 const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: string) => {
-    const itemCards = items.slice(0, GRID_ITEM_COUNT).map(product => (
+    const itemCards = items.slice(0, 19).map(product => (
       <ProductCart key={`product-${String(product.id)}`} product={product}/>
     ));
-    while (itemCards.length < GRID_ITEM_COUNT) {
-      itemCards.push(<EmptySlot key={`empty-${itemCards.length}`}/>);
-    }
 
-    // Заменяем последний элемент на ViewAllCard
-    itemCards[GRID_ITEM_COUNT - 1] = <ViewAllCard key="view-all" href={viewAllHref} label={viewAllLabel}/>;
+    // Добавляем ViewAllCard в конец
+    itemCards.push(<ViewAllCard key="view-all" href={viewAllHref} label={viewAllLabel}/>);
 
     return (
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -99,7 +88,7 @@ const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: st
         <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-2 text-center">
             <h2 className="text-2xl font-semibold text-gray-900">Новинки</h2>
-            <p className="text-sm text-gray-500">Последние 15 товаров, добавленные на площадку</p>
+            <p className="text-sm text-gray-500">Недавно добавленные товары</p>
           </div>
           {renderGrid(latestProductsWithImages, '/new', 'Новинки')}
         </section>
