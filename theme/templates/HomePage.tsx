@@ -15,7 +15,6 @@ type HomePageProps = {
 }
 
 const GRID_ITEM_COUNT = 14;
-const TOTAL_GRID_SLOTS = GRID_ITEM_COUNT + 1;
 
 const normalizeProducts = (products: ProductModel[]) => {
   const result: ProductModel[] = [];
@@ -50,8 +49,8 @@ const ViewAllCard = ({href, label}: { href: string, label: string }) => (
 );
 
 const EmptySlot = () => (
-  <div className="flex flex-col gap-2 p-2 opacity-0 pointer-events-none select-none">
-    <div className="aspect-square rounded-[0.375rem] border border-transparent" />
+  <div className="opacity-0 pointer-events-none select-none" aria-hidden="true">
+    <div className="aspect-square" />
   </div>
 );
 
@@ -67,12 +66,12 @@ const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: st
       itemCards.push(<EmptySlot key={`empty-${itemCards.length}`}/>);
     }
 
-    const cards = [...itemCards, <EmptySlot key="empty-last"/>];
-    cards[GRID_ITEM_COUNT - 1] = <ViewAllCard key="view-all" href={viewAllHref} label={viewAllLabel}/>;
+    // Заменяем последний элемент на ViewAllCard
+    itemCards[GRID_ITEM_COUNT - 1] = <ViewAllCard key="view-all" href={viewAllHref} label={viewAllLabel}/>;
 
     return (
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {cards.slice(0, TOTAL_GRID_SLOTS)}
+        {itemCards}
       </div>
     );
   };

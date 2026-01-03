@@ -16,6 +16,7 @@ type CategoryPopularImage = {
   imageUrl: string;
   rotationIndex: number;
   cacheUntil: number;
+  productsCount: number;
 };
 
 
@@ -23,7 +24,7 @@ type CategoryPopularImage = {
  * Получает топ товаров для всех категорий с оптимизированным запросом
  */
 async function getTopProductsForAllCategories(): Promise<
-  Map<string, Array<{ productId: bigint; imageUrl: string | null }>>
+  Map<string, { products: Array<{ productId: bigint; imageUrl: string | null }>; productsCount: number }>
 > {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - CATEGORY_ROTATION_CONFIG.statsPeriodDays);
@@ -39,6 +40,7 @@ async function getTopProductsForAllCategories(): Promise<
       image_src: string | null;
       popularity_score: number;
       rank: number;
+      products_count: bigint;
     }>
   >`
     WITH ProductPopularity AS (
@@ -74,15 +76,26 @@ async function getTopProductsForAllCategories(): Promise<
         ) as rank
       FROM ProductPopularity pp
     ),
+    CategoryCounts AS (
+      SELECT
+        p.category_id,
+        COUNT(*) as products_count
+      FROM products p
+      WHERE p.enabled = true
+        AND p.category_id IS NOT NULL
+      GROUP BY p.category_id
+    ),
     ProductsWithImages AS (
       SELECT DISTINCT ON (rp.product_id)
         rp.category_id,
         c.handle as category_handle,
         rp.product_id,
         rp.rank,
-        i.src as image_src
+        i.src as image_src,
+        COALESCE(cc.products_count, 0) as products_count
       FROM RankedProducts rp
       LEFT JOIN categories c ON c.id = rp.category_id
+      LEFT JOIN CategoryCounts cc ON cc.category_id = rp.category_id
       LEFT JOIN LATERAL (
         SELECT pi.image_id
         FROM product_images pi
@@ -100,7 +113,7 @@ async function getTopProductsForAllCategories(): Promise<
   // Группируем результаты по категориям (используем handle вместо id)
   const categoryMap = new Map<
     string,
-    Array<{ productId: bigint; imageUrl: string | null }>
+    { products: Array<{ productId: bigint; imageUrl: string | null }>; productsCount: number }
   >();
 
   for (const row of results) {
@@ -108,7 +121,10 @@ async function getTopProductsForAllCategories(): Promise<
     if (!categoryHandle) continue; // Пропускаем если нет handle
 
     if (!categoryMap.has(categoryHandle)) {
-      categoryMap.set(categoryHandle, []);
+      categoryMap.set(categoryHandle, {
+        products: [],
+        productsCount: Number(row.products_count) || 0,
+      });
     }
 
     const imageUrl = row.image_src
@@ -117,7 +133,7 @@ async function getTopProductsForAllCategories(): Promise<
         : `/${row.image_src}`
       : null;
 
-    categoryMap.get(categoryHandle)!.push({
+    categoryMap.get(categoryHandle)!.products.push({
       productId: row.product_id,
       imageUrl,
     });
@@ -138,18 +154,19 @@ async function generatePopularImages(): Promise<
 
   const result: Record<string, CategoryPopularImage> = {};
 
-  for (const [categoryHandle, products] of categoryProductsMap.entries()) {
-    if (products.length === 0) continue;
+  for (const [categoryHandle, categoryData] of categoryProductsMap.entries()) {
+    if (categoryData.products.length === 0) continue;
 
     // Выбираем товар по индексу ротации
-    const selectedIndex = rotationIndex % products.length;
-    const selectedProduct = products[selectedIndex];
+    const selectedIndex = rotationIndex % categoryData.products.length;
+    const selectedProduct = categoryData.products[selectedIndex];
 
     result[categoryHandle] = {
       productId: selectedProduct.productId.toString(),
       imageUrl: selectedProduct.imageUrl || "",
       rotationIndex: selectedIndex,
       cacheUntil,
+      productsCount: categoryData.productsCount,
     };
   }
 

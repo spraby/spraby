@@ -14,6 +14,7 @@ export type CategoryPopularImage = {
   imageUrl: string;
   rotationIndex: number;
   cacheUntil: number;
+  productsCount: number;
 };
 
 type Props = {
@@ -22,10 +23,19 @@ type Props = {
 };
 
 const PLACEHOLDER = (
-  <div className="pointer-events-none relative mt-5 flex h-[110px] w-[70%] max-w-[160px] items-center justify-center rounded-[0.375rem] bg-[#eceaf9] text-[11px] font-semibold uppercase tracking-[0.3em] text-[#d3d0ed] md:mt-8 md:h-[130px]">
+  <div className="pointer-events-none relative mt-5 flex w-[110px] md:w-[130px] aspect-square items-center justify-center rounded-[0.375rem] bg-[#eceaf9] text-[11px] font-semibold uppercase tracking-[0.3em] text-[#d3d0ed] md:mt-8">
     изображение
   </div>
 );
+
+const getProductsWord = (count: number) => {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  if (mod100 >= 11 && mod100 <= 14) return 'товаров';
+  if (mod10 === 1) return 'товар';
+  if (mod10 >= 2 && mod10 <= 4) return 'товара';
+  return 'товаров';
+};
 
 export default function PopularCategories({items, popularImages}: Props) {
   if (!items.length) return null;
@@ -43,17 +53,22 @@ export default function PopularCategories({items, popularImages}: Props) {
               key={item.id}
               className="group relative flex h-full min-h-[170px] flex-col justify-between rounded-[0.375rem] bg-[#f2f1ff] px-5 py-5 text-gray-900 md:min-h-[190px] md:px-6 md:py-6"
             >
-              <header className="flex items-start justify-between gap-4">
+              <header className="flex flex-col gap-1.5">
                 <h3 className="text-lg font-semibold md:text-lg">{item.title}</h3>
+                {popularImage?.productsCount && (
+                  <p className="text-xs font-medium text-gray-500">
+                    {new Intl.NumberFormat('ru-RU').format(popularImage.productsCount)} {getProductsWord(popularImage.productsCount)}
+                  </p>
+                )}
               </header>
 
               {hasImage ? (
-                <div className="pointer-events-none relative mt-5 h-[110px] w-[70%] max-w-[160px] overflow-hidden rounded-[0.375rem] bg-white md:mt-8 md:h-[130px]">
+                <div className="pointer-events-none relative mt-5 w-[110px] md:w-[130px] aspect-square overflow-hidden rounded-[0.375rem] bg-white md:mt-8">
                   <Image
                     src={popularImage.imageUrl}
                     alt={item.title}
                     fill
-                    sizes="(max-width: 768px) 160px, 160px"
+                    sizes="(max-width: 768px) 110px, 130px"
                     className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
