@@ -74,7 +74,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
             breakpoints: {
               640: {
                 fixedWidth: 66,
-                fixedHeight: 38,
+                fixedHeight: 66,
               },
             },
           }}
@@ -82,7 +82,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
           {images.map((image, index) => {
             return (
               <SplideSlide key={index}>
-                <Image alt='' src={image} fill sizes="(max-width: 768px) 104px, 104px" objectFit={'contain'}/>
+                <Image alt='' src={image} fill sizes="(max-width: 768px) 66px, 104px" objectFit={'cover'} className="rounded-[0.5rem]"/>
               </SplideSlide>
             );
           })}

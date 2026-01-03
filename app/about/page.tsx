@@ -40,14 +40,14 @@ export default function AboutPage() {
 
           <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2">
             {/* Михаил */}
-            <div className="group flex flex-col items-center rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm transition hover:border-purple-200 hover:shadow-md">
+            <div className="group flex flex-col items-center rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
               <div className="mb-6">
-                <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-purple-100 bg-gradient-to-br from-purple-100 to-purple-200 shadow-md transition group-hover:border-purple-200">
+                <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-purple-100 bg-gradient-to-br from-purple-100 to-purple-200 shadow-md">
                   <Image
                     src="/team/mikhail.jpg"
                     alt="Михаил"
                     fill
-                    className="object-cover object-top transition group-hover:scale-110"
+                    className="object-cover object-top"
                     sizes="112px"
                   />
                 </div>
@@ -78,14 +78,14 @@ export default function AboutPage() {
             </div>
 
             {/* Евгений */}
-            <div className="group flex flex-col items-center rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm transition hover:border-purple-200 hover:shadow-md">
+            <div className="group flex flex-col items-center rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
               <div className="mb-6">
-                <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-blue-100 bg-gradient-to-br from-blue-100 to-blue-200 shadow-md transition group-hover:border-blue-200">
+                <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-blue-100 bg-gradient-to-br from-blue-100 to-blue-200 shadow-md">
                   <Image
                     src="/team/evgeniy.jpg"
                     alt="Евгений"
                     fill
-                    className="object-cover object-top transition group-hover:scale-110"
+                    className="object-cover object-top"
                     sizes="112px"
                   />
                 </div>
@@ -130,7 +130,7 @@ export default function AboutPage() {
               </div>
               <h3 className="mb-2 text-lg font-semibold text-gray-900">Ручная работа</h3>
               <p className="text-sm text-gray-600">
-                Мы поддерживаем мастеров, которые создают изделия своими руками с душой и вниманием к деталям
+                Мы поддерживаем мастеров, которые создают уникальные изделия вручную
               </p>
             </div>
 
