@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import {useMemo} from "react";
 import {MenuItem} from "@/types";
 
@@ -29,8 +30,16 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
       <div className='mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8'>
         <div className='grid gap-10 lg:grid-cols-[1.2fr,1fr,1fr,1fr]'>
           <div className='flex flex-col gap-4'>
-            <Link href='/' className='flex items-center text-purple-600'>
-              <span className='text-2xl font-bold lowercase tracking-tight'>spraby</span>
+            <Link href='/' className='flex items-center gap-2 text-purple-600'>
+              <Image
+                src="/img/favicon.svg"
+                alt="Spraby логотип"
+                width={34}
+                height={34}
+                className="h-8 w-auto"
+                priority
+              />
+              <span className='text-2xl font-bold lowercase tracking-tight leading-none'>spraby</span>
             </Link>
             <p className='text-sm text-gray-600 leading-relaxed'>
               spraby — маркетплейс изделий ручной работы от мастеров и ремесленников. Мы соединяем

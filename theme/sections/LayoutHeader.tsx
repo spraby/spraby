@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import {type FormEvent, useEffect, useMemo, useRef, useState} from "react";
 import SearchIcon from "@/theme/assets/SearchIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
@@ -92,8 +93,16 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
             <div className='flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-0 py-3 lg:py-5'>
               <div className='flex items-center gap-3'>
-                <Link href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight'>
-                  spraby
+                <Link href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight flex items-center gap-2.5'>
+                  <Image
+                    src="/img/favicon.svg"
+                    alt="Spraby логотип"
+                    width={38}
+                    height={38}
+                    className="h-9 w-auto"
+                    priority
+                  />
+                  <span className="leading-none">spraby</span>
                 </Link>
               </div>
 
