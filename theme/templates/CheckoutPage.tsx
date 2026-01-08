@@ -9,7 +9,7 @@ import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
 import {Snippet} from "@nextui-org/react";
 import Price from "@/theme/snippents/Price";
-import {create} from "@/services/Orders";
+import {createWithNotifications} from "@/services/Orders";
 import {format} from "date-fns";
 import {useRouter} from "next/navigation";
 import {useCart} from "@/theme/hooks/useCart";
@@ -115,7 +115,7 @@ export default function CheckoutPage() {
     try {
       // Создаем заказы для каждого бренда
       const orderPromises = itemsByBrand.map(async (brand) => {
-        const order = await create({
+        const order = await createWithNotifications({
           data: {
             name: `#${format(new Date(), 'yyMMdd-HHmmssSSS')}`,
             Customer: {
@@ -405,9 +405,12 @@ export default function CheckoutPage() {
 
                           {/* Контент */}
                           <div className="flex flex-1 flex-col gap-2 z-10 pointer-events-none">
-                            <h3 className="text-sm font-semibold text-gray-900 leading-tight group-hover:text-purple-600 transition-colors">
+                            <Link
+                              href={productUrl}
+                              className="text-sm font-semibold text-gray-900 leading-tight group-hover:text-purple-600 transition-colors pointer-events-auto relative z-20"
+                            >
                               {item.title}
-                            </h3>
+                            </Link>
                             {item.variantTitle && (
                               <div className="flex flex-wrap gap-1.5">
                                 {item.variantTitle.split(', ').map((option, idx) => {
@@ -452,8 +455,17 @@ export default function CheckoutPage() {
                                   +
                                 </button>
                               </div>
-                              <div className="flex items-center gap-2 pointer-events-none">
-                                <Price finalPrice={Number(item.finalPrice)} price={Number(item.price)} size="sm"/>
+                              <div className="flex flex-col items-end gap-1 pointer-events-none">
+                                <div className="flex items-center gap-2.5">
+                                  {hasDiscount && (
+                                    <span className="text-xs text-gray-400 line-through">
+                                      {Number(item.price).toFixed(2)} BYN
+                                    </span>
+                                  )}
+                                  <span className="text-base font-bold text-purple-600">
+                                    {Number(item.finalPrice).toFixed(2)} BYN
+                                  </span>
+                                </div>
                                 {hasDiscount && (
                                   <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">
                                     -{discountPercent}%

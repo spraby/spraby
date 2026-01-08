@@ -1,0 +1,520 @@
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Hr,
+  Preview,
+  Section,
+  Text,
+  Row,
+  Column,
+  Button,
+  Img,
+} from '@react-email/components'
+
+interface NewOrderNotificationProps {
+  brandName: string
+  orderNumber: string
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  productTitle: string
+  variantTitle?: string
+  price: string
+  finalPrice: string
+  note?: string
+  orderUrl: string
+  productImage?: string
+}
+
+export default function NewOrderNotification({
+  brandName,
+  orderNumber,
+  customerName,
+  customerEmail,
+  customerPhone,
+  productTitle,
+  variantTitle,
+  price,
+  finalPrice,
+  note,
+  orderUrl,
+  productImage,
+}: NewOrderNotificationProps) {
+  const hasDiscount = price !== finalPrice
+
+  // Парсим опции товара из variantTitle
+  const variantOptions = variantTitle ? variantTitle.split(', ').map(option => {
+    const [label, value] = option.split(': ')
+    return { label, value }
+  }) : []
+
+  return (
+    <Html>
+      <Head />
+      <Preview>Новый заказ {orderNumber} для {brandName}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          {/* Header */}
+          <Section style={header}>
+            <Heading style={logo}>spraby</Heading>
+            <Text style={tagline}>маркетплейс авторских товаров</Text>
+          </Section>
+
+          {/* Alert */}
+          <Section style={alertSection}>
+            <Text style={alertIcon}>🛍️</Text>
+            <Heading style={h1}>Новый заказ!</Heading>
+            <Text style={orderNumber}>Заказ {orderNumber}</Text>
+          </Section>
+
+          {/* Brand Greeting */}
+          <Section style={section}>
+            <Text style={greeting}>Здравствуйте, {brandName}!</Text>
+            <Text style={text}>
+              Поступил новый заказ на маркетплейсе Spraby. Пожалуйста, свяжитесь с покупателем в ближайшее время.
+            </Text>
+          </Section>
+
+          {/* Customer Info */}
+          <Section style={customerSection}>
+            <Heading style={sectionTitle}>📋 Информация о покупателе</Heading>
+            <div style={infoCard}>
+              <Row style={infoRow}>
+                <Column style={infoLabel}>Имя:</Column>
+                <Column style={infoValue}>{customerName}</Column>
+              </Row>
+              <Row style={infoRow}>
+                <Column style={infoLabel}>Email:</Column>
+                <Column>
+                  <a href={`mailto:${customerEmail}`} style={emailLink}>
+                    {customerEmail}
+                  </a>
+                </Column>
+              </Row>
+              <Row style={infoRow}>
+                <Column style={infoLabel}>Телефон:</Column>
+                <Column>
+                  <a href={`tel:${customerPhone}`} style={phoneLink}>
+                    {customerPhone}
+                  </a>
+                </Column>
+              </Row>
+            </div>
+          </Section>
+
+          {/* Product Details */}
+          <Section style={productSection}>
+            <Heading style={sectionTitle}>📦 Детали заказа</Heading>
+            <div style={productCard}>
+              <table cellPadding="0" cellSpacing="0" border={0} width="100%">
+                <tr>
+                  {productImage && (
+                    <td style={{width: '100px', paddingRight: '16px', verticalAlign: 'top'}}>
+                      <Img
+                        src={productImage}
+                        alt={productTitle}
+                        width="100"
+                        height="100"
+                        style={{
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                    </td>
+                  )}
+                  <td style={{verticalAlign: 'top'}}>
+                    <Text style={productTitleStyle}>{productTitle}</Text>
+
+                    {variantOptions.length > 0 && (
+                      <div style={{marginTop: '12px', marginBottom: '12px'}}>
+                        {variantOptions.map((option, idx) => (
+                          <span
+                            key={idx}
+                            style={{
+                              display: 'inline-block',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '9999px',
+                              padding: '4px 12px',
+                              marginRight: '6px',
+                              marginBottom: '6px',
+                              fontSize: '12px',
+                            }}
+                          >
+                            <span style={{
+                              color: '#9ca3af',
+                              textTransform: 'uppercase',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                              letterSpacing: '0.05em',
+                            }}>
+                              {option.label}
+                            </span>
+                            {' '}
+                            <span style={{
+                              color: '#1f2937',
+                              fontWeight: '500',
+                            }}>
+                              {option.value}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={priceContainerNew}>
+                      {hasDiscount && (
+                        <Text style={oldPrice}>{price} BYN</Text>
+                      )}
+                      <Text style={finalPriceText}>{finalPrice} BYN</Text>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </Section>
+
+          {/* Customer Note */}
+          {note && (
+            <Section style={noteSection}>
+              <Heading style={sectionTitle}>💬 Комментарий покупателя</Heading>
+              <div style={noteCard}>
+                <Text style={noteText}>{note}</Text>
+              </div>
+            </Section>
+          )}
+
+          <Hr style={hr} />
+
+          {/* Action Required */}
+          <Section style={actionSection}>
+            <Heading style={sectionTitle}>⚡ Требуется действие</Heading>
+            <div style={actionList}>
+              <div style={actionItem}>
+                <span style={checkboxIcon}>□</span>
+                <Text style={actionText}>Свяжитесь с покупателем для подтверждения заказа</Text>
+              </div>
+              <div style={actionItem}>
+                <span style={checkboxIcon}>□</span>
+                <Text style={actionText}>Уточните детали доставки</Text>
+              </div>
+              <div style={actionItem}>
+                <span style={checkboxIcon}>□</span>
+                <Text style={actionText}>Согласуйте способ оплаты</Text>
+              </div>
+            </div>
+
+            <div style={urlBox}>
+              <Text style={urlLabel}>Ссылка на заказ:</Text>
+              <Text style={urlText}>{orderUrl}</Text>
+            </div>
+          </Section>
+
+          <Hr style={hr} />
+
+          {/* Footer */}
+          <Section style={footer}>
+            <Text style={footerText}>
+              Это автоматическое уведомление. Пожалуйста, не отвечайте на это письмо.
+            </Text>
+            <Text style={footerText}>
+              По вопросам работы платформы:{' '}
+              <a href="mailto:support@spraby.com" style={link}>support@spraby.com</a>
+            </Text>
+            <Text style={copyright}>
+              © {new Date().getFullYear()} Spraby. Все права защищены.
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
+
+// Styles
+const main = {
+  backgroundColor: '#f6f6f9',
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+}
+
+const container = {
+  backgroundColor: '#ffffff',
+  margin: '0 auto',
+  padding: '0',
+  maxWidth: '600px',
+}
+
+const header = {
+  backgroundColor: '#ffffff',
+  padding: '32px 24px',
+  textAlign: 'center' as const,
+  borderBottom: '1px solid #e5e7eb',
+}
+
+const logoLink = {
+  textDecoration: 'none',
+  display: 'inline-block',
+}
+
+const logo = {
+  color: '#7c3aed',
+  fontSize: '32px',
+  fontWeight: 'bold' as const,
+  margin: '0',
+  letterSpacing: '-0.5px',
+}
+
+const tagline = {
+  color: '#1f2937',
+  fontSize: '14px',
+  margin: '12px 0 0 0',
+  fontWeight: '400',
+}
+
+const alertSection = {
+  textAlign: 'center' as const,
+  padding: '40px 24px 32px',
+  backgroundColor: '#fef3c7',
+  borderBottom: '3px solid #f59e0b',
+}
+
+const alertIcon = {
+  fontSize: '48px',
+  margin: '0 0 16px 0',
+  lineHeight: '1',
+}
+
+const h1 = {
+  color: '#1f2937',
+  fontSize: '28px',
+  fontWeight: 'bold',
+  margin: '0 0 12px 0',
+  lineHeight: '1.2',
+}
+
+const orderNumber = {
+  color: '#78350f',
+  fontSize: '16px',
+  fontWeight: '600',
+  margin: '0',
+  backgroundColor: '#fef3c7',
+  padding: '8px 16px',
+  borderRadius: '6px',
+  display: 'inline-block',
+}
+
+const section = {
+  padding: '24px',
+}
+
+const greeting = {
+  color: '#1f2937',
+  fontSize: '16px',
+  lineHeight: '24px',
+  margin: '0 0 8px 0',
+  fontWeight: '500',
+}
+
+const text = {
+  color: '#4b5563',
+  fontSize: '16px',
+  lineHeight: '26px',
+  margin: '0',
+}
+
+const sectionTitle = {
+  color: '#1f2937',
+  fontSize: '18px',
+  fontWeight: '600',
+  margin: '0 0 16px 0',
+}
+
+const customerSection = {
+  padding: '24px',
+  backgroundColor: '#eff6ff',
+}
+
+const infoCard = {
+  backgroundColor: '#ffffff',
+  border: '1px solid #dbeafe',
+  borderRadius: '12px',
+  padding: '20px',
+}
+
+const infoRow = {
+  marginBottom: '12px',
+}
+
+const infoLabel = {
+  color: '#6b7280',
+  fontSize: '14px',
+  fontWeight: '500',
+  width: '100px',
+  paddingRight: '12px',
+}
+
+const infoValue = {
+  color: '#1f2937',
+  fontSize: '14px',
+  fontWeight: '500',
+}
+
+const emailLink = {
+  color: '#2563eb',
+  textDecoration: 'none',
+  fontSize: '14px',
+  fontWeight: '500',
+}
+
+const phoneLink = {
+  color: '#2563eb',
+  textDecoration: 'none',
+  fontSize: '14px',
+  fontWeight: '600',
+}
+
+const productSection = {
+  padding: '24px',
+}
+
+const productCard = {
+  backgroundColor: '#ffffff',
+  border: '1px solid #e5e7eb',
+  borderRadius: '12px',
+  padding: '20px',
+}
+
+const productTitleStyle = {
+  color: '#1f2937',
+  fontSize: '18px',
+  fontWeight: '600',
+  margin: '0 0 8px 0',
+  lineHeight: '1.4',
+}
+
+const priceContainerNew = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  marginTop: '12px',
+}
+
+const oldPrice = {
+  color: '#9ca3af',
+  fontSize: '16px',
+  textDecoration: 'line-through',
+  margin: '0',
+}
+
+const finalPriceText = {
+  color: '#7c3aed',
+  fontSize: '24px',
+  fontWeight: 'bold',
+  margin: '0',
+}
+
+const noteSection = {
+  padding: '24px',
+  backgroundColor: '#fef3c7',
+}
+
+const noteCard = {
+  backgroundColor: '#ffffff',
+  border: '1px solid #fcd34d',
+  borderRadius: '12px',
+  padding: '16px',
+}
+
+const noteText = {
+  color: '#78350f',
+  fontSize: '15px',
+  fontStyle: 'italic',
+  margin: '0',
+  lineHeight: '1.6',
+}
+
+const hr = {
+  borderColor: '#e5e7eb',
+  margin: '0',
+}
+
+const actionSection = {
+  padding: '24px',
+  textAlign: 'center' as const,
+}
+
+const actionList = {
+  textAlign: 'left' as const,
+  marginBottom: '24px',
+  backgroundColor: '#f9fafb',
+  padding: '20px',
+  borderRadius: '12px',
+}
+
+const actionItem = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  marginBottom: '12px',
+  gap: '12px',
+}
+
+const checkboxIcon = {
+  color: '#7c3aed',
+  fontSize: '20px',
+  fontWeight: 'bold',
+  lineHeight: '24px',
+  flexShrink: 0,
+}
+
+const actionText = {
+  color: '#4b5563',
+  fontSize: '15px',
+  margin: '0',
+  lineHeight: '24px',
+}
+
+const urlBox = {
+  backgroundColor: '#f9fafb',
+  border: '1px solid #e5e7eb',
+  borderRadius: '8px',
+  padding: '16px',
+  marginTop: '24px',
+}
+
+const urlLabel = {
+  color: '#6b7280',
+  fontSize: '13px',
+  fontWeight: '600',
+  margin: '0 0 8px 0',
+}
+
+const urlText = {
+  color: '#1f2937',
+  fontSize: '13px',
+  margin: '0',
+  wordBreak: 'break-all' as const,
+  fontFamily: 'monospace',
+}
+
+const footer = {
+  padding: '24px',
+  textAlign: 'center' as const,
+  backgroundColor: '#f9fafb',
+}
+
+const footerText = {
+  color: '#6b7280',
+  fontSize: '14px',
+  lineHeight: '22px',
+  margin: '0 0 8px 0',
+}
+
+const copyright = {
+  color: '#9ca3af',
+  fontSize: '12px',
+  margin: '0',
+}

@@ -17,7 +17,7 @@ import {Accordion, AccordionItem, Snippet} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
 import Price from "@/theme/snippents/Price";
-import {create} from "@/services/Orders";
+import {createWithNotifications} from "@/services/Orders";
 import {setStatistic} from "@/services/ProductStatistics";
 import {differenceInMonths, format} from "date-fns";
 import {BreadcrumbItem} from "@/types";
@@ -748,7 +748,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                   handleSubmit((data) => {
                                     if (variant && product) {
                                       setSubmiting(true);
-                                      create({
+                                      createWithNotifications({
                                         data: {
                                           name: `#${format(new Date(), 'yyMMdd-HHmmssSSS')}`,
                                           Customer: {
