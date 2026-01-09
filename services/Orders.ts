@@ -93,8 +93,20 @@ async function sendOrderEmailNotifications(orderId: bigint) {
 
     // Проверяем наличие email продавца
     const sellerEmail = order.Brand.User?.email
-    if (!sellerEmail) {
+    const shouldRedirectSellerEmail = process.env.SELLER_EMAIL_TO_CUSTOMER === 'true'
+    const sellerNotificationEmail = shouldRedirectSellerEmail ? order.Customer.email : sellerEmail
+
+    console.log('[ORDER] Seller notification debug:', {
+      sellerEmail,
+      shouldRedirectSellerEmail,
+      sellerNotificationEmail,
+    })
+
+    if (!sellerEmail && !shouldRedirectSellerEmail) {
       console.warn('[ORDER] Brand has no associated user email, skipping seller notification:', order.Brand.name)
+    }
+    if (!sellerEmail && shouldRedirectSellerEmail) {
+      console.warn('[ORDER] Brand has no associated user email, redirecting seller notification to customer for tests:', order.Brand.name)
     }
 
     // Вычисляем суммарную цену и финальную цену
@@ -105,6 +117,10 @@ async function sendOrderEmailNotifications(orderId: bigint) {
     const totalFinalPrice = order.OrderItems.reduce((sum, item) => {
       return sum + (Number(item.final_price) * item.quantity)
     }, 0)
+
+    const discountPercent = totalPrice > totalFinalPrice && totalPrice > 0
+      ? Math.round((1 - (totalFinalPrice / totalPrice)) * 100)
+      : undefined
 
     // Формируем заголовки товаров
     const productTitles = order.OrderItems.map(item => {
@@ -134,12 +150,15 @@ async function sendOrderEmailNotifications(orderId: bigint) {
       productImage = `${process.env.AWS_IMAGE_DOMAIN}/${firstItem.Product.Images[0].Image.src}`
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://spraby.com'
     // URL для просмотра заказа в панели продавца
-    const orderUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://spraby.com'}/admin/orders/${order.id}`
+    const orderUrl = `${siteUrl}/admin/orders/${order.id}`
+    // Публичная ссылка для отслеживания статуса заказа (для покупателя)
+    const trackingUrl = `${siteUrl}/purchases/${order.name.replace('#', '')}`
 
     // Отправляем письма
     // Если у продавца нет email, отправляем только покупателю
-    const result = sellerEmail
+    const result = sellerNotificationEmail
       ? await sendOrderEmails(
           // Письмо покупателю
           {
@@ -150,7 +169,9 @@ async function sendOrderEmailNotifications(orderId: bigint) {
             variantTitle,
             price: totalPrice.toFixed(2),
             finalPrice: totalFinalPrice.toFixed(2),
+            discountPercent,
             brandName: order.Brand.name,
+            trackingUrl,
             customerEmail: order.Customer.email,
             customerPhone: shipping.phone,
             note: shipping.note || undefined,
@@ -158,7 +179,7 @@ async function sendOrderEmailNotifications(orderId: bigint) {
           },
           // Письмо продавцу
           {
-            to: sellerEmail,
+            to: sellerNotificationEmail,
             brandName: order.Brand.name,
             orderNumber: order.name,
             customerName: shipping.name,
@@ -168,6 +189,8 @@ async function sendOrderEmailNotifications(orderId: bigint) {
             variantTitle,
             price: totalPrice.toFixed(2),
             finalPrice: totalFinalPrice.toFixed(2),
+            discountPercent,
+            trackingUrl,
             note: shipping.note || undefined,
             orderUrl,
             productImage,
@@ -182,7 +205,9 @@ async function sendOrderEmailNotifications(orderId: bigint) {
             variantTitle,
             price: totalPrice.toFixed(2),
             finalPrice: totalFinalPrice.toFixed(2),
+            discountPercent,
             brandName: order.Brand.name,
+            trackingUrl,
             customerEmail: order.Customer.email,
             customerPhone: shipping.phone,
             note: shipping.note || undefined,

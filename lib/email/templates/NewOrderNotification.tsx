@@ -24,6 +24,8 @@ interface NewOrderNotificationProps {
   variantTitle?: string
   price: string
   finalPrice: string
+  discountPercent?: number
+  trackingUrl?: string
   note?: string
   orderUrl: string
   productImage?: string
@@ -42,8 +44,15 @@ export default function NewOrderNotification({
   note,
   orderUrl,
   productImage,
+  discountPercent,
+  trackingUrl,
 }: NewOrderNotificationProps) {
-  const hasDiscount = price !== finalPrice
+  const hasDiscount = typeof discountPercent === 'number'
+    ? discountPercent > 0
+    : price !== finalPrice
+  const cleanedPhone = customerPhone.replace(/\D/g, '')
+  const telegramUrl = cleanedPhone ? `http://t.me/+${cleanedPhone}` : undefined
+  const viberUrl = cleanedPhone ? `viber://chat?number=%2B${cleanedPhone}` : undefined
 
   // Парсим опции товара из variantTitle
   const variantOptions = variantTitle ? variantTitle.split(', ').map(option => {
@@ -102,6 +111,24 @@ export default function NewOrderNotification({
                   </a>
                 </Column>
               </Row>
+              {cleanedPhone && (
+                <Row style={infoRow}>
+                  <Column style={infoLabel}>Telegram:</Column>
+                  <Column>
+                    <a href={telegramUrl} style={telegramLink}>
+                      {telegramUrl}
+                    </a>
+                  </Column>
+                </Row>
+              )}
+              {cleanedPhone && (
+                <Row style={infoRow}>
+                  <Column style={infoLabel}>Viber:</Column>
+                  <Column>
+                    <span style={viberUrlText}>{viberUrl}</span>
+                  </Column>
+                </Row>
+              )}
             </div>
           </Section>
 
@@ -170,7 +197,12 @@ export default function NewOrderNotification({
                       {hasDiscount && (
                         <Text style={oldPrice}>{price} BYN</Text>
                       )}
-                      <Text style={finalPriceText}>{finalPrice} BYN</Text>
+                      <span style={finalPriceGroupNew}>
+                        <Text style={finalPriceText}>{finalPrice} BYN</Text>
+                        {hasDiscount && typeof discountPercent === 'number' && discountPercent > 0 && (
+                          <span style={discountBadge}>-{discountPercent}%</span>
+                        )}
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -212,6 +244,13 @@ export default function NewOrderNotification({
               <Text style={urlLabel}>Ссылка на заказ:</Text>
               <Text style={urlText}>{orderUrl}</Text>
             </div>
+
+            {trackingUrl && (
+              <div style={urlBox}>
+                <Text style={urlLabel}>Статус для покупателя:</Text>
+                <Text style={urlText}>{trackingUrl}</Text>
+              </div>
+            )}
           </Section>
 
           <Hr style={hr} />
@@ -335,7 +374,7 @@ const sectionTitle = {
 
 const customerSection = {
   padding: '24px',
-  backgroundColor: '#eff6ff',
+  backgroundColor: '#ffffff',
 }
 
 const infoCard = {
@@ -377,6 +416,21 @@ const phoneLink = {
   fontWeight: '600',
 }
 
+const telegramLink = {
+  color: '#2563eb',
+  textDecoration: 'none',
+  fontSize: '13px',
+  fontWeight: '600',
+  wordBreak: 'break-all' as const,
+}
+
+const viberUrlText = {
+  color: '#1f2937',
+  fontSize: '13px',
+  fontFamily: 'monospace',
+  wordBreak: 'break-all' as const,
+}
+
 const productSection = {
   padding: '24px',
 }
@@ -399,15 +453,19 @@ const productTitleStyle = {
 const priceContainerNew = {
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
   marginTop: '12px',
+}
+
+const finalPriceGroupNew = {
+  display: 'inline-flex',
+  alignItems: 'center',
 }
 
 const oldPrice = {
   color: '#9ca3af',
   fontSize: '16px',
   textDecoration: 'line-through',
-  margin: '0',
+  margin: '0 12px 0 0',
 }
 
 const finalPriceText = {
@@ -415,6 +473,17 @@ const finalPriceText = {
   fontSize: '24px',
   fontWeight: 'bold',
   margin: '0',
+}
+
+const discountBadge = {
+  backgroundColor: '#ffe4e6',
+  color: '#e11d48',
+  padding: '4px 10px',
+  borderRadius: '9999px',
+  fontSize: '12px',
+  fontWeight: '700' as const,
+  marginLeft: '10px',
+  display: 'inline-block',
 }
 
 const noteSection = {
@@ -511,6 +580,12 @@ const footerText = {
   fontSize: '14px',
   lineHeight: '22px',
   margin: '0 0 8px 0',
+}
+
+const link = {
+  color: '#7c3aed',
+  textDecoration: 'none',
+  fontWeight: '500',
 }
 
 const copyright = {

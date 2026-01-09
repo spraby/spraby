@@ -20,7 +20,9 @@ interface OrderConfirmationProps {
   variantTitle?: string
   price: string
   finalPrice: string
+  discountPercent?: number
   brandName: string
+  trackingUrl?: string
   customerEmail: string
   customerPhone: string
   note?: string
@@ -35,12 +37,16 @@ export default function OrderConfirmation({
   price,
   finalPrice,
   brandName,
+  trackingUrl,
   customerEmail,
   customerPhone,
   note,
   productImage,
+  discountPercent,
 }: OrderConfirmationProps) {
-  const hasDiscount = price !== finalPrice
+  const hasDiscount = typeof discountPercent === 'number'
+    ? discountPercent > 0
+    : price !== finalPrice
 
   // Парсим опции товара из variantTitle
   const variantOptions = variantTitle ? variantTitle.split(', ').map(option => {
@@ -141,7 +147,12 @@ export default function OrderConfirmation({
                       {hasDiscount && (
                         <Text style={oldPrice}>{price} BYN</Text>
                       )}
-                      <Text style={finalPriceText}>{finalPrice} BYN</Text>
+                      <span style={finalPriceGroup}>
+                        <Text style={finalPriceText}>{finalPrice} BYN</Text>
+                        {hasDiscount && typeof discountPercent === 'number' && discountPercent > 0 && (
+                          <span style={discountBadge}>-{discountPercent}%</span>
+                        )}
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -167,6 +178,15 @@ export default function OrderConfirmation({
               </Row>
             )}
           </Section>
+
+          {/* Tracking */}
+          {trackingUrl && (
+            <Section style={section}>
+              <a href={trackingUrl} style={trackingButton}>
+                Отслеживать этот заказ
+              </a>
+            </Section>
+          )}
 
           <Hr style={hr} />
 
@@ -336,7 +356,7 @@ const sectionTitle = {
 
 const productSection = {
   padding: '24px',
-  backgroundColor: '#f9fafb',
+  backgroundColor: '#ffffff',
 }
 
 const productCard = {
@@ -362,17 +382,21 @@ const variantText = {
 }
 
 const priceContainer = {
+  marginTop: '12px',
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
-  marginTop: '12px',
+}
+
+const finalPriceGroup = {
+  display: 'inline-flex',
+  alignItems: 'center',
 }
 
 const oldPrice = {
   color: '#9ca3af',
   fontSize: '16px',
   textDecoration: 'line-through',
-  margin: '0',
+  margin: '0 12px 0 0',
 }
 
 const finalPriceText = {
@@ -380,6 +404,32 @@ const finalPriceText = {
   fontSize: '24px',
   fontWeight: 'bold',
   margin: '0',
+}
+
+const discountBadge = {
+  backgroundColor: '#ffe4e6',
+  color: '#e11d48',
+  padding: '4px 10px',
+  borderRadius: '9999px',
+  fontSize: '12px',
+  fontWeight: '700' as const,
+  marginLeft: '10px',
+  display: 'inline-block',
+}
+
+const trackingButton = {
+  marginTop: '4px',
+  display: 'block',
+  textAlign: 'center' as const,
+  padding: '14px 18px',
+  borderRadius: '14px',
+  backgroundColor: '#ffffff',
+  color: '#7c3aed',
+  border: '1px solid #e5e7eb',
+  fontSize: '15px',
+  fontWeight: '700' as const,
+  textDecoration: 'none',
+  boxShadow: '0 6px 16px rgba(17, 24, 39, 0.06)',
 }
 
 const infoRow = {

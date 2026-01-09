@@ -14,7 +14,9 @@ export interface OrderConfirmationParams {
   variantTitle?: string
   price: string
   finalPrice: string
+  discountPercent?: number
   brandName: string
+  trackingUrl?: string
   customerEmail: string
   customerPhone: string
   note?: string
@@ -32,6 +34,8 @@ export interface NewOrderNotificationParams {
   variantTitle?: string
   price: string
   finalPrice: string
+  discountPercent?: number
+  trackingUrl?: string
   note?: string
   orderUrl: string
   productImage?: string
