@@ -10,9 +10,9 @@ import {
   Text,
   Row,
   Column,
-  Button,
   Img,
 } from '@react-email/components'
+import { EmailOrderItem } from '../types'
 
 interface NewOrderNotificationProps {
   brandName: string
@@ -25,6 +25,7 @@ interface NewOrderNotificationProps {
   price: string
   finalPrice: string
   discountPercent?: number
+  orderItems?: EmailOrderItem[]
   trackingUrl?: string
   note?: string
   orderUrl: string
@@ -44,21 +45,39 @@ export default function NewOrderNotification({
   note,
   orderUrl,
   productImage,
-  discountPercent,
   trackingUrl,
+  orderItems,
 }: NewOrderNotificationProps) {
-  const hasDiscount = typeof discountPercent === 'number'
-    ? discountPercent > 0
-    : price !== finalPrice
   const cleanedPhone = customerPhone.replace(/\D/g, '')
   const telegramUrl = cleanedPhone ? `http://t.me/+${cleanedPhone}` : undefined
   const viberUrl = cleanedPhone ? `viber://chat?number=%2B${cleanedPhone}` : undefined
 
-  // Парсим опции товара из variantTitle
-  const variantOptions = variantTitle ? variantTitle.split(', ').map(option => {
-    const [label, value] = option.split(': ')
-    return { label, value }
-  }) : []
+  const items = orderItems && orderItems.length > 0
+    ? orderItems
+    : [{
+        title: productTitle,
+        variantTitle,
+        quantity: 1,
+        price,
+        finalPrice,
+        image: productImage,
+      }]
+  const itemsCount = items.length
+  const totalOriginal = Number(price)
+  const totalFinal = Number(finalPrice)
+  const totalDiscount = totalOriginal > totalFinal ? totalOriginal - totalFinal : 0
+  const totalOriginalText = totalOriginal.toFixed(2)
+  const totalFinalText = totalFinal.toFixed(2)
+  const totalDiscountText = totalDiscount.toFixed(2)
+
+  const getVariantOptions = (value?: string) => (
+    value
+      ? value.split(', ').map(option => {
+          const [label, optionValue] = option.split(': ')
+          return { label, value: optionValue }
+        })
+      : []
+  )
 
   return (
     <Html>
@@ -83,11 +102,128 @@ export default function NewOrderNotification({
           <Section style={section}>
             <Text style={greeting}>Здравствуйте, {brandName}!</Text>
             <Text style={text}>
-              Поступил новый заказ на маркетплейсе Spraby. Пожалуйста, свяжитесь с покупателем в ближайшее время.
+              Поступил новый заказ на маркетплейсе spraby. Пожалуйста, свяжитесь с покупателем в ближайшее время.
             </Text>
           </Section>
 
-          {/* Customer Info */}
+          {/* Product Details */}
+          <Section style={productSection}>
+            <Heading style={sectionTitle}>📦 Детали заказа</Heading>
+            {items.map((item, index) => {
+              const priceValue = Number(item.price)
+              const finalPriceValue = Number(item.finalPrice)
+              const hasDiscount = priceValue > finalPriceValue
+              const discountPercent = hasDiscount && priceValue > 0
+                ? Math.round((1 - (finalPriceValue / priceValue)) * 100)
+                : 0
+              const variantOptions = getVariantOptions(item.variantTitle)
+              const cardStyle = index < items.length - 1 ? productCardWithSpacing : productCard
+
+              return (
+                <div style={cardStyle} key={`${item.title}-${index}`}>
+                  <table cellPadding="0" cellSpacing="0" border={0} width="100%">
+                    <tr>
+                      {item.image && (
+                        <td style={{width: '100px', paddingRight: '16px', verticalAlign: 'top'}}>
+                          <Img
+                            src={item.image}
+                            alt={item.title}
+                            width="100"
+                            height="100"
+                            style={{
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                          />
+                        </td>
+                      )}
+                      <td style={{verticalAlign: 'top'}}>
+                        <Text style={productTitleStyle}>{item.title}</Text>
+
+                        {item.quantity > 1 && (
+                          <Text style={quantityText}>Количество: {item.quantity}</Text>
+                        )}
+
+                        {variantOptions.length > 0 && (
+                          <div style={{marginTop: '12px', marginBottom: '12px'}}>
+                            {variantOptions.map((option, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  display: 'inline-block',
+                                  backgroundColor: '#ffffff',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: '9999px',
+                                  padding: '4px 12px',
+                                  marginRight: '6px',
+                                  marginBottom: '6px',
+                                  fontSize: '12px',
+                                }}
+                              >
+                                <span style={{
+                                  color: '#9ca3af',
+                                  textTransform: 'uppercase',
+                                  fontSize: '10px',
+                                  fontWeight: '600',
+                                  letterSpacing: '0.05em',
+                                }}>
+                                  {option.label}
+                                </span>
+                                {' '}
+                                <span style={{
+                                  color: '#1f2937',
+                                  fontWeight: '500',
+                                }}>
+                                  {option.value}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div style={priceContainerNew}>
+                          {hasDiscount && (
+                            <Text style={oldPrice}>{item.price} BYN</Text>
+                          )}
+                          <span style={finalPriceGroupNew}>
+                            <Text style={finalPriceText}>{item.finalPrice} BYN</Text>
+                            {hasDiscount && discountPercent > 0 && (
+                              <span style={discountBadge}>-{discountPercent}%</span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              )
+            })}
+
+            <div style={totalsSection}>
+              <table cellPadding="0" cellSpacing="0" border={0} width="100%" style={totalsTable}>
+                <tr>
+                  <td style={totalsLabel}>Товары ({itemsCount})</td>
+                  <td style={totalsValue}>{totalOriginalText} BYN</td>
+                </tr>
+                {totalDiscount > 0 && (
+                  <tr>
+                    <td style={totalsDiscountLabel}>Скидка</td>
+                    <td style={totalsDiscountValue}>-{totalDiscountText} BYN</td>
+                  </tr>
+                )}
+              </table>
+              <div style={totalsDivider} />
+              <table cellPadding="0" cellSpacing="0" border={0} width="100%">
+                <tr>
+                  <td style={totalsTotalLabel}>Итого</td>
+                  <td style={totalsTotalValue}>{totalFinalText} BYN</td>
+                </tr>
+              </table>
+            </div>
+          </Section>
+
+                    {/* Customer Info */}
           <Section style={customerSection}>
             <Heading style={sectionTitle}>📋 Информация о покупателе</Heading>
             <div style={infoCard}>
@@ -129,84 +265,6 @@ export default function NewOrderNotification({
                   </Column>
                 </Row>
               )}
-            </div>
-          </Section>
-
-          {/* Product Details */}
-          <Section style={productSection}>
-            <Heading style={sectionTitle}>📦 Детали заказа</Heading>
-            <div style={productCard}>
-              <table cellPadding="0" cellSpacing="0" border={0} width="100%">
-                <tr>
-                  {productImage && (
-                    <td style={{width: '100px', paddingRight: '16px', verticalAlign: 'top'}}>
-                      <Img
-                        src={productImage}
-                        alt={productTitle}
-                        width="100"
-                        height="100"
-                        style={{
-                          borderRadius: '8px',
-                          objectFit: 'cover',
-                          display: 'block',
-                        }}
-                      />
-                    </td>
-                  )}
-                  <td style={{verticalAlign: 'top'}}>
-                    <Text style={productTitleStyle}>{productTitle}</Text>
-
-                    {variantOptions.length > 0 && (
-                      <div style={{marginTop: '12px', marginBottom: '12px'}}>
-                        {variantOptions.map((option, idx) => (
-                          <span
-                            key={idx}
-                            style={{
-                              display: 'inline-block',
-                              backgroundColor: '#ffffff',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '9999px',
-                              padding: '4px 12px',
-                              marginRight: '6px',
-                              marginBottom: '6px',
-                              fontSize: '12px',
-                            }}
-                          >
-                            <span style={{
-                              color: '#9ca3af',
-                              textTransform: 'uppercase',
-                              fontSize: '10px',
-                              fontWeight: '600',
-                              letterSpacing: '0.05em',
-                            }}>
-                              {option.label}
-                            </span>
-                            {' '}
-                            <span style={{
-                              color: '#1f2937',
-                              fontWeight: '500',
-                            }}>
-                              {option.value}
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div style={priceContainerNew}>
-                      {hasDiscount && (
-                        <Text style={oldPrice}>{price} BYN</Text>
-                      )}
-                      <span style={finalPriceGroupNew}>
-                        <Text style={finalPriceText}>{finalPrice} BYN</Text>
-                        {hasDiscount && typeof discountPercent === 'number' && discountPercent > 0 && (
-                          <span style={discountBadge}>-{discountPercent}%</span>
-                        )}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              </table>
             </div>
           </Section>
 
@@ -292,11 +350,6 @@ const header = {
   padding: '32px 24px',
   textAlign: 'center' as const,
   borderBottom: '1px solid #e5e7eb',
-}
-
-const logoLink = {
-  textDecoration: 'none',
-  display: 'inline-block',
 }
 
 const logo = {
@@ -442,12 +495,23 @@ const productCard = {
   padding: '20px',
 }
 
+const productCardWithSpacing = {
+  ...productCard,
+  marginBottom: '16px',
+}
+
 const productTitleStyle = {
   color: '#1f2937',
   fontSize: '18px',
   fontWeight: '600',
   margin: '0 0 8px 0',
   lineHeight: '1.4',
+}
+
+const quantityText = {
+  color: '#6b7280',
+  fontSize: '13px',
+  margin: '0 0 8px 0',
 }
 
 const priceContainerNew = {
@@ -484,6 +548,62 @@ const discountBadge = {
   fontWeight: '700' as const,
   marginLeft: '10px',
   display: 'inline-block',
+}
+
+const totalsSection = {
+  borderTop: '1px solid #e5e7eb',
+  marginTop: '16px',
+  paddingTop: '16px',
+}
+
+const totalsTable = {
+  marginBottom: '12px',
+}
+
+const totalsLabel = {
+  color: '#6b7280',
+  fontSize: '14px',
+  textAlign: 'left' as const,
+  paddingBottom: '8px',
+}
+
+const totalsValue = {
+  color: '#6b7280',
+  fontSize: '14px',
+  textAlign: 'right' as const,
+  paddingBottom: '8px',
+}
+
+const totalsDiscountLabel = {
+  color: '#16a34a',
+  fontSize: '14px',
+  textAlign: 'left' as const,
+}
+
+const totalsDiscountValue = {
+  color: '#16a34a',
+  fontSize: '14px',
+  textAlign: 'right' as const,
+}
+
+const totalsDivider = {
+  height: '1px',
+  backgroundColor: '#e5e7eb',
+  marginBottom: '12px',
+}
+
+const totalsTotalLabel = {
+  color: '#111827',
+  fontSize: '18px',
+  fontWeight: '700' as const,
+  textAlign: 'left' as const,
+}
+
+const totalsTotalValue = {
+  color: '#7c3aed',
+  fontSize: '18px',
+  fontWeight: '700' as const,
+  textAlign: 'right' as const,
 }
 
 const noteSection = {

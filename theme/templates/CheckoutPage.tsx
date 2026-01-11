@@ -9,7 +9,7 @@ import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
 import {Snippet} from "@nextui-org/react";
 import Price from "@/theme/snippents/Price";
-import {createWithNotifications} from "@/services/Orders";
+import {createWithNotifications, sendCustomerOrderSummaryEmail} from "@/services/Orders";
 import {format} from "date-fns";
 import {useRouter} from "next/navigation";
 import {useCart} from "@/theme/hooks/useCart";
@@ -46,6 +46,7 @@ const CheckCircleIcon = () => (
 type OrderResult = {
   orderNumber: string;
   brandName?: string;
+  orderId?: string;
 }
 
 export default function CheckoutPage() {
@@ -111,6 +112,7 @@ export default function CheckoutPage() {
   const onSubmit = async (data: any) => {
     if (cartItems.length === 0) return;
 
+    const isMultiBrand = itemsByBrand.length > 1;
     setSubmitting(true);
     try {
       // Создаем заказы для каждого бренда
@@ -158,15 +160,32 @@ export default function CheckoutPage() {
               }
             }
           }
+        }, {
+          sendCustomerEmail: !isMultiBrand,
+          sendSellerEmail: true,
+          awaitNotifications: isMultiBrand,
         });
 
         return {
           orderNumber: order.name,
-          brandName: brand.brandName
+          brandName: brand.brandName,
+          orderId: String(order.id),
         };
       });
 
       const orders = await Promise.all(orderPromises);
+      if (isMultiBrand) {
+        try {
+          const orderIds = orders
+            .map(order => order.orderId)
+            .filter((id): id is string => Boolean(id));
+          if (orderIds.length > 0) {
+            await sendCustomerOrderSummaryEmail(orderIds);
+          }
+        } catch (error) {
+          console.error('Failed to send customer order summary email', error);
+        }
+      }
       if (orders.length > 0) {
         setCompletedOrders(orders);
         clearCart();

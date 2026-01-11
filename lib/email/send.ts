@@ -1,7 +1,10 @@
 'use server'
 
 import { resend, FROM_EMAIL, IS_EMAIL_ENABLED } from './resend'
+import { enqueueEmailSend } from './queue'
+import { EmailOrderItem, EmailOrderSummary } from './types'
 import OrderConfirmation from './templates/OrderConfirmation'
+import OrderSummary from './templates/OrderSummary'
 import NewOrderNotification from './templates/NewOrderNotification'
 import { render } from '@react-email/components'
 import * as React from 'react'
@@ -16,6 +19,7 @@ export interface OrderConfirmationParams {
   finalPrice: string
   discountPercent?: number
   brandName: string
+  orderItems?: EmailOrderItem[]
   trackingUrl?: string
   customerEmail: string
   customerPhone: string
@@ -35,10 +39,20 @@ export interface NewOrderNotificationParams {
   price: string
   finalPrice: string
   discountPercent?: number
+  orderItems?: EmailOrderItem[]
   trackingUrl?: string
   note?: string
   orderUrl: string
   productImage?: string
+}
+
+export interface CustomerOrderSummaryParams {
+  to: string
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  note?: string
+  orders: EmailOrderSummary[]
 }
 
 /**
@@ -50,27 +64,63 @@ export async function sendOrderConfirmationEmail(params: OrderConfirmationParams
     return { success: true, disabled: true }
   }
 
-  try {
-    const emailHtml = await render(React.createElement(OrderConfirmation, params))
+  return enqueueEmailSend(async () => {
+    try {
+      const emailHtml = await render(React.createElement(OrderConfirmation, params))
 
-    const { data, error } = await resend.emails.send({
-      from: `Spraby <${FROM_EMAIL}>`,
-      to: params.to,
-      subject: `✓ Ваш заказ ${params.orderNumber} получен`,
-      html: emailHtml,
-    })
+      const { data, error } = await resend.emails.send({
+        from: `spraby <${FROM_EMAIL}>`,
+        to: params.to,
+        subject: `✓ Ваш заказ ${params.orderNumber} получен`,
+        html: emailHtml,
+      })
 
-    if (error) {
-      console.error('[RESEND ERROR] Order confirmation:', error)
+      if (error) {
+        console.error('[RESEND ERROR] Order confirmation:', error)
+        return { success: false, error }
+      }
+
+      console.log('[EMAIL SENT] Order confirmation to:', params.to, '- ID:', data?.id)
+      return { success: true, data }
+    } catch (error) {
+      console.error('[EMAIL ERROR] Order confirmation:', error)
       return { success: false, error }
     }
+  })
+}
 
-    console.log('[EMAIL SENT] Order confirmation to:', params.to, '- ID:', data?.id)
-    return { success: true, data }
-  } catch (error) {
-    console.error('[EMAIL ERROR] Order confirmation:', error)
-    return { success: false, error }
+/**
+ * Отправка суммарного письма покупателю по нескольким заказам
+ */
+export async function sendCustomerOrderSummaryEmail(params: CustomerOrderSummaryParams) {
+  if (!IS_EMAIL_ENABLED) {
+    console.log('[EMAIL DISABLED] Would send customer order summary to:', params.to)
+    return { success: true, disabled: true }
   }
+
+  return enqueueEmailSend(async () => {
+    try {
+      const emailHtml = await render(React.createElement(OrderSummary, params))
+
+      const { data, error } = await resend.emails.send({
+        from: `spraby <${FROM_EMAIL}>`,
+        to: params.to,
+        subject: '✓ Ваш заказ на spraby получен',
+        html: emailHtml,
+      })
+
+      if (error) {
+        console.error('[RESEND ERROR] Customer order summary:', error)
+        return { success: false, error }
+      }
+
+      console.log('[EMAIL SENT] Customer order summary to:', params.to, '- ID:', data?.id)
+      return { success: true, data }
+    } catch (error) {
+      console.error('[EMAIL ERROR] Customer order summary:', error)
+      return { success: false, error }
+    }
+  })
 }
 
 /**
@@ -82,27 +132,29 @@ export async function sendNewOrderNotificationEmail(params: NewOrderNotification
     return { success: true, disabled: true }
   }
 
-  try {
-    const emailHtml = await render(React.createElement(NewOrderNotification, params))
+  return enqueueEmailSend(async () => {
+    try {
+      const emailHtml = await render(React.createElement(NewOrderNotification, params))
 
-    const { data, error } = await resend.emails.send({
-      from: `Spraby Notifications <${FROM_EMAIL}>`,
-      to: params.to,
-      subject: `🛍️ Новый заказ ${params.orderNumber}`,
-      html: emailHtml,
-    })
+      const { data, error } = await resend.emails.send({
+        from: `spraby <${FROM_EMAIL}>`,
+        to: params.to,
+        subject: `🛍️ Новый заказ ${params.orderNumber}`,
+        html: emailHtml,
+      })
 
-    if (error) {
-      console.error('[RESEND ERROR] New order notification:', error)
+      if (error) {
+        console.error('[RESEND ERROR] New order notification:', error)
+        return { success: false, error }
+      }
+
+      console.log('[EMAIL SENT] New order notification to:', params.to, '- ID:', data?.id)
+      return { success: true, data }
+    } catch (error) {
+      console.error('[EMAIL ERROR] New order notification:', error)
       return { success: false, error }
     }
-
-    console.log('[EMAIL SENT] New order notification to:', params.to, '- ID:', data?.id)
-    return { success: true, data }
-  } catch (error) {
-    console.error('[EMAIL ERROR] New order notification:', error)
-    return { success: false, error }
-  }
+  })
 }
 
 /**
@@ -112,13 +164,23 @@ export async function sendOrderEmails(
   customerParams: OrderConfirmationParams,
   sellerParams: NewOrderNotificationParams
 ) {
-  const [customerResult, sellerResult] = await Promise.allSettled([
-    sendOrderConfirmationEmail(customerParams),
-    sendNewOrderNotificationEmail(sellerParams),
-  ])
+  let sellerResult
+  let customerResult
+
+  try {
+    sellerResult = await sendNewOrderNotificationEmail(sellerParams)
+  } catch (error) {
+    sellerResult = { success: false, error }
+  }
+
+  try {
+    customerResult = await sendOrderConfirmationEmail(customerParams)
+  } catch (error) {
+    customerResult = { success: false, error }
+  }
 
   return {
-    customer: customerResult.status === 'fulfilled' ? customerResult.value : { success: false, error: customerResult.reason },
-    seller: sellerResult.status === 'fulfilled' ? sellerResult.value : { success: false, error: sellerResult.reason },
+    customer: customerResult,
+    seller: sellerResult,
   }
 }
