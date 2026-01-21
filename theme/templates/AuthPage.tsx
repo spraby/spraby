@@ -20,7 +20,7 @@ type FormState = {
   remember: boolean;
   accountType: AccountType;
   brandName: string;
-  instagram: string;
+  // instagram: string;
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -34,7 +34,7 @@ const initialFormState: FormState = {
   remember: true,
   accountType: "customer",
   brandName: "",
-  instagram: "",
+  // instagram: "",
 };
 
 const COPY = {
@@ -151,11 +151,11 @@ export default function AuthPage({mode}: AuthPageProps) {
         if (!form.brandName.trim()) {
           nextErrors.brandName = "Укажите название бренда";
         }
-        if (!form.instagram.trim()) {
-          nextErrors.instagram = "Укажите Instagram";
-        } else if (!form.instagram.trim().match(/^@?[\w.]+$/)) {
-          nextErrors.instagram = "Некорректный Instagram";
-        }
+        // if (!form.instagram.trim()) {
+        //   nextErrors.instagram = "Укажите Instagram";
+        // } else if (!form.instagram.trim().match(/^@?[\w.]+$/)) {
+        //   nextErrors.instagram = "Некорректный Instagram";
+        // }
       }
     }
     return nextErrors;
@@ -321,7 +321,7 @@ export default function AuthPage({mode}: AuthPageProps) {
                   }}
                   placeholder="spraby"
                 />
-                <Input
+                {/* <Input
                   label="Instagram"
                   variant="bordered"
                   radius="sm"
@@ -337,7 +337,7 @@ export default function AuthPage({mode}: AuthPageProps) {
                   startContent={
                     <span className="text-sm text-gray-400">@</span>
                   }
-                />
+                /> */}
               </>
             )}
 
