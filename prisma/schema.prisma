@@ -326,8 +326,8 @@ model brand_requests {
   reviewed_by                             BigInt?
   approved_at                             DateTime? @db.Timestamp(0)
   rejected_at                             DateTime? @db.Timestamp(0)
-  created_at                              DateTime? @db.Timestamp(0)
-  updated_at                              DateTime? @db.Timestamp(0)
+  created_at                              DateTime? @default(now()) @db.Timestamp(0)
+  updated_at                              DateTime? @default(now()) @db.Timestamp(0)
   brands                                  brands?   @relation(fields: [brand_id], references: [id], onUpdate: NoAction, map: "brand_requests_brand_id_foreign")
   users_brand_requests_reviewed_byTousers users?    @relation("brand_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "brand_requests_reviewed_by_foreign")
   users_brand_requests_user_idTousers     users?    @relation("brand_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "brand_requests_user_id_foreign")
