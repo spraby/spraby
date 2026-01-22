@@ -68,7 +68,7 @@ export async function getOptions(where: Prisma.categoriesWhereInput) {
     })
 
     return (category?.CategoryOption ?? []).reduce((acc: OptionModel[], categoryOption) => {
-      if (!acc?.find(i => i.id === categoryOption.Option.id)) acc.push(categoryOption.Option)
+      if (categoryOption.Option && !acc?.find(i => i.id === categoryOption.Option?.id)) acc.push(categoryOption.Option)
       return acc;
     }, [])
 

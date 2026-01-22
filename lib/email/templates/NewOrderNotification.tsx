@@ -95,7 +95,7 @@ export default function NewOrderNotification({
           <Section style={alertSection}>
             <Text style={alertIcon}>🛍️</Text>
             <Heading style={h1}>Новый заказ!</Heading>
-            <Text style={orderNumber}>Заказ {orderNumber}</Text>
+            <Text style={orderNumberStyle}>Заказ {orderNumber}</Text>
           </Section>
 
           {/* Brand Greeting */}
@@ -388,7 +388,7 @@ const h1 = {
   lineHeight: '1.2',
 }
 
-const orderNumber = {
+const orderNumberStyle = {
   color: '#78350f',
   fontSize: '16px',
   fontWeight: '600',

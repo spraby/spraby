@@ -88,7 +88,7 @@ export default function OrderConfirmation({
           <Section style={successSection}>
             <Text style={successIcon}>✓</Text>
             <Heading style={h1}>Заказ оформлен!</Heading>
-            <Text style={orderNumber}>Номер заказа: <strong>{orderNumber}</strong></Text>
+            <Text style={orderNumberStyle}>Номер заказа: <strong>{orderNumber}</strong></Text>
           </Section>
 
           {/* Customer Info */}
@@ -374,7 +374,7 @@ const h1 = {
   lineHeight: '1.2',
 }
 
-const orderNumber = {
+const orderNumberStyle = {
   color: '#6b7280',
   fontSize: '16px',
   margin: '0',

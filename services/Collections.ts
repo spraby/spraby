@@ -1,6 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
-import Prisma, {CategoryCollection, CategoryModel, CollectionModel, OptionModel} from "@/prisma/types";
+import Prisma, {CategoryCollectionModel, CategoryModel, CollectionModel, OptionModel} from "@/prisma/types";
 
 /**
  *
@@ -82,9 +82,9 @@ export async function getOptions(where: Prisma.collectionsWhereInput) {
       }
     })
 
-    return (collection?.CategoryCollection ?? []).reduce((acc: OptionModel[], categoryCollection: CategoryCollection) => {
-      (categoryCollection.Category.CategoryOption ?? []).map(option => {
-        if (!acc?.find(i => i.id === option.Option.id)) acc.push(option.Option)
+    return (collection?.CategoryCollection ?? []).reduce((acc: OptionModel[], categoryCollection: CategoryCollectionModel) => {
+      (categoryCollection.Category?.CategoryOption ?? []).map(option => {
+        if (option.Option && !acc?.find(i => i.id === option.Option?.id)) acc.push(option.Option)
       })
       return acc;
     }, [])

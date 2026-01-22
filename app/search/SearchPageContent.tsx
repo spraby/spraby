@@ -203,7 +203,7 @@ export default function SearchPageContent() {
                 <div className="relative inline-flex items-center">
                   <select
                     value={sort}
-                    onChange={(e) => setSort(e.target.value)}
+                    onChange={(e) => setSort(e.target.value as ProductSort)}
                     className="appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-gray-800 focus:border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-200"
                     aria-label="Сортировка результатов"
                   >

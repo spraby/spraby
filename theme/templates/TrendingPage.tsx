@@ -7,7 +7,9 @@ import Link from "next/link";
 
 const PAGE_SIZE = 20;
 
-export default function TrendingPage({products}: { products: ProductModel[] }) {
+type TrendingProduct = ProductModel & { price: string; final_price: string };
+
+export default function TrendingPage({products}: { products: TrendingProduct[] }) {
   const [visible, setVisible] = useState<ProductModel[]>(() => products.slice(0, PAGE_SIZE));
   const [page, setPage] = useState(1);
   const sentinelRef = useRef<HTMLDivElement | null>(null);

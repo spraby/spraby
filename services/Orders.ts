@@ -211,8 +211,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
     const trackingUrl = `${siteUrl}/purchases/${order.name.replace('#', '')}`
 
     // Отправляем письма
-    let customerResult = { success: true, skipped: true }
-    let sellerResult = { success: true, skipped: true }
+    let customerResult: { success: boolean; skipped?: boolean; data?: unknown; error?: unknown; disabled?: boolean } = { success: true, skipped: true }
+    let sellerResult: { success: boolean; skipped?: boolean; data?: unknown; error?: unknown; disabled?: boolean } = { success: true, skipped: true }
 
     if (sendCustomerEmail && sendSellerEmail && sellerNotificationEmail) {
       const result = await sendOrderEmails(
