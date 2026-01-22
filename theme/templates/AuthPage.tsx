@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {type FormEvent, useMemo, useState} from "react";
 import {Input} from "@nextui-org/input";
-import {Checkbox} from "@nextui-org/react";
+import {Checkbox, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button} from "@nextui-org/react";
 
 type AuthPageProps = {
   mode: "login" | "register";
@@ -32,14 +32,14 @@ const initialFormState: FormState = {
   password: "",
   confirmPassword: "",
   remember: true,
-  accountType: "customer",
+  accountType: "seller", // Временно только продавцы
   brandName: "",
   instagram: "",
 };
 
 const COPY = {
   login: {
-    title: "Войти в spraby",
+    title: "Войти в кабинет продавца",
     subtitle: "Привет! Рады видеть вас снова.",
     actionLabel: "Войти",
     switchLabel: "Нет аккаунта?",
@@ -47,8 +47,8 @@ const COPY = {
     switchHref: "/register",
   },
   register: {
-    title: "Создать аккаунт",
-    subtitle: "Присоединяйтесь к сообществу мастеров и покупателей.",
+    title: "Создать аккаунт продавца",
+    subtitle: "Присоединяйтесь к сообществу мастеров.",
     actionLabel: "Создать аккаунт",
     switchLabel: "Уже есть аккаунт?",
     switchCta: "Войти",
@@ -88,12 +88,35 @@ const formatBelarusPhone = (value: string) => {
 
 const getPhoneDigitsCount = (value: string) => normalizeDigits(value.replace(/^375/, "")).length;
 
+type ForgotPasswordStep = "form" | "code" | "newPassword" | "success";
+
+type ForgotPasswordForm = {
+  email: string;
+  phone: string;
+  code: string;
+  newPassword: string;
+  confirmNewPassword: string;
+};
+
 export default function AuthPage({mode}: AuthPageProps) {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "success">("idle");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Forgot password modal state
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState<ForgotPasswordStep>("form");
+  const [forgotPasswordForm, setForgotPasswordForm] = useState<ForgotPasswordForm>({
+    email: "",
+    phone: "",
+    code: "",
+    newPassword: "",
+    confirmNewPassword: "",
+  });
+  const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
   const copy = COPY[mode];
   const isRegister = mode === "register";
@@ -186,6 +209,149 @@ export default function AuthPage({mode}: AuthPageProps) {
 
   const passwordType = showPassword ? "text" : "password";
 
+  // Forgot password handlers
+  const handleForgotPasswordChange = (field: keyof ForgotPasswordForm, value: string) => {
+    setForgotPasswordForm((prev) => ({...prev, [field]: value}));
+    setForgotPasswordError(null);
+  };
+
+  const resetForgotPasswordModal = () => {
+    setForgotPasswordStep("form");
+    setForgotPasswordForm({
+      email: "",
+      phone: "",
+      code: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    });
+    setForgotPasswordError(null);
+    setForgotPasswordLoading(false);
+  };
+
+  const handleForgotPasswordClose = () => {
+    setForgotPasswordOpen(false);
+    resetForgotPasswordModal();
+  };
+
+  const handleRequestResetCode = async () => {
+    const {email, phone} = forgotPasswordForm;
+
+    if (!email.trim() || !phone.trim()) {
+      setForgotPasswordError("Заполните все поля");
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordError(null);
+
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: email.trim(),
+          phone: normalizeDigits(phone),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setForgotPasswordError(data.message || "Произошла ошибка");
+        return;
+      }
+
+      setForgotPasswordStep("code");
+    } catch {
+      setForgotPasswordError("Ошибка соединения с сервером");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    const {email, code} = forgotPasswordForm;
+
+    if (!code.trim() || code.trim().length !== 6) {
+      setForgotPasswordError("Введите 6-значный код");
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordError(null);
+
+    try {
+      const response = await fetch("/api/auth/verify-reset-code", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: email.trim(),
+          code: code.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setForgotPasswordError(data.message || "Неверный код");
+        return;
+      }
+
+      setForgotPasswordStep("newPassword");
+    } catch {
+      setForgotPasswordError("Ошибка соединения с сервером");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    const {email, code, newPassword, confirmNewPassword} = forgotPasswordForm;
+
+    if (!newPassword.trim()) {
+      setForgotPasswordError("Введите новый пароль");
+      return;
+    }
+
+    if (newPassword.trim().length < 6) {
+      setForgotPasswordError("Пароль должен содержать минимум 6 символов");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setForgotPasswordError("Пароли не совпадают");
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordError(null);
+
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: email.trim(),
+          code: code.trim(),
+          newPassword: newPassword.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setForgotPasswordError(data.message || "Ошибка сброса пароля");
+        return;
+      }
+
+      setForgotPasswordStep("success");
+    } catch {
+      setForgotPasswordError("Ошибка соединения с сервером");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   return (
     <section className="w-full px-4 pb-14 pt-6 sm:px-6">
       <div className="mx-auto w-full max-w-xl">
@@ -201,6 +367,7 @@ export default function AuthPage({mode}: AuthPageProps) {
           </div>
 
           <form className="space-y-5 px-6 py-6 sm:px-7 sm:py-7" onSubmit={handleSubmit}>
+            {/* Google OAuth - временно отключено
             <button
               type="button"
               onClick={handleGoogleClick}
@@ -215,7 +382,9 @@ export default function AuthPage({mode}: AuthPageProps) {
               <span>или</span>
               <span className="h-px flex-1 bg-gray-200"/>
             </div>
+            */}
 
+            {/* Выбор типа аккаунта - временно только продавец
             {isRegister && (
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-gray-700">Тип аккаунта</p>
@@ -253,6 +422,7 @@ export default function AuthPage({mode}: AuthPageProps) {
                 </div>
               </div>
             )}
+            */}
 
             <Input
               type="tel"
@@ -398,9 +568,13 @@ export default function AuthPage({mode}: AuthPageProps) {
                 Запомнить меня
               </Checkbox>
               {!isRegister && (
-                <Link href="#" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
+                <button
+                  type="button"
+                  onClick={() => setForgotPasswordOpen(true)}
+                  className="text-sm font-semibold text-purple-600 hover:text-purple-700"
+                >
                   Забыли пароль?
-                </Link>
+                </button>
               )}
             </div>
 
@@ -440,6 +614,198 @@ export default function AuthPage({mode}: AuthPageProps) {
           </form>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        isOpen={forgotPasswordOpen}
+        onClose={handleForgotPasswordClose}
+        placement="center"
+        classNames={{
+          base: "max-w-md",
+        }}
+      >
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                {forgotPasswordStep === "form" && "Восстановление пароля"}
+                {forgotPasswordStep === "code" && "Введите код"}
+                {forgotPasswordStep === "newPassword" && "Новый пароль"}
+                {forgotPasswordStep === "success" && "Пароль изменён"}
+              </ModalHeader>
+              <ModalBody>
+                {forgotPasswordStep === "form" && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Введите данные вашего аккаунта. Если они совпадают, мы отправим код для сброса пароля на вашу почту.
+                    </p>
+                    <Input
+                      type="email"
+                      label="Email"
+                      variant="bordered"
+                      radius="sm"
+                      value={forgotPasswordForm.email}
+                      onValueChange={(value) => handleForgotPasswordChange("email", value)}
+                      classNames={{
+                        label: "text-sm font-semibold text-gray-700",
+                        inputWrapper: "bg-white",
+                      }}
+                      placeholder="hello@spra.by"
+                    />
+                    <Input
+                      type="tel"
+                      label="Телефон"
+                      variant="bordered"
+                      radius="sm"
+                      value={forgotPasswordForm.phone}
+                      onValueChange={(value) => handleForgotPasswordChange("phone", formatBelarusPhone(value))}
+                      classNames={{
+                        label: "text-sm font-semibold text-gray-700",
+                        inputWrapper: "bg-white",
+                      }}
+                      placeholder="+375 (29) 000-00-00"
+                    />
+                  </div>
+                )}
+
+                {forgotPasswordStep === "code" && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Мы отправили 6-значный код на <strong>{forgotPasswordForm.email}</strong>. Введите его ниже.
+                    </p>
+                    <Input
+                      label="Код подтверждения"
+                      variant="bordered"
+                      radius="sm"
+                      value={forgotPasswordForm.code}
+                      onValueChange={(value) => handleForgotPasswordChange("code", value.replace(/\D/g, "").slice(0, 6))}
+                      classNames={{
+                        label: "text-sm font-semibold text-gray-700",
+                        inputWrapper: "bg-white",
+                      }}
+                      placeholder="000000"
+                      maxLength={6}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Код действителен в течение 30 минут
+                    </p>
+                  </div>
+                )}
+
+                {forgotPasswordStep === "newPassword" && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Придумайте новый пароль для вашего аккаунта.
+                    </p>
+                    <Input
+                      type="password"
+                      label="Новый пароль"
+                      variant="bordered"
+                      radius="sm"
+                      value={forgotPasswordForm.newPassword}
+                      onValueChange={(value) => handleForgotPasswordChange("newPassword", value)}
+                      classNames={{
+                        label: "text-sm font-semibold text-gray-700",
+                        inputWrapper: "bg-white",
+                      }}
+                      placeholder="Минимум 6 символов"
+                    />
+                    <Input
+                      type="password"
+                      label="Повторите пароль"
+                      variant="bordered"
+                      radius="sm"
+                      value={forgotPasswordForm.confirmNewPassword}
+                      onValueChange={(value) => handleForgotPasswordChange("confirmNewPassword", value)}
+                      classNames={{
+                        label: "text-sm font-semibold text-gray-700",
+                        inputWrapper: "bg-white",
+                      }}
+                      placeholder="Ещё раз новый пароль"
+                    />
+                  </div>
+                )}
+
+                {forgotPasswordStep === "success" && (
+                  <div className="space-y-4 text-center py-4">
+                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-3xl">✓</span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Ваш пароль успешно изменён. Теперь вы можете войти с новым паролем.
+                    </p>
+                  </div>
+                )}
+
+                {forgotPasswordError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {forgotPasswordError}
+                  </div>
+                )}
+              </ModalBody>
+              <ModalFooter>
+                {forgotPasswordStep === "form" && (
+                  <>
+                    <Button variant="light" onPress={handleForgotPasswordClose}>
+                      Отмена
+                    </Button>
+                    <Button
+                      color="primary"
+                      onPress={handleRequestResetCode}
+                      isLoading={forgotPasswordLoading}
+                      className="bg-purple-600"
+                    >
+                      Отправить код
+                    </Button>
+                  </>
+                )}
+
+                {forgotPasswordStep === "code" && (
+                  <>
+                    <Button variant="light" onPress={() => setForgotPasswordStep("form")}>
+                      Назад
+                    </Button>
+                    <Button
+                      color="primary"
+                      onPress={handleVerifyCode}
+                      isLoading={forgotPasswordLoading}
+                      className="bg-purple-600"
+                    >
+                      Подтвердить
+                    </Button>
+                  </>
+                )}
+
+                {forgotPasswordStep === "newPassword" && (
+                  <>
+                    <Button variant="light" onPress={() => setForgotPasswordStep("code")}>
+                      Назад
+                    </Button>
+                    <Button
+                      color="primary"
+                      onPress={handleResetPassword}
+                      isLoading={forgotPasswordLoading}
+                      className="bg-purple-600"
+                    >
+                      Сохранить пароль
+                    </Button>
+                  </>
+                )}
+
+                {forgotPasswordStep === "success" && (
+                  <Button
+                    color="primary"
+                    onPress={handleForgotPasswordClose}
+                    className="bg-purple-600 w-full"
+                  >
+                    Войти
+                  </Button>
+                )}
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </section>
   );
 }

@@ -38,16 +38,18 @@ enum user_role {
 }
 
 model users {
-  id         BigInt    @id @default(autoincrement())
-  first_name String?
-  last_name  String?
-  email      String    @unique
-  phone      String?
-  password   String
-  role       user_role @default(customer)
-  updated_at DateTime  @updatedAt
-  created_at DateTime  @default(now())
-  Brands     brands[]
+  id                     BigInt    @id @default(autoincrement())
+  first_name             String?
+  last_name              String?
+  email                  String    @unique
+  phone                  String?
+  password               String
+  role                   user_role @default(customer)
+  password_reset_token   String?   @unique
+  password_reset_expires DateTime?
+  updated_at             DateTime  @updatedAt
+  created_at             DateTime  @default(now())
+  Brands                 brands[]
 }
 
 model brands {
