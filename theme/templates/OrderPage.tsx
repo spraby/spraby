@@ -36,56 +36,90 @@ export default function OrderPage({order}: Props) {
     ]
   }, [order]);
 
-  return <main className={'pt-10'}>
-    <div className={'container mx-auto flex flex-col gap-5 items-center px-5'}>
-      <h1 className={'text-center font-bold text-lg'}>Отслеживание заказа {order.name}</h1>
+  const activeIndex = statuses.reduce((acc, s, idx) => (s.isActive ? idx : acc), -1);
 
-      <div className={'flex flex-row md:flex-col items-stretch gap-5'}>
-        <div className={'flex flex-gap-5 flex-col items-center md:h-auto md:w-full md:flex-row justify-between'}>
-          {
-            statuses.map(({isActive}, index) => {
-              const color = isActive ? 'bg-blue-500' : 'bg-gray-300';
-              const showFirstHalf = !(index === 0);
-              const showSecondHalf = !(index === statuses.length - 1);
-              return <div
-                className={`w-[15px] h-full md:h-auto md:w-full flex justify-center items-center flex-col md:flex-row`}>
-                <div
-                  className={`w-[5px] h-1/2 md:w-1/2 md:h-[5px] mb-2 md:mr-2 md:mb-0 ${showFirstHalf ? color : 'bg-transparent'}`}></div>
-                <div className={`w-[15px] min-w-[15px] min-h-[15px] h-[15px] rounded-full ${color}`}/>
-                <div
-                  className={`w-[5px] h-1/2 md:w-1/2 md:h-[5px] mt-2 md:ml-2 md:mt-0 ${showSecondHalf ? color : 'bg-transparent'}`}></div>
+  return (
+    <main className='px-4 pt-6 pb-12 sm:px-6 lg:px-8'>
+      <div className='mx-auto flex w-full max-w-4xl flex-col items-center gap-6'>
+        <h1 className='text-center text-2xl font-bold text-gray-900 sm:text-3xl'>
+          Отслеживание заказа {order.name}
+        </h1>
+
+        <div className='w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6'>
+          <div className='flex flex-col gap-6'>
+            {/* Mobile vertical timeline */}
+            <div className="flex flex-col gap-0 sm:hidden">
+              {statuses.map(({name, description, isActive}, index) => {
+                const color = isActive ? 'bg-blue-500' : 'bg-gray-300';
+                const prevActive = index > 0 ? statuses[index - 1].isActive : false;
+                const nextExists = index < statuses.length - 1;
+                return (
+                  <div key={`status-mobile-${name}`} className="flex items-stretch gap-3 py-0">
+                    <div className="flex w-[18px] flex-col items-center">
+                      <div className={`w-[3px] flex-1 ${index === 0 ? 'bg-transparent' : prevActive ? 'bg-blue-500' : 'bg-gray-200'}`}/>
+                      <div className={`h-[18px] w-[18px] min-h-[18px] min-w-[18px] rounded-full ${color}`}/>
+                      <div className={`w-[3px] flex-1 ${!nextExists ? 'bg-transparent' : isActive ? 'bg-blue-500' : 'bg-gray-200'}`}/>
+                    </div>
+                    <div className="flex-1">
+                      <div className='text-base font-semibold text-gray-900'>{name}</div>
+                      <p className='text-sm text-gray-500'>{description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop horizontal timeline */}
+            <div className='hidden sm:flex sm:flex-col sm:gap-6'>
+              <div className='flex flex-row items-center justify-between gap-0'>
+                {
+                  statuses.map(({isActive}, index) => {
+                    const color = isActive ? 'bg-blue-500' : 'bg-gray-300';
+                    const showFirstHalf = !(index === 0);
+                    const showSecondHalf = !(index === statuses.length - 1);
+                    return (
+                      <div
+                        key={`status-node-${index}`}
+                        className='flex w-full flex-row items-center justify-center'>
+                        <div className={`h-[3px] w-full ${showFirstHalf ? color : 'bg-transparent'}`}/>
+                        <div className={`h-[18px] w-[18px] min-h-[18px] min-w-[18px] rounded-full ${color}`}/>
+                        <div className={`h-[3px] w-full ${showSecondHalf ? color : 'bg-transparent'}`}/>
+                      </div>
+                    );
+                  })
+                }
               </div>
-            })
-          }
-        </div>
-        <div
-          className={'flex flex-gap-5 flex-col items-start md:h-auto md:w-full md:flex-row justify-between'}>
-          {
-            statuses.map(status => {
-              return <div
-                className={'pt-5 md:pt-0 flex flex-col items-start md:items-center justify-center min-h-[100px] md:min-h-min flex-1'}>
-                <div className={'font-bold'}>{status.name}</div>
-                <p className={'text-left md:text-center text-sm text-gray-500'}>{status.description}</p>
+              <div className='flex flex-col gap-4 sm:flex-row sm:justify-between'>
+                {
+                  statuses.map(status => {
+                    return (
+                      <div
+                        key={status.name}
+                        className='flex flex-1 flex-col items-start gap-1 sm:items-center sm:text-center'>
+                        <div className='text-base font-semibold text-gray-900'>{status.name}</div>
+                        <p className='text-sm text-gray-500'>{status.description}</p>
+                      </div>
+                    );
+                  })
+                }
               </div>
-            })
-          }
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </main>
+    </main>
+  );
 }
 
 type Props = {
-  // order: OrderModel
-  order: any
+  order: OrderModel
 }
 
 /**
  *
  * @param orderStatus
  */
-// function getStatusesState(orderStatus: OrderModel['status']): { [key: string]: boolean } {
-function getStatusesState(orderStatus: any): { [key: string]: boolean } {
+function getStatusesState(orderStatus: OrderModel['status']): { [key: string]: boolean } {
   const statuses = ['pending', 'confirmed', 'processing', 'completed', 'cancelled', 'archived'];
   let isActive = true;
 

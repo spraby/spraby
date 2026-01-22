@@ -1,60 +1,40 @@
 'use client'
 
 import Filter from "@/theme/snippents/Filter";
-import {useEffect, useState} from "react";
-import {useSearchParams} from "next/navigation";
-import {isEqual} from "lodash";
+import type {FilterItem} from "@/types";
 
-const FilterPanel = ({options, searchParams: defaultSearchParams, onChange: onChangeFilter}: Props) => {
-  const router = useSearchParams()
-  const [searchParams, setSearchParams] = useState(defaultSearchParams)
+type FilterPanelProps = {
+  options: FilterItem[];
+  selected: Record<string, string[]>;
+  onToggle: (filterKey: string, value: string, active: boolean, item: FilterItem['values'][number]) => void;
+  onClearFilter?: (filterKey: string) => void;
+};
 
-  useEffect(() => {
-    const params: any = {}
-    router.forEach((value, key) => {
-      params[key] = value
-    })
-    if (!isEqual(params, searchParams)) {
-      setSearchParams(params);
-      onChangeFilter(params)
-    }
-  }, [router]);
-
-  const onChange = (active: boolean, item: any, filter: any) => {
-    let url = new URL(window.location.href);
-    const values = (url.searchParams.get(filter.key) ?? '').split(',').filter(i => !!i.length)
-
-    if (active) {
-      if (!values.includes(item.value)) {
-        values.push(item.value);
-        url.searchParams.set(filter.key, values.join(','));
-      }
-    } else if (!!values?.length) {
-      const params = values.filter(i => i !== item.value).join(',')
-      url.searchParams.set(filter.key, params);
-      if (!params?.length) url.searchParams.delete(filter.key)
-    }
-    window.history.replaceState(null, '', url);
+export default function FilterPanel({
+                                      options,
+                                      selected,
+                                      onToggle,
+                                      onClearFilter,
+                                    }: FilterPanelProps) {
+  if (!options.length) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-200 px-4 py-10 text-center text-sm text-gray-500">
+        Фильтры появятся, когда в категории будут доступные опции.
+      </div>
+    );
   }
 
-  return <div className={'flex flex-col gap-5'}>
-    {
-      options.map((filter, index) => (
+  return (
+    <div className="flex flex-col gap-3">
+      {options.map((filter) => (
         <Filter
-          selected={(searchParams[filter.key] ?? '').split(',')}
-          key={index}
+          key={filter.key}
           filter={filter}
-          onChange={(active: boolean, item: any) => onChange(active, item, filter)}
+          selected={selected[filter.key] ?? []}
+          onChange={(active, item) => onToggle(filter.key, item.value, active, item)}
+          onReset={onClearFilter ? () => onClearFilter(filter.key) : undefined}
         />
-      ))
-    }
-  </div>
-};
-
-type Props = {
-  searchParams: any,
-  options: any[],
-  onChange: any
-};
-
-export default FilterPanel;
+      ))}
+    </div>
+  );
+}

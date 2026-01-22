@@ -5,11 +5,20 @@ import {VariantModel} from "@/prisma/types";
 import {isEqual} from "lodash";
 import {Select, SelectItem} from "@nextui-org/select";
 
-const VariantSelector = ({variants, options = [], onChange}: Props) => {
+const VariantSelector = ({variants, options = [], onChange, initialVariantId}: Props) => {
   const [selectedOptions, setSelectedOption] = useState<SelectedOptions>({});
   const [selectedVariant, setSelectedValiant] = useState<VariantModel>();
 
   useEffect(() => {
+    if (initialVariantId) {
+      const initial = variants.find(v => `${v.id}` === `${initialVariantId}`);
+      if (initial && isValidVariant(initial, options)) {
+        const selectedOptionsData = getVariantOptionsData(initial);
+        setSelectedOption(selectedOptionsData);
+        setSelectedValiant(initial);
+        return;
+      }
+    }
     //find first valid product variant by options
     const firstOption = options?.length ? options[0] : null;
     const firstOptionValue = firstOption ? (firstOption?.options?.length ? firstOption.options[0].value : null) : null;
@@ -121,7 +130,8 @@ export default VariantSelector;
 type Props = {
   variants: VariantModel[],
   options?: Options[],
-  onChange?: (variant?: VariantModel) => any
+  onChange?: (variant?: VariantModel) => any,
+  initialVariantId?: string | number | bigint | null,
 }
 
 type Options = {

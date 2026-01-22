@@ -1,9 +1,63 @@
+@font-face {
+  font-family: 'Gilroy';
+  src: url('/fonts/gilroy/Gilroy-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: url('/fonts/gilroy/Gilroy-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: url('/fonts/gilroy/Gilroy-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: url('/fonts/gilroy/Gilroy-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: url('/fonts/gilroy/Gilroy-Heavy.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body {
+  font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 //COMPONENTS
 @import 'components/sp-menu.scss';
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 .default {
   li {
@@ -29,6 +83,58 @@
   }
 }
 
-.splide__track--nav > .splide__list > .splide__slide {
+.product-gallery .splide__track--nav > .splide__list > .splide__slide {
+  position: relative;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
   border-radius: 10px;
+}
+
+/* Custom scrollbar to match brand style */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 rgba(124, 58, 237, 0.05);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+  border: 2px solid rgba(248, 247, 255, 0.8);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c0c4cc;
+}
+
+.product-gallery .splide__track--nav > .splide__list > .splide__slide.is-active {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.product-gallery .splide__track--nav > .splide__list > .splide__slide.is-active::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -9px;
+  height: 4px;
+  z-index: 2;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%);
+  pointer-events: none;
+}
+
+.product-gallery .splide__track--nav {
+  padding-bottom: 10px;
 }

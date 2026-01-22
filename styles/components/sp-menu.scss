@@ -1,9 +1,11 @@
 .sp-menu {
   padding: 0;
+  @apply w-full;
 
   a,
   span {
-    @apply text-sm cursor-pointer leading-tight text-gray-800 hover:text-purple-500 no-underline;
+    font-size: 0.9rem;
+    @apply cursor-pointer leading-tight text-gray-800 hover:text-purple-500 no-underline;
   }
 
   li {
@@ -13,20 +15,30 @@
   //------------------- FIRST LINE
 
   & > ul {
-    @apply relative flex justify-start gap-8 m-0 p-0;
+    @apply relative flex w-full m-0 p-0 gap-6 justify-between;
 
     & > li {
+      @apply flex-1 min-w-0;
+
       & > a,
       & > span {
-        @apply relative block text-gray-800 font-semibold py-5 px-0 cursor-pointer
+        @apply relative flex justify-center items-center text-center text-gray-800 font-semibold py-5 px-4 cursor-pointer w-full
         before:absolute before:bottom-1 before:w-full before:h-1 before:rounded before:bg-purple-500 before:opacity-0 before:transition-opacity before:duration-300
         hover:before:opacity-100;
+        &::before {
+          content: '';
+        }
       }
 
       &:hover {
         & > ul {
           @apply visible opacity-100;
         }
+      }
+
+      &:hover > a::before,
+      &:hover > span::before {
+        opacity: 1;
       }
 
       //------------------- SECOND LINE
@@ -57,7 +69,11 @@
           //------------------- THIRD LINE
 
           & > ul {
-            @apply flex flex-col gap-1 opacity-0 invisible absolute z-10 m-6 pl-6 top-0 right-0 w-3/4 border-l border-solid border-purple-500;
+            @apply flex flex-col opacity-0 invisible absolute z-10 m-6 pl-4 top-0 border-l border-solid border-gray-200;
+            gap: 0.3rem;
+            left: 32%;
+            right: 0;
+            width: auto;
             transition: opacity 0.4s ease-in-out,
             visibility 0.4s ease-in-out;
 
@@ -71,7 +87,9 @@
               //------------------- FORTH LINE
 
               & > ul {
-                @apply absolute z-10 pl-6 top-0 right-0 w-3/4 opacity-0 invisible border-l border-solid border-purple-500;
+                @apply absolute z-10 pl-4 top-0 opacity-0 invisible border-l border-solid border-gray-200;
+                left: 47%;
+                right: 0;
                 transition: opacity 0.4s ease-in-out,
                 visibility 0.4s ease-in-out;
 
@@ -88,5 +106,31 @@
         }
       }
     }
+  }
+
+  .sp-menu__arrow {
+    @apply h-3.5 w-3.5 flex-shrink-0 text-purple-500 transition-transform duration-200;
+  }
+
+  li:hover > a .sp-menu__arrow,
+  li:hover > span .sp-menu__arrow,
+  .sp-menu__link:hover .sp-menu__arrow,
+  .sp-menu__arrow:hover {
+    @apply translate-x-0.5 text-purple-600;
+  }
+
+  .sp-menu__link:hover .sp-menu__link-text,
+  .sp-menu__arrow:hover ~ .sp-menu__link-text {
+    @apply text-purple-500;
+  }
+
+  .sp-menu__link {
+    @apply flex items-center justify-between gap-2 pr-4;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .sp-menu__link-text {
+    @apply flex-1;
   }
 }

@@ -31,9 +31,9 @@ const Price = ({finalPrice, price, size = '2xl'}: Props) => {
     </span> : undefined;
   }, [price, finalPrice])
 
-  return <span className={'flex gap-3'}>
-    {priceMarkup}
+  return <span className={'flex gap-3 items-baseline'}>
     {finalPriceMarkup}
+    {priceMarkup}
   </span>
 };
 
