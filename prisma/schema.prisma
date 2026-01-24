@@ -16,9 +16,6 @@ model users {
   password                                         String           @db.VarChar(255)
   created_at                                       DateTime?        @db.Timestamp(0)
   updated_at                                       DateTime?        @updatedAt @db.Timestamp(0)
-  two_factor_secret                                String?
-  two_factor_recovery_codes                        String?
-  two_factor_confirmed_at                          DateTime?        @db.Timestamp(0)
   phone                                            String?          @db.VarChar(255)
   audits                                           audits[]
   brand_requests_brand_requests_reviewed_byTousers brand_requests[] @relation("brand_requests_reviewed_byTousers")

@@ -41,18 +41,18 @@ export {
 export type UserModel = users & {
   Brands?: BrandModel[]
   audits?: AuditModel[]
-  brand_requests_reviewed?: BrandRequestModel[]
-  brand_requests_user?: BrandRequestModel[]
+  brand_requests_brand_requests_reviewed_byTousers?: BrandRequestModel[]
+  brand_requests_brand_requests_user_idTousers?: BrandRequestModel[]
 }
 
 export type BrandModel = brands & {
   User?: UserModel
   Products?: ProductModel[]
-  BrandCategory?: BrandCategoryModel[]
-  BrandImage?: BrandImageModel[]
+  brand_category?: BrandCategoryModel[]
+  brand_image?: BrandImageModel[]
   Settings?: BrandSettingsModel[]
-  Orders?: OrderModel[]
-  BrandRequests?: BrandRequestModel[]
+  orders?: OrderModel[]
+  brand_requests?: BrandRequestModel[]
 }
 
 export type OptionModel = options & {
@@ -69,7 +69,7 @@ export type OptionValueModel = option_values & {
 export type CategoryModel = categories & {
   CategoryOption?: CategoryOptionModel[]
   CategoryCollection?: CategoryCollectionModel[]
-  BrandCategory?: BrandCategoryModel[]
+  brand_category?: BrandCategoryModel[]
   Products?: ProductModel[]
 }
 
@@ -100,7 +100,7 @@ export type VariantModel = variants & {
   Product?: ProductModel
   Image?: ProductImageModel
   VariantValue?: VariantValueModel[]
-  OrderItems?: OrderItemModel[]
+  order_items?: OrderItemModel[]
 }
 
 export type VariantValueModel = variant_values & {
