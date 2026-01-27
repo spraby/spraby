@@ -74,6 +74,8 @@ const ProductCart = ({product}: Props) => {
 
 export default ProductCart;
 
+type ProductWithStringPrices = ProductModel & { price: string; final_price: string };
+
 type Props = {
-  product: ProductModel
+  product: ProductModel | ProductWithStringPrices
 };

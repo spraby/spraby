@@ -195,7 +195,7 @@ export async function getProductsOnTrend() {
   }
 }
 
-export async function getTrendingProducts(limit = 100) {
+export async function getTrendingProducts(limit = 100): Promise<(ProductModel & { price: string; final_price: string })[]> {
   try {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -262,9 +262,9 @@ export async function getTrendingProducts(limit = 100) {
           src: i.Image?.src ? `${process.env.AWS_IMAGE_DOMAIN}/${i.Image.src}` : i.Image?.src
         } : null
       }))
-    }));
+    })) as (ProductModel & { price: string; final_price: string })[];
   } catch (error) {
-    return handlePrismaError<ProductModel[]>(error, [], 'products.getTrendingProducts');
+    return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getTrendingProducts');
   }
 }
 

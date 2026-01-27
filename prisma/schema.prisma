@@ -1,11 +1,485 @@
-datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model users {
+  id                                               BigInt           @id @default(autoincrement())
+  first_name                                       String?          @db.VarChar(255)
+  last_name                                        String?          @db.VarChar(255)
+  email                                            String           @unique(map: "users_email_unique") @db.VarChar(255)
+  password                                         String           @db.VarChar(255)
+  created_at                                       DateTime?        @db.Timestamp(0)
+  updated_at                                       DateTime?        @updatedAt @db.Timestamp(0)
+  phone                                            String?          @db.VarChar(255)
+  audits                                           audits[]
+  brand_requests_brand_requests_reviewed_byTousers brand_requests[] @relation("brand_requests_reviewed_byTousers")
+  brand_requests_brand_requests_user_idTousers     brand_requests[] @relation("brand_requests_user_idTousers")
+  Brands                                           brands[]
+}
+
+model brands {
+  id             BigInt           @id @default(autoincrement())
+  user_id        BigInt?
+  name           String           @db.VarChar(255)
+  description    String?
+  created_at     DateTime?        @db.Timestamp(0)
+  updated_at     DateTime?        @updatedAt @db.Timestamp(0)
+  brand_category brand_category[]
+  brand_image    brand_image[]
+  brand_requests brand_requests[]
+  Settings       brand_settings[]
+  User           users?           @relation(fields: [user_id], references: [id], onUpdate: SetNull, map: "brands_user_id_foreign")
+  orders         orders[]
+  Products       products[]
+}
+
+model options {
+  id            BigInt            @id @default(autoincrement())
+  name          String            @db.VarChar(255)
+  title         String            @db.VarChar(255)
+  description   String?
+  created_at    DateTime?         @db.Timestamp(0)
+  updated_at    DateTime?         @updatedAt @db.Timestamp(0)
+  Categories    category_option[]
+  Values        option_values[]
+  VariantValues variant_values[]
+}
+
+model option_values {
+  id            BigInt           @id @default(autoincrement())
+  option_id     BigInt
+  value         String           @db.VarChar(255)
+  created_at    DateTime?        @db.Timestamp(0)
+  updated_at    DateTime?        @updatedAt @db.Timestamp(0)
+  position      Int              @default(0)
+  Option        options          @relation(fields: [option_id], references: [id], onDelete: Cascade, map: "option_values_option_id_foreign")
+  VariantValues variant_values[]
+}
+
+model category_collection {
+  category_id   BigInt
+  collection_id BigInt
+  Category      categories  @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_collection_category_id_foreign")
+  Collection    collections @relation(fields: [collection_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_collection_collection_id_foreign")
+
+  @@id([category_id, collection_id])
+}
+
+model category_option {
+  category_id BigInt
+  option_id   BigInt
+  Category    categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_option_category_id_foreign")
+  Option      options    @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_option_option_id_foreign")
+
+  @@id([category_id, option_id])
+}
+
+model categories {
+  id                 BigInt                @id @default(autoincrement())
+  handle             String                @unique(map: "categories_handle_unique") @db.VarChar(255)
+  name               String                @db.VarChar(255)
+  title              String                @db.VarChar(255)
+  description        String?
+  created_at         DateTime?             @db.Timestamp(0)
+  updated_at         DateTime?             @updatedAt @db.Timestamp(0)
+  header             String?               @db.VarChar(255)
+  brand_category     brand_category[]
+  CategoryCollection category_collection[]
+  CategoryOption     category_option[]
+  Products           products[]
+}
+
+model collections {
+  id                 BigInt                @id @default(autoincrement())
+  handle             String                @unique(map: "collections_handle_unique") @db.VarChar(255)
+  name               String                @db.VarChar(255)
+  title              String                @db.VarChar(255)
+  description        String?
+  created_at         DateTime?             @db.Timestamp(0)
+  updated_at         DateTime?             @updatedAt @db.Timestamp(0)
+  header             String?               @db.VarChar(255)
+  CategoryCollection category_collection[]
+}
+
+model products {
+  id          BigInt              @id @default(autoincrement())
+  brand_id    BigInt
+  category_id BigInt?
+  title       String              @db.VarChar(255)
+  description String?
+  enabled     Boolean             @default(true)
+  price       Decimal             @default(0) @db.Decimal(10, 2)
+  final_price Decimal             @default(0) @db.Decimal(10, 2)
+  created_at  DateTime?           @db.Timestamp(0)
+  updated_at  DateTime?           @updatedAt @db.Timestamp(0)
+  OrderItems  order_items[]
+  Images      product_images[]
+  Statistics  ProductStatistics[]
+  Brand       brands              @relation(fields: [brand_id], references: [id], onDelete: Cascade, map: "products_brand_id_foreign")
+  Category    categories?         @relation(fields: [category_id], references: [id], onUpdate: SetNull, map: "products_category_id_foreign")
+  Variants    variants[]
+}
+
+model variants {
+  id           BigInt           @id @default(autoincrement())
+  product_id   BigInt
+  image_id     BigInt?
+  title        String?          @db.VarChar(255)
+  price        Decimal          @default(0) @db.Decimal(10, 2)
+  final_price  Decimal          @default(0) @db.Decimal(10, 2)
+  created_at   DateTime?        @db.Timestamp(0)
+  updated_at   DateTime?        @updatedAt @db.Timestamp(0)
+  enabled      Boolean          @default(true)
+  order_items  order_items[]
+  VariantValue variant_values[]
+  Image        product_images?  @relation(fields: [image_id], references: [id], onUpdate: SetNull, map: "variants_image_id_foreign")
+  Product      products         @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "variants_product_id_foreign")
+}
+
+model variant_values {
+  id              BigInt        @id @default(autoincrement())
+  variant_id      BigInt
+  option_id       BigInt
+  option_value_id BigInt
+  created_at      DateTime?     @db.Timestamp(0)
+  updated_at      DateTime?     @updatedAt @db.Timestamp(0)
+  Option          options       @relation(fields: [option_id], references: [id], onDelete: Cascade, map: "variant_values_option_id_foreign")
+  Value           option_values @relation(fields: [option_value_id], references: [id], onDelete: Cascade, map: "variant_values_option_value_id_foreign")
+  Variant         variants      @relation(fields: [variant_id], references: [id], onDelete: Cascade, map: "variant_values_variant_id_foreign")
+
+  @@unique([variant_id, option_id, option_value_id], map: "variant_values_variant_id_option_id_option_value_id_unique")
+}
+
+model images {
+  id                BigInt              @id @default(autoincrement())
+  name              String              @db.VarChar(255)
+  src               String              @db.VarChar(255)
+  alt               String?             @db.VarChar(255)
+  meta              String?
+  created_at        DateTime?           @db.Timestamp(0)
+  updated_at        DateTime?           @updatedAt @db.Timestamp(0)
+  brand_image       brand_image[]
+  image_conversions image_conversions[]
+  ProductImages     product_images[]
+}
+
+model product_images {
+  id          BigInt        @id @default(autoincrement())
+  product_id  BigInt
+  image_id    BigInt
+  position    Int           @default(0)
+  created_at  DateTime?     @db.Timestamp(0)
+  updated_at  DateTime?     @updatedAt @db.Timestamp(0)
+  order_items order_items[]
+  Image       images        @relation(fields: [image_id], references: [id], onDelete: Cascade, map: "product_images_image_id_foreign")
+  Product     products      @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "product_images_product_id_foreign")
+  Variant     variants[]
+}
+
+model settings {
+  id         BigInt    @id @default(autoincrement())
+  data       Json      @default("[]")
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  key        String    @unique(map: "settings_key_unique") @db.VarChar(255)
+}
+
+model brand_settings {
+  id         BigInt    @id @default(autoincrement())
+  type       String    @db.VarChar(255)
+  data       Json      @default("{}")
+  brand_id   BigInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  Brand      brands    @relation(fields: [brand_id], references: [id], onDelete: Cascade, map: "brand_settings_brand_id_foreign")
+
+  @@unique([id, type, brand_id], map: "brand_settings_id_type_brand_id_unique")
+  @@unique([type, brand_id], map: "brand_settings_type_brand_id_unique")
+}
+
+model customers {
+  id         BigInt    @id @default(autoincrement())
+  email      String    @unique(map: "customers_email_unique") @db.VarChar(255)
+  name       String    @db.VarChar(255)
+  phone      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  Orders     orders[]
+}
+
+model orders {
+  id               BigInt            @id @default(autoincrement())
+  name             String            @db.VarChar(255)
+  customer_id      BigInt
+  brand_id         BigInt
+  note             String?
+  status           order_status      @default(pending)
+  delivery_status  delivery_status   @default(pending)
+  financial_status financial_status  @default(unpaid)
+  created_at       DateTime?         @db.Timestamp(0)
+  updated_at       DateTime?         @updatedAt @db.Timestamp(0)
+  OrderItems       order_items[]
+  OrderShippings   order_shippings[]
+  Brand            brands            @relation(fields: [brand_id], references: [id], onDelete: Cascade, map: "orders_brand_id_foreign")
+  Customer         customers         @relation(fields: [customer_id], references: [id], onDelete: Cascade, map: "orders_customer_id_foreign")
+}
+
+model order_items {
+  id            BigInt          @id @default(autoincrement())
+  order_id      BigInt
+  product_id    BigInt?
+  variant_id    BigInt?
+  image_id      BigInt?
+  title         String          @db.VarChar(255)
+  variant_title String          @db.VarChar(255)
+  description   String?
+  quantity      Int
+  price         Decimal         @default(0) @db.Decimal(10, 2)
+  final_price   Decimal         @default(0) @db.Decimal(10, 2)
+  created_at    DateTime?       @db.Timestamp(0)
+  updated_at    DateTime?       @updatedAt @db.Timestamp(0)
+  Image         product_images? @relation(fields: [image_id], references: [id], onUpdate: SetNull, map: "order_items_image_id_foreign")
+  Order         orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_items_order_id_foreign")
+  Product       products?       @relation(fields: [product_id], references: [id], onUpdate: SetNull, map: "order_items_product_id_foreign")
+  Variant       variants?       @relation(fields: [variant_id], references: [id], onUpdate: SetNull, map: "order_items_variant_id_foreign")
+}
+
+model order_shippings {
+  id         BigInt    @id @default(autoincrement())
+  order_id   BigInt
+  name       String    @db.VarChar(255)
+  phone      String    @db.VarChar(255)
+  note       String
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  Order      orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_shippings_order_id_foreign")
+}
+
+model ProductStatistics {
+  id         BigInt    @id @default(autoincrement())
+  product_id BigInt
+  client_id  String    @db.VarChar(255)
+  type       String    @db.VarChar(255)
+  geo        Json
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  Product    products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "product_statistics_product_id_foreign")
+
+  @@unique([product_id, client_id, type], name: "statistics", map: "statistics")
+  @@map("product_statistics")
+}
+
+model audits {
+  id             BigInt    @id @default(autoincrement())
+  event          String    @db.VarChar(255)
+  message        String?
+  old_values     Json?     @db.Json
+  new_values     Json?     @db.Json
+  auditable_type String    @db.VarChar(255)
+  auditable_id   BigInt
+  user_id        BigInt?
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "audits_user_id_foreign")
+
+  @@index([auditable_type, auditable_id], map: "audits_auditable_type_auditable_id_index")
+}
+
+model brand_category {
+  brand_id    BigInt
+  category_id BigInt
+  brands      brands     @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brand_category_brand_id_foreign")
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brand_category_category_id_foreign")
+
+  @@id([brand_id, category_id])
+}
+
+model brand_image {
+  brand_id BigInt
+  image_id BigInt
+  brands   brands @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brand_image_brand_id_foreign")
+  images   images @relation(fields: [image_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brand_image_image_id_foreign")
+
+  @@id([brand_id, image_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model brand_requests {
+  id                                      BigInt    @id @default(autoincrement())
+  email                                   String    @db.VarChar(255)
+  phone                                   String?   @db.VarChar(255)
+  name                                    String?   @db.VarChar(255)
+  brand_name                              String?   @db.VarChar(255)
+  status                                  String    @default("pending") @db.VarChar(255)
+  brand_id                                BigInt?
+  user_id                                 BigInt?
+  rejection_reason                        String?
+  reviewed_by                             BigInt?
+  approved_at                             DateTime? @db.Timestamp(0)
+  rejected_at                             DateTime? @db.Timestamp(0)
+  created_at                              DateTime? @default(now()) @db.Timestamp(0)
+  updated_at                              DateTime? @default(now()) @db.Timestamp(0)
+  brands                                  brands?   @relation(fields: [brand_id], references: [id], onUpdate: NoAction, map: "brand_requests_brand_id_foreign")
+  users_brand_requests_reviewed_byTousers users?    @relation("brand_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "brand_requests_reviewed_by_foreign")
+  users_brand_requests_user_idTousers     users?    @relation("brand_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "brand_requests_user_id_foreign")
+}
+
+model cache {
+  key        String @id @db.VarChar(255)
+  value      String
+  expiration Int
+}
+
+model cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement())
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String
+  queue      String
+  payload    String
+  exception  String
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model image_conversions {
+  id              BigInt    @id @default(autoincrement())
+  image_id        BigInt
+  conversion_name String    @db.VarChar(255)
+  conversion_md5  String    @db.VarChar(255)
+  width           Int
+  height          Int
+  size            Int
+  x               Int?
+  y               Int?
+  rotate          Int       @default(0)
+  scale_x         Int       @default(1) @db.SmallInt
+  scale_y         Int       @default(1) @db.SmallInt
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+  images          images    @relation(fields: [image_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "image_conversions_image_id_foreign")
+}
+
+model job_batches {
+  id             String  @id @db.VarChar(255)
+  name           String  @db.VarChar(255)
+  total_jobs     Int
+  pending_jobs   Int
+  failed_jobs    Int
+  failed_job_ids String
+  options        String?
+  cancelled_at   Int?
+  created_at     Int
+  finished_at    Int?
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement())
+  queue        String @db.VarChar(255)
+  payload      String
+  attempts     Int    @db.SmallInt
+  reserved_at  Int?
+  available_at Int
+  created_at   Int
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement())
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model model_has_permissions {
+  permission_id BigInt
+  model_type    String      @db.VarChar(255)
+  model_id      BigInt
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_permissions_permission_id_foreign")
+
+  @@id([permission_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_permissions_model_id_model_type_index")
+}
+
+model model_has_roles {
+  role_id    BigInt
+  model_type String @db.VarChar(255)
+  model_id   BigInt
+  roles      roles  @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_roles_role_id_foreign")
+
+  @@id([role_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_roles_model_id_model_type_index")
+}
+
+model permissions {
+  id                    BigInt                  @id @default(autoincrement())
+  name                  String                  @db.VarChar(255)
+  guard_name            String                  @db.VarChar(255)
+  created_at            DateTime?               @db.Timestamp(0)
+  updated_at            DateTime?               @db.Timestamp(0)
+  model_has_permissions model_has_permissions[]
+  role_has_permissions  role_has_permissions[]
+
+  @@unique([name, guard_name], map: "permissions_name_guard_name_unique")
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt
+  name           String
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([expires_at], map: "personal_access_tokens_expires_at_index")
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model role_has_permissions {
+  permission_id BigInt
+  role_id       BigInt
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_permission_id_foreign")
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_role_id_foreign")
+
+  @@id([permission_id, role_id])
+}
+
+model roles {
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String                 @db.VarChar(255)
+  guard_name           String                 @db.VarChar(255)
+  created_at           DateTime?              @db.Timestamp(0)
+  updated_at           DateTime?              @db.Timestamp(0)
+  model_has_roles      model_has_roles[]
+  role_has_permissions role_has_permissions[]
+
+  @@unique([name, guard_name], map: "roles_name_guard_name_unique")
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt?
+  ip_address    String? @db.VarChar(45)
+  user_agent    String?
+  payload       String
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
 }
 
 enum order_status {
@@ -30,277 +504,4 @@ enum financial_status {
   paid
   partial_paid
   refunded
-}
-
-enum user_role {
-  customer
-  seller
-}
-
-model users {
-  id                     BigInt    @id @default(autoincrement())
-  first_name             String?
-  last_name              String?
-  email                  String    @unique
-  phone                  String?
-  password               String
-  role                   user_role @default(customer)
-  password_reset_token   String?   @unique
-  password_reset_expires DateTime?
-  updated_at             DateTime  @updatedAt
-  created_at             DateTime  @default(now())
-  Brands                 brands[]
-}
-
-model brands {
-  id          BigInt           @id @default(autoincrement())
-  user_id     BigInt?
-  name        String
-  description String?
-  instagram   String?
-  updated_at  DateTime         @updatedAt
-  created_at  DateTime         @default(now())
-  User        users?           @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Products    products[]
-  Categories  categories[]
-  Images      images[]
-  Settings    brand_settings[]
-  orders      orders[]
-}
-
-model options {
-  id            BigInt            @id @default(autoincrement())
-  name          String
-  title         String
-  description   String?
-  updated_at    DateTime          @updatedAt
-  created_at    DateTime          @default(now())
-  Values        option_values[]
-  Categories    category_option[]
-  VariantValues variant_values[]
-}
-
-model option_values {
-  id            BigInt           @id @default(autoincrement())
-  option_id     BigInt
-  value         String
-  position      Int              @default(0)
-  updated_at    DateTime         @updatedAt
-  created_at    DateTime         @default(now())
-  Option        options          @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  VariantValues variant_values[]
-}
-
-model category_collection {
-  category_id   BigInt
-  collection_id BigInt
-
-  Category   categories  @relation(fields: [category_id], references: [id])
-  Collection collections @relation(fields: [collection_id], references: [id])
-
-  @@id([category_id, collection_id])
-}
-
-model category_option {
-  category_id BigInt
-  option_id   BigInt
-  Category    categories @relation(fields: [category_id], references: [id])
-  Option      options    @relation(fields: [option_id], references: [id])
-
-  @@id([category_id, option_id])
-}
-
-model categories {
-  id                 BigInt                @id @default(autoincrement())
-  handle             String                @unique
-  name               String
-  title              String
-  header             String?
-  description        String?
-  updated_at         DateTime              @updatedAt
-  created_at         DateTime              @default(now())
-  CategoryOption     category_option[]
-  Brands             brands[]
-  Products           products[]
-  CategoryCollection category_collection[]
-}
-
-model collections {
-  id                 BigInt                @id @default(autoincrement())
-  handle             String                @unique
-  name               String
-  title              String
-  header             String?
-  description        String?
-  updated_at         DateTime              @updatedAt
-  created_at         DateTime              @default(now())
-  CategoryCollection category_collection[]
-}
-
-model products {
-  id          BigInt              @id @default(autoincrement())
-  brand_id    BigInt
-  category_id BigInt?
-  title       String
-  description String?
-  enabled     Boolean             @default(true)
-  price       Decimal             @default(0) @db.Decimal(10, 2)
-  final_price Decimal             @default(0) @db.Decimal(10, 2)
-  updated_at  DateTime            @updatedAt
-  created_at  DateTime            @default(now())
-  Brand       brands              @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Category    categories?         @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Variants    variants[]
-  Images      product_images[]
-  OrderItems  order_items[]
-  Statistics  ProductStatistics[]
-}
-
-model variants {
-  id           BigInt           @id @default(autoincrement())
-  product_id   BigInt
-  image_id     BigInt?
-  title        String?
-  price        Decimal          @default(0) @db.Decimal(10, 2)
-  final_price  Decimal          @default(0) @db.Decimal(10, 2)
-  enabled      Boolean          @default(true)
-  updated_at   DateTime         @updatedAt
-  created_at   DateTime         @default(now())
-  Product      products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Image        product_images?  @relation(fields: [image_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  VariantValue variant_values[]
-  order_items  order_items[]
-}
-
-model variant_values {
-  id              BigInt        @id @default(autoincrement())
-  variant_id      BigInt
-  option_id       BigInt
-  option_value_id BigInt
-  updated_at      DateTime      @updatedAt
-  created_at      DateTime      @default(now())
-  Variant         variants      @relation(fields: [variant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Option          options       @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Value           option_values @relation(fields: [option_value_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([variant_id, option_id])
-  @@unique([variant_id, option_id, option_value_id])
-}
-
-model images {
-  id            BigInt           @id @default(autoincrement())
-  name          String
-  src           String
-  alt           String?
-  meta          String?
-  updated_at    DateTime         @updatedAt
-  created_at    DateTime         @default(now())
-  Brands        brands[]
-  ProductImages product_images[]
-}
-
-model product_images {
-  id          BigInt        @id @default(autoincrement())
-  product_id  BigInt
-  image_id    BigInt
-  position    Int           @default(0)
-  updated_at  DateTime      @updatedAt
-  created_at  DateTime      @default(now())
-  Product     products      @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Image       images        @relation(fields: [image_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Variant     variants[]
-  order_items order_items[]
-}
-
-model settings {
-  id         BigInt   @id @default(autoincrement())
-  key        String   @unique
-  data       Json     @default("[]") @db.JsonB
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-}
-
-model brand_settings {
-  id         BigInt   @id @default(autoincrement())
-  type       String
-  data       Json     @default("{}") @db.JsonB
-  brand_id   BigInt
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-  Brand      brands   @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([type, brand_id])
-}
-
-model customers {
-  id         BigInt   @id @default(autoincrement())
-  email      String   @unique
-  name       String
-  phone      String
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-  Orders     orders[]
-}
-
-model orders {
-  id               BigInt            @id @default(autoincrement())
-  name             String
-  customer_id      BigInt
-  brand_id         BigInt
-  note             String?
-  status           order_status      @default(pending)
-  delivery_status  delivery_status   @default(pending)
-  financial_status financial_status  @default(unpaid)
-  updated_at       DateTime          @updatedAt
-  created_at       DateTime          @default(now())
-  Customer         customers         @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Brand            brands            @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  OrderShippings   order_shippings[]
-  OrderItems       order_items[]
-}
-
-model order_items {
-  id            BigInt          @id @default(autoincrement())
-  order_id      BigInt
-  product_id    BigInt?
-  variant_id    BigInt?
-  image_id      BigInt?
-  title         String
-  variant_title String
-  description   String?
-  quantity      Int
-  price         Decimal         @default(0) @db.Decimal(10, 2)
-  final_price   Decimal         @default(0) @db.Decimal(10, 2)
-  updated_at    DateTime        @updatedAt
-  created_at    DateTime        @default(now())
-  Order         orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Product       products?       @relation(fields: [product_id], references: [id], onDelete: SetNull)
-  Variant       variants?       @relation(fields: [variant_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  Image         product_images? @relation(fields: [image_id], references: [id], onDelete: SetNull, onUpdate: SetNull)
-}
-
-model order_shippings {
-  id         BigInt   @id @default(autoincrement())
-  order_id   BigInt
-  name       String
-  phone      String
-  note       String
-  updated_at DateTime @updatedAt
-  created_at DateTime @default(now())
-  Order      orders   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-model ProductStatistics {
-  id         BigInt   @id @default(autoincrement()) @db.BigInt
-  product_id BigInt   @db.BigInt
-  client_id  String
-  type       String
-  geo        Json?    @db.JsonB
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @db.Timestamptz(6)
-
-  Product products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([product_id, client_id, type], name: "statistics")
-  @@map("product_statistics")
 }

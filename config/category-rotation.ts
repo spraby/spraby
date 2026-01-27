@@ -5,7 +5,16 @@
  * изображений в блоке "Популярные категории"
  */
 
-export const CATEGORY_ROTATION_CONFIG = {
+type RotationInterval = 'hourly' | 'daily' | 'custom';
+
+export const CATEGORY_ROTATION_CONFIG: {
+  poolSize: number;
+  statsPeriodDays: number;
+  weights: { view: number; click: number; add_to_cart: number };
+  cacheDuration: number;
+  rotationInterval: RotationInterval;
+  fallbackImage: string;
+} = {
   /**
    * Размер пула топ товаров для каждой категории
    * Чем больше значение, тем больше разнообразие, но выше нагрузка на БД
@@ -47,13 +56,13 @@ export const CATEGORY_ROTATION_CONFIG = {
    * 'daily' - каждый день меняется изображение
    * 'custom' - можно настроить custom логику в getRotationIndex()
    */
-  rotationInterval: 'hourly' as const,
+  rotationInterval: 'hourly',
 
   /**
    * Fallback изображение если нет товаров в категории
    */
   fallbackImage: '/placeholder-category.jpg',
-} as const;
+};
 
 /**
  * Вспомогательные функции для работы с конфигурацией

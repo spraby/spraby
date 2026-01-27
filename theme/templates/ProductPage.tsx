@@ -262,6 +262,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const options = useMemo(() => {
     if (product && product?.Category && product?.Variants?.length) {
       return product.Category.CategoryOption?.reduce((acc: Options[], categoryOption) => {
+        if (!categoryOption.Option) return acc;
+
         const optionVariantValues = (product?.Variants ?? []).reduce((acc: string[], variant) => {
           (variant.VariantValue ?? []).map(variantValue => {
             if (variantValue.option_id === categoryOption.option_id && variantValue.Value?.value && !acc.includes(variantValue.Value.value)) acc.push(variantValue.Value.value);

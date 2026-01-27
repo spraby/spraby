@@ -20,26 +20,44 @@ import {
   order_shippings,
   Prisma,
   ProductStatistics,
+  audits,
+  brand_category,
+  brand_image,
+  brand_requests,
+  image_conversions,
+  order_status,
+  delivery_status,
+  financial_status,
 } from '@prisma/client'
 
 export default Prisma
 
+export {
+  order_status,
+  delivery_status,
+  financial_status,
+}
+
 export type UserModel = users & {
   Brands?: BrandModel[]
+  audits?: AuditModel[]
+  brand_requests_brand_requests_reviewed_byTousers?: BrandRequestModel[]
+  brand_requests_brand_requests_user_idTousers?: BrandRequestModel[]
 }
 
 export type BrandModel = brands & {
   User?: UserModel
   Products?: ProductModel[]
-  Categories?: CategoryModel[]
-  Images?: ImageModel[]
+  brand_category?: BrandCategoryModel[]
+  brand_image?: BrandImageModel[]
   Settings?: BrandSettingsModel[]
-  Orders?: OrderModel[]
+  orders?: OrderModel[]
+  brand_requests?: BrandRequestModel[]
 }
 
 export type OptionModel = options & {
   Values?: OptionValueModel[]
-  CategoryOption?: CategoryOption[]
+  Categories?: CategoryOptionModel[]
   VariantValues?: VariantValueModel[]
 }
 
@@ -49,40 +67,40 @@ export type OptionValueModel = option_values & {
 }
 
 export type CategoryModel = categories & {
-  CategoryOption?: CategoryOption[]
-  CategoryCollection?: CategoryCollection[]
-  Brands?: BrandModel[]
+  CategoryOption?: CategoryOptionModel[]
+  CategoryCollection?: CategoryCollectionModel[]
+  brand_category?: BrandCategoryModel[]
   Products?: ProductModel[]
 }
 
-export type CategoryOption = category_option & {
-  Category: CategoryModel,
-  Option: OptionModel
+export type CategoryOptionModel = category_option & {
+  Category?: CategoryModel
+  Option?: OptionModel
 }
 
 export type CollectionModel = collections & {
-  CategoryCollection?: CategoryCollection[],
+  CategoryCollection?: CategoryCollectionModel[]
 }
 
-export type CategoryCollection = category_collection & {
-  Category: CategoryModel
-  Collection: CollectionModel
+export type CategoryCollectionModel = category_collection & {
+  Category?: CategoryModel
+  Collection?: CollectionModel
 }
 
 export type ProductModel = products & {
   Brand?: BrandModel
   Category?: CategoryModel
   Variants?: VariantModel[]
-  Images?: ProductImageModel[],
-  OrderItems?: OrderItemModel[],
-  Statistics?: ProductStatisticsModel[],
+  Images?: ProductImageModel[]
+  OrderItems?: OrderItemModel[]
+  Statistics?: ProductStatisticsModel[]
 }
 
 export type VariantModel = variants & {
   Product?: ProductModel
   Image?: ProductImageModel
-  VariantValue?: VariantValueModel[],
-  OrderItems?: OrderItemModel[]
+  VariantValue?: VariantValueModel[]
+  order_items?: OrderItemModel[]
 }
 
 export type VariantValueModel = variant_values & {
@@ -96,20 +114,22 @@ export type ProductStatisticsModel = ProductStatistics & {
 }
 
 export type ImageModel = images & {
-  Brands?: BrandModel[]
+  BrandImage?: BrandImageModel[]
+  ImageConversions?: ImageConversionModel[]
   ProductImages?: ProductImageModel[]
-  Variants?: VariantModel[]
 }
 
 export type ProductImageModel = product_images & {
   Product?: ProductModel
   Image?: ImageModel
+  OrderItems?: OrderItemModel[]
+  Variant?: VariantModel[]
 }
 
 export type SettingsModel = settings & {}
 
 export type BrandSettingsModel = brand_settings & {
-  brands?: BrandModel
+  Brand?: BrandModel
 }
 
 export type CustomerModel = customers & {
@@ -117,36 +137,59 @@ export type CustomerModel = customers & {
 }
 
 export type OrderModel = orders & {
-  Brand?: BrandModel,
-  Customer?: CustomerModel,
-  OrderShippings?: OrderShippingModel[],
+  Brand?: BrandModel
+  Customer?: CustomerModel
+  OrderShippings?: OrderShippingModel[]
   OrderItems?: OrderItemModel[]
 }
 
 export type OrderItemModel = order_items & {
-  Order: OrderModel,
-  Product: ProductModel,
-  Variant: VariantModel,
-  Image: ProductImageModel
+  Order?: OrderModel
+  Product?: ProductModel
+  Variant?: VariantModel
+  Image?: ProductImageModel
 }
 
 export type OrderShippingModel = order_shippings & {
-  Order: OrderModel
+  Order?: OrderModel
+}
+
+export type AuditModel = audits & {
+  User?: UserModel
+}
+
+export type BrandCategoryModel = brand_category & {
+  Brand?: BrandModel
+  Category?: CategoryModel
+}
+
+export type BrandImageModel = brand_image & {
+  Brand?: BrandModel
+  Image?: ImageModel
+}
+
+export type BrandRequestModel = brand_requests & {
+  Brand?: BrandModel
+  ReviewedBy?: UserModel
+  User?: UserModel
+}
+
+export type ImageConversionModel = image_conversions & {
+  Image?: ImageModel
 }
 
 export type BrandSettingsData = {
   delivery: {
     description: string
-  },
+  }
   refund: {
     description: string
-  },
-  phones: string[],
-  emails: string[],
+  }
+  phones: string[]
+  emails: string[]
   socials: {
     type: 'whatsapp' | 'telegram' | 'instagram'
     link: string
   }[]
   addresses: string[]
 }
-

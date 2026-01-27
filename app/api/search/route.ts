@@ -27,10 +27,10 @@ export async function GET(request: Request) {
   const where = {
     enabled: true,
     OR: [
-      {title: {contains: q, mode: "insensitive"}},
-      {description: {contains: q, mode: "insensitive"}},
+      {title: {contains: q, mode: "insensitive" as const}},
+      {description: {contains: q, mode: "insensitive" as const}},
     ],
-  } as const;
+  };
 
   const orderBy =
     sort === "price_asc"

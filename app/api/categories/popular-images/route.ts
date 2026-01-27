@@ -155,7 +155,7 @@ async function generatePopularImages(): Promise<
 
   const result: Record<string, CategoryPopularImage> = {};
 
-  for (const [categoryHandle, categoryData] of categoryProductsMap.entries()) {
+  for (const [categoryHandle, categoryData] of Array.from(categoryProductsMap.entries())) {
     if (categoryData.products.length === 0) continue;
 
     // Берем первые 6 товаров с ротацией

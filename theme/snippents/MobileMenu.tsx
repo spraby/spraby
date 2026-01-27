@@ -46,12 +46,16 @@ export default function MobileMenu({menu}: MobileMenuProps) {
     }
   };
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const navigateToSearch = () => {
     const query = search.trim();
     router.push(query ? `/search?q=${encodeURIComponent(query)}` : '/search');
     setOpenSuggest(false);
     handleClose();
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    navigateToSearch();
   };
 
   useEffect(() => {
@@ -211,7 +215,7 @@ export default function MobileMenu({menu}: MobileMenuProps) {
                   <div className="border-t border-gray-100 px-4 py-2 text-right">
                     <button
                       type="button"
-                      onClick={handleSearchSubmit}
+                      onClick={navigateToSearch}
                       className="text-xs font-semibold text-purple-600 hover:text-purple-700"
                     >
                       Все результаты
