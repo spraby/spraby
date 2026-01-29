@@ -1,5 +1,6 @@
 'use client'
 
+import Link from "next/link";
 import ProductCart from "@/theme/snippents/ProductCart";
 import ResponsiveFilters from "@/theme/snippents/ResponsiveFilters";
 import {BreadcrumbItem, FilterItem} from "@/types";
@@ -181,9 +182,9 @@ export default function CollectionPage({
                     {
                       (!!breadcrumbs?.length && breadcrumbs?.length > index + 1) ?
                         <>
-                          <a href={i.url} className="inline-flex items-center gap-1 text-gray-600 transition hover:text-purple-600">
+                          <Link href={i.url} className="inline-flex items-center gap-1 text-gray-600 transition hover:text-purple-600">
                             {i.title}
-                          </a>
+                          </Link>
                           <BreadcrumbSeparatorIcon/>
                         </> :
                         <span className="text-gray-800 font-semibold">

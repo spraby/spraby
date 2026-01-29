@@ -1,4 +1,4 @@
-import type {Metadata} from "next";
+import type {Metadata, Viewport} from "next";
 import '../styles/index.scss';
 import {getMainMenu} from "@/services/Settings";
 import AppShell from "@/theme/layouts/AppShell";
@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     shortcut: "/img/favicon.svg",
     apple: "/img/favicon.svg",
   },
+};
+
+export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 

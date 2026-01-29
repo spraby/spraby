@@ -2,7 +2,7 @@ import {findFirst} from "@/services/Orders";
 import {serializeObject} from "@/services/utilits";
 import OrderPage from "@/theme/templates/OrderPage";
 
-export default async function (props: any) {
+export default async function PurchasePage(props: any) {
   const order = await findFirst({
     where: {name: `#${props.params.id}`},
   });

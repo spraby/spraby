@@ -2,7 +2,7 @@ import HomePage from "@/theme/templates/HomePage";
 import {getLatestProducts, getProductsOnTrend} from "@/services/Products";
 import {getPopularCategoriesByViews} from "@/services/Categories";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 // Функция для получения популярных изображений категорий
 async function getCategoryPopularImages() {

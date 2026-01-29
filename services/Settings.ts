@@ -1,4 +1,5 @@
 'use server'
+import {unstable_cache} from "next/cache";
 import db from "@/prisma/db.client";
 import {handlePrismaError} from "@/prisma/safeCall";
 import {BreadcrumbItem, MenuItem} from "@/types";
@@ -6,25 +7,33 @@ import {BreadcrumbItem, MenuItem} from "@/types";
 /**
  *
  */
-export async function getMainMenu(): Promise<MenuItem[]> {
+const getMainMenuCached = unstable_cache(async (): Promise<MenuItem[]> => {
   try {
     const settings = await db.settings.findUnique({where: {key: 'menu'}});
     return (settings?.data as MenuItem[]) ?? [];
   } catch (error) {
     return handlePrismaError<MenuItem[]>(error, [], 'settings.getMainMenu');
   }
+}, ['settings:menu'], {revalidate: 300});
+
+export async function getMainMenu(): Promise<MenuItem[]> {
+  return getMainMenuCached();
 }
 
 /**
  *
  */
-export async function getInformationSettings(): Promise<Record<string, unknown>> {
+const getInformationSettingsCached = unstable_cache(async (): Promise<Record<string, unknown>> => {
   try {
     const settings = await db.settings.findUnique({where: {key: 'information'}});
     return (settings?.data as Record<string, unknown>) ?? {};
   } catch (error) {
     return handlePrismaError<Record<string, unknown>>(error, {}, 'settings.getInformationSettings');
   }
+}, ['settings:information'], {revalidate: 300});
+
+export async function getInformationSettings(): Promise<Record<string, unknown>> {
+  return getInformationSettingsCached();
 }
 
 export async function getBreadcrumbs(currentUrl: string): Promise<any | null> {

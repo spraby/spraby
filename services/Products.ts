@@ -1,8 +1,10 @@
 'use server'
+import {unstable_cache} from "next/cache";
 import db from "@/prisma/db.client";
 import {handlePrismaError, safePrismaCall} from "@/prisma/safeCall";
 import Prisma, {ProductModel} from "@/prisma/types";
 import type {ProductSort} from "@/types";
+import {serializeObject} from "@/services/utilits";
 
 /**
  *
@@ -89,7 +91,7 @@ export async function getPage(params = {limit: 10, page: 1, search: ''}, conditi
   }
 }
 
-export async function getProductsOnTrend() {
+const getProductsOnTrendCached = unstable_cache(async () => {
   try {
     const productViewCounts = await safePrismaCall(
       () => db.products.findMany({
@@ -176,7 +178,7 @@ export async function getProductsOnTrend() {
       limitedProducts = [...limitedProducts, ...fallbackProducts];
     }
 
-    return limitedProducts.slice(0, 19).map(product => {
+    const result = limitedProducts.slice(0, 19).map(product => {
       return {
         ...product,
         price: `${product.price}`,
@@ -190,12 +192,18 @@ export async function getProductsOnTrend() {
         }))
       };
     }) as (ProductModel & { price: string; final_price: string })[];
+
+    return serializeObject(result) as (ProductModel & { price: string; final_price: string })[];
   } catch (error) {
     return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getProductsOnTrend');
   }
+}, ['products:trend'], {revalidate: 300});
+
+export async function getProductsOnTrend() {
+  return getProductsOnTrendCached();
 }
 
-export async function getTrendingProducts(limit = 100): Promise<(ProductModel & { price: string; final_price: string })[]> {
+const getTrendingProductsCached = unstable_cache(async (limit = 100): Promise<(ProductModel & { price: string; final_price: string })[]> => {
   try {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -251,7 +259,7 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
       .map(id => productMap.get(id.toString()))
       .filter(Boolean) as ProductModel[];
 
-    return sortedProducts.map(product => ({
+    const result = sortedProducts.map(product => ({
       ...product,
       price: `${product.price}`,
       final_price: `${product.final_price}`,
@@ -263,12 +271,18 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
         } : null
       }))
     })) as (ProductModel & { price: string; final_price: string })[];
+
+    return serializeObject(result) as (ProductModel & { price: string; final_price: string })[];
   } catch (error) {
     return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getTrendingProducts');
   }
+}, ['products:trending'], {revalidate: 300});
+
+export async function getTrendingProducts(limit = 100): Promise<(ProductModel & { price: string; final_price: string })[]> {
+  return getTrendingProductsCached(limit);
 }
 
-export async function getLatestProducts(limit = 15) {
+const getLatestProductsCached = unstable_cache(async (limit = 15) => {
   try {
     const products = await findMany({
       where: {
@@ -295,7 +309,7 @@ export async function getLatestProducts(limit = 15) {
       }
     });
 
-    return products.map(product => ({
+    const result = products.map(product => ({
       ...product,
       price: `${product.price}`,
       final_price: `${product.final_price}`,
@@ -307,9 +321,15 @@ export async function getLatestProducts(limit = 15) {
         }
       }))
     })) as (ProductModel & { price: string; final_price: string })[];
+
+    return serializeObject(result) as (ProductModel & { price: string; final_price: string })[];
   } catch (error) {
     return handlePrismaError<(ProductModel & { price: string; final_price: string })[]>(error, [], 'products.getLatestProducts');
   }
+}, ['products:latest'], {revalidate: 300});
+
+export async function getLatestProducts(limit = 15) {
+  return getLatestProductsCached(limit);
 }
 
 

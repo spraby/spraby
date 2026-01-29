@@ -6,7 +6,7 @@ import {BreadcrumbItem} from "@/types";
 
 // export const revalidate = 120
 
-export default async function (props: any) {
+export default async function ProductDetailsPage(props: any) {
   const product = await findFirst({
     where: {id: props.params.id},
     include: {

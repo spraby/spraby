@@ -1,4 +1,5 @@
 'use server'
+import {unstable_cache} from "next/cache";
 import db from "@/prisma/db.client";
 import Prisma, {CategoryModel, OptionModel} from "@/prisma/types";
 import {handlePrismaError, safePrismaCall} from "@/prisma/safeCall";
@@ -77,7 +78,7 @@ export async function getOptions(where: Prisma.categoriesWhereInput) {
   }
 }
 
-export async function getPopularCategoriesByViews(limit = 6) {
+const getPopularCategoriesByViewsCached = unstable_cache(async (limit = 6) => {
   try {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -142,4 +143,8 @@ export async function getPopularCategoriesByViews(limit = 6) {
   } catch (error) {
     return handlePrismaError(error, [], 'categories.getPopularCategoriesByViews');
   }
+}, ['categories:popular'], {revalidate: 300});
+
+export async function getPopularCategoriesByViews(limit = 6) {
+  return getPopularCategoriesByViewsCached(limit);
 }

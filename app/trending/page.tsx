@@ -1,7 +1,7 @@
 import {getTrendingProducts} from "@/services/Products";
 import TrendingPage from "@/theme/templates/TrendingPage";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function Page() {
   const products = await getTrendingProducts(100);
