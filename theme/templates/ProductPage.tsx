@@ -225,9 +225,34 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     setDrawerMode('order');
   };
 
-  const hasDiscount = Number(product.price) > Number(product.final_price);
+  const pricing = useMemo(() => {
+    const productPriceRaw = `${product.price ?? ''}`.trim();
+    const productFinalRaw = `${product.final_price ?? ''}`.trim();
+    const variantPriceRaw = variant ? `${variant.price ?? ''}`.trim() : '';
+    const variantFinalRaw = variant ? `${variant.final_price ?? ''}`.trim() : '';
+
+    const hasVariantFinal = hasValidPrice(variantFinalRaw);
+    const finalPriceRaw = hasVariantFinal
+      ? variantFinalRaw
+      : (hasValidPrice(productFinalRaw) ? productFinalRaw : productPriceRaw);
+    const basePriceRaw = hasVariantFinal ? variantPriceRaw : productPriceRaw;
+    const priceRaw = hasValidPrice(basePriceRaw) ? basePriceRaw : finalPriceRaw;
+
+    const finalPriceNumber = Number(finalPriceRaw);
+    const priceNumber = Number(priceRaw);
+
+    return {
+      source: hasVariantFinal ? 'variant' : 'product',
+      finalPriceRaw,
+      priceRaw,
+      finalPrice: Number.isFinite(finalPriceNumber) ? finalPriceNumber : 0,
+      price: Number.isFinite(priceNumber) ? priceNumber : 0
+    };
+  }, [product.price, product.final_price, variant]);
+
+  const hasDiscount = pricing.price > pricing.finalPrice && pricing.price > 0;
   const discountPercent = hasDiscount
-    ? Math.round((1 - Number(product.final_price) / Number(product.price)) * 100)
+    ? Math.round((1 - (pricing.finalPrice / pricing.price)) * 100)
     : 0;
 
   const brandDisplayName = useMemo(() => {
@@ -501,9 +526,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     const productId = toIdString(product.id);
     if (!productId) return null;
     const title = typeof product.title === 'string' ? product.title.trim() : '';
-    const rawFinalPrice = `${product.final_price ?? ''}`.trim();
-    const rawPrice = `${product.price ?? ''}`.trim();
-    const finalPrice = rawFinalPrice.length ? rawFinalPrice : rawPrice;
+    const finalPrice = pricing.finalPriceRaw;
     if (!title.length || !finalPrice.length) return null;
     const imageCandidate = productPreviewImage ?? primaryImageSrc ?? null;
     const descriptionText = sanitizeDescription(product.description);
@@ -515,7 +538,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       productId,
       title,
       finalPrice,
-      price: rawPrice.length ? rawPrice : null,
+      price: pricing.priceRaw.length ? pricing.priceRaw : null,
       image: imageCandidate,
       brand: brandDisplayName ?? null,
       productUrl: `/products/${productId}`,
@@ -524,7 +547,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       variantTitle: variantTitle.length ? variantTitle : null,
       variantOptions: variantDetails,
     };
-  }, [brandDisplayName, primaryImageSrc, product.description, product.final_price, product.id, product.price, product.title, productPreviewImage, variant, variantDetails, variantSummary]);
+  }, [brandDisplayName, primaryImageSrc, product.description, product.id, product.title, productPreviewImage, pricing.finalPriceRaw, pricing.priceRaw, variant, variantDetails, variantSummary]);
 
   const isInFavorites = useMemo(() => {
     if (!favoriteProductData) return false;
@@ -771,10 +794,10 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                             }
                                           },
                                           OrderItems: {
-                                            createMany: {
+                                              createMany: {
                                               data: {
-                                                price: product.price,
-                                                final_price: product.final_price,
+                                                price: pricing.priceRaw,
+                                                final_price: pricing.finalPriceRaw,
                                                 image_id: variant?.image_id,
                                                 product_id: product.id,
                                                 variant_id: variant.id,
@@ -897,7 +920,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-wide text-gray-500 sm:text-sm">
           <span>Стоимость товара</span>
           <span className="flex items-center gap-2">
-            <Price finalPrice={+product.final_price} price={+product.price} size="lg"/>
+            <Price finalPrice={pricing.finalPrice} price={pricing.price} size="lg"/>
             {hasDiscount && (
               <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold text-rose-600 sm:text-xs">
                 -{discountPercent}%
@@ -908,7 +931,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         <div className="flex items-center justify-between text-base font-semibold text-gray-900 sm:text-lg">
           <span>Итого</span>
           <span className="flex items-baseline gap-1.5 sm:gap-2 text-purple-600">
-            <Price finalPrice={+product.final_price} size="lg"/>
+            <Price finalPrice={pricing.finalPrice} size="lg"/>
           </span>
         </div>
       </div>
@@ -1119,7 +1142,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               <HeardIcon color={isInFavorites ? '#db2777' : '#272738'} filled={isInFavorites}/>
             </button>
           </div>
-          <Price finalPrice={+product.final_price} price={+product.price}/>
+          <Price finalPrice={pricing.finalPrice} price={pricing.price}/>
           {tags.length > 0 && (
             <div className='flex flex-col gap-2'>
               <div className='flex flex-wrap gap-2'>
@@ -1168,8 +1191,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                     title: product.title,
                     variantTitle: variantSummary,
                     image: productPreviewImage,
-                    price: String(product.price),
-                    finalPrice: String(product.final_price),
+                    price: pricing.priceRaw,
+                    finalPrice: pricing.finalPriceRaw,
                   });
                   setStatistic(product.id, 'add_to_cart').then();
 
