@@ -7,6 +7,12 @@
 
 type RotationInterval = 'hourly' | 'daily' | 'custom';
 
+// Количество изображений, отображаемых в сетке каждой категории
+export const IMAGES_PER_CATEGORY = 6;
+
+// Количество популярных категорий на главной странице
+export const POPULAR_CATEGORIES_LIMIT = 9;
+
 export const CATEGORY_ROTATION_CONFIG: {
   poolSize: number;
   statsPeriodDays: number;
@@ -17,17 +23,17 @@ export const CATEGORY_ROTATION_CONFIG: {
 } = {
   /**
    * Размер пула топ товаров для каждой категории
-   * Чем больше значение, тем больше разнообразие, но выше нагрузка на БД
-   * Рекомендуемые значения: 20-100
+   * Оптимальное значение: IMAGES_PER_CATEGORY * 2-3 для ротации
+   * Слишком большое значение увеличивает нагрузку на БД
    */
-  poolSize: 50,
+  poolSize: IMAGES_PER_CATEGORY * 2,
 
   /**
    * Период анализа статистики в днях
    * Определяет, за какой период учитываются просмотры, клики и добавления в корзину
    * Рекомендуемые значения: 7, 14, 30, 60
    */
-  statsPeriodDays: 30,
+  statsPeriodDays: 14,
 
   /**
    * Веса для расчёта популярности
@@ -39,8 +45,8 @@ export const CATEGORY_ROTATION_CONFIG: {
    */
   weights: {
     view: 1,
-    click: 2,
-    add_to_cart: 3,
+    click: 3,
+    add_to_cart: 5,
   },
 
   /**
@@ -48,7 +54,7 @@ export const CATEGORY_ROTATION_CONFIG: {
    * Определяет, как часто обновляются данные
    * 3600 = 1 час, 1800 = 30 минут, 600 = 10 минут
    */
-  cacheDuration: 3600, // 1 hour
+  cacheDuration: 1800, // 30 minutes
 
   /**
    * Интервал ротации изображений

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import {IMAGES_PER_CATEGORY} from '@/config/category-rotation';
 
 export type PopularCategory = {
   id: string;
@@ -24,11 +25,11 @@ type Props = {
 };
 
 const PLACEHOLDER = (
-  <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8">
-    {Array.from({ length: 6 }).map((_, i) => (
+  <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8" aria-hidden="true">
+    {Array.from({ length: IMAGES_PER_CATEGORY }).map((_, i) => (
       <div
         key={i}
-        className="aspect-square rounded-[0.25rem] bg-[#eceaf9] pointer-events-none"
+        className="aspect-square rounded-[0.25rem] bg-[#eceaf9] pointer-events-none animate-pulse"
       />
     ))}
   </div>
@@ -62,25 +63,27 @@ export default function PopularCategories({items, popularImages}: Props) {
               <header className="flex flex-col gap-1.5">
                 <h3 className="text-lg font-semibold md:text-lg">{item.title}</h3>
                 {popularImage?.productsCount && (
-                  <p className="text-xs font-medium text-gray-500">
+                  <p className="text-xs font-medium text-gray-500" role="text" aria-label={`${popularImage.productsCount} ${getProductsWord(popularImage.productsCount)} в этой категории`}>
                     {new Intl.NumberFormat('ru-RU').format(popularImage.productsCount)} {getProductsWord(popularImage.productsCount)}
                   </p>
                 )}
               </header>
 
               {hasImages ? (
-                <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8">
-                  {popularImage.images.slice(0, 6).map((img, idx) => (
+                <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8" role="group" aria-label={`Примеры товаров в категории ${item.title}`}>
+                  {popularImage.images.slice(0, IMAGES_PER_CATEGORY).map((img, idx) => (
                     <div
                       key={img.productId}
                       className="pointer-events-none relative aspect-square overflow-hidden rounded-[0.25rem] bg-white"
                     >
                       <Image
                         src={img.imageUrl}
-                        alt={`${item.title} ${idx + 1}`}
-                        fill
+                        alt={`Пример товара ${idx + 1} из категории ${item.title}`}
+                        width={65}
+                        height={65}
                         sizes="(max-width: 768px) 55px, 65px"
                         className="object-cover object-center"
+                        loading="lazy"
                       />
                     </div>
                   ))}
@@ -92,10 +95,11 @@ export default function PopularCategories({items, popularImages}: Props) {
               <footer className="pt-4">
                 <Link
                   href={item.href}
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#7c3aed] transition-colors duration-200 group-hover:text-[#6d31da]"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#7c3aed] transition-colors duration-200 hover:text-[#6d31da] focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:ring-offset-2 rounded"
+                  aria-label={`Смотреть все товары в категории ${item.title}`}
                 >
                   Смотреть
-                  <span aria-hidden className="text-base">›</span>
+                  <span aria-hidden="true" className="text-base">›</span>
                 </Link>
               </footer>
             </article>

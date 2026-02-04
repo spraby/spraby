@@ -1,27 +1,49 @@
 import HomePage from "@/theme/templates/HomePage";
 import {getLatestProducts, getProductsOnTrend} from "@/services/Products";
 import {getPopularCategoriesByViews} from "@/services/Categories";
+import {POPULAR_CATEGORIES_LIMIT} from "@/config/category-rotation";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 1800; // ISR: 30 минут
 
-// Функция для получения популярных изображений категорий
 async function getCategoryPopularImages() {
+  const TIMEOUT_MS = 5000; // 5 секунд timeout
+
   try {
-    return {};
-    // // Для SSR используем полный URL (обязательно для fetch в серверных компонентах)
-    // const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010';
-    // const response = await fetch(`${baseUrl}/api/categories/popular-images`, {
-    //   next: { revalidate: 600 }, // ISR: обновлять каждые 10 минут
-    // });
-    //
-    // if (!response.ok) {
-    //   console.error('Failed to fetch popular images:', response.statusText);
-    //   return {};
-    // }
-    //
-    // return await response.json();
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010';
+
+    // Создаем AbortController для timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${baseUrl}/api/categories/popular-images`, {
+        next: { revalidate: 1800 },
+        cache: 'force-cache',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.error('[PopularImages] Failed to fetch:', response.status, response.statusText);
+        return {};
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error(`[PopularImages] Request timeout after ${TIMEOUT_MS}ms`);
+      } else {
+        throw fetchError;
+      }
+
+      return {};
+    }
   } catch (error) {
-    console.error('Error fetching popular images:', error);
+    console.error('[PopularImages] Error fetching:', error instanceof Error ? error.message : error);
     return {};
   }
 }
@@ -30,7 +52,7 @@ export default async function Page() {
   const [topProducts, latestProducts, popularCategories, popularImages] = await Promise.all([
     getProductsOnTrend(),
     getLatestProducts(19),
-    getPopularCategoriesByViews(9),
+    getPopularCategoriesByViews(POPULAR_CATEGORIES_LIMIT),
     getCategoryPopularImages()
   ]);
 

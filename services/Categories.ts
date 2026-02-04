@@ -79,66 +79,54 @@ export async function getOptions(where: Prisma.categoriesWhereInput) {
 
 export async function getPopularCategoriesByViews(limit = 6) {
   try {
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-    const viewCounts = await safePrismaCall(
-      () => db.productStatistics.groupBy({
-        by: ['product_id'],
-        where: {
-          type: 'view',
-          created_at: {gte: since},
-        },
-        _count: {product_id: true},
-        orderBy: {_count: {product_id: 'desc'}},
-        take: 300,
-      }),
-      [],
-      'categories.popular.views'
-    );
+    // Оптимизированный запрос с fallback: если нет статистики, используем количество товаров
+    const results = await db.$queryRaw<
+      Array<{
+        category_handle: string;
+        category_title: string;
+        category_name: string;
+        total_score: bigint;
+      }>
+    >`
+      WITH ProductStats AS (
+        SELECT
+          p.id as product_id,
+          p.category_id,
+          COALESCE(COUNT(ps.id), 0) as stat_count
+        FROM products p
+        LEFT JOIN product_statistics ps ON ps.product_id = p.id
+          AND ps.type = 'view'
+          AND ps.created_at IS NOT NULL
+        WHERE p.enabled = true
+          AND p.category_id IS NOT NULL
+        GROUP BY p.id, p.category_id
+        ORDER BY stat_count DESC
+        LIMIT 100
+      ),
+      CategoryTotals AS (
+        SELECT
+          c.handle as category_handle,
+          c.title as category_title,
+          c.name as category_name,
+          COALESCE(SUM(ps.stat_count), COUNT(p.id)) as total_score
+        FROM categories c
+        INNER JOIN products p ON p.category_id = c.id AND p.enabled = true
+        LEFT JOIN ProductStats ps ON ps.product_id = p.id
+        WHERE c.handle IS NOT NULL
+        GROUP BY c.id, c.handle, c.title, c.name
+        ORDER BY total_score DESC
+        LIMIT ${limit}
+      )
+      SELECT * FROM CategoryTotals
+    `;
 
-    const productIds = viewCounts.map(v => typeof v.product_id === 'bigint' ? v.product_id : BigInt(v.product_id));
-    if (!productIds.length) return [];
-
-    const products = await safePrismaCall(
-      () => db.products.findMany({
-        where: {id: {in: productIds}},
-        include: {
-          Category: true,
-        },
-      }),
-      [],
-      'categories.popular.products'
-    );
-
-    const productMap = new Map(products.map(p => [p.id?.toString(), p]));
-    const categoryTotals = new Map<string, {title: string; handle: string; count: number}>();
-
-    for (const row of viewCounts) {
-      const product = productMap.get(row.product_id.toString());
-      const category = product?.Category;
-      if (!category?.handle) continue;
-      const key = category.handle;
-      const existing = categoryTotals.get(key);
-      const count = row._count?.product_id ?? 0;
-      if (existing) {
-        existing.count += count;
-      } else {
-        categoryTotals.set(key, {
-          title: category.title || category.name || category.handle,
-          handle: category.handle,
-          count,
-        });
-      }
-    }
-
-    return Array.from(categoryTotals.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, limit)
-      .map(item => ({
-        id: item.handle,
-        title: item.title,
-        href: `/categories/${item.handle}`,
-      }));
+    return results.map(row => ({
+      id: row.category_handle,
+      title: row.category_title || row.category_name || row.category_handle,
+      href: `/categories/${row.category_handle}`,
+    }));
   } catch (error) {
     return handlePrismaError(error, [], 'categories.getPopularCategoriesByViews');
   }
