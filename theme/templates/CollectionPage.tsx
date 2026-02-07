@@ -5,7 +5,7 @@ import ResponsiveFilters from "@/theme/snippents/ResponsiveFilters";
 import {BreadcrumbItem, FilterItem} from "@/types";
 import {getFilteredProducts} from "@/services/Products";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {CategoryModel, CollectionModel, ProductModel} from "@/prisma/types";
+import {CategoryModel, CollectionModel, ProductCardModel} from "@/prisma/types";
 import {Spin} from "antd";
 import {convertSearchParamsToQueryParams} from "@/services/Options";
 import type {ProductSort} from "@/types";
@@ -49,7 +49,7 @@ export default function CollectionPage({
                                          pageSize = DEFAULT_PAGE_SIZE,
                                        }: Props) {
   const [loading, setLoading] = useState(!!defaultLoading);
-  const [products, setProducts] = useState<ProductModel[]>(defaultProducts);
+  const [products, setProducts] = useState<ProductCardModel[]>(defaultProducts);
   const [total, setTotal] = useState<number>(defaultTotal);
   const [page, setPage] = useState<number>(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -299,7 +299,7 @@ export default function CollectionPage({
 type Props = {
   category?: CategoryModel,
   collection?: CollectionModel,
-  products: ProductModel[],
+  products: ProductCardModel[],
   filter: FilterItem[],
   searchParams?: any,
   loading?: boolean,

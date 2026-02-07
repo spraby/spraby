@@ -2,15 +2,13 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import ProductCart from "@/theme/snippents/ProductCart";
-import {ProductModel} from "@/prisma/types";
+import {ProductCardModel} from "@/prisma/types";
 import Link from "next/link";
 
 const PAGE_SIZE = 20;
 
-type TrendingProduct = ProductModel & { price: string; final_price: string };
-
-export default function TrendingPage({products}: { products: TrendingProduct[] }) {
-  const [visible, setVisible] = useState<ProductModel[]>(() => products.slice(0, PAGE_SIZE));
+export default function TrendingPage({products}: { products: ProductCardModel[] }) {
+  const [visible, setVisible] = useState<ProductCardModel[]>(() => products.slice(0, PAGE_SIZE));
   const [page, setPage] = useState(1);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 

@@ -21,7 +21,6 @@
     "@react-email/components": "^1.0.3",
     "@splidejs/react-splide": "^0.7.12",
     "antd": "^5.14.0",
-    "bcrypt": "^5.1.1",
     "date-fns": "^3.6.0",
     "framer-motion": "^11.5.4",
     "lodash": "^4.17.21",

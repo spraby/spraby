@@ -6,7 +6,6 @@ import { EmailOrderItem, EmailOrderSummary } from './types'
 import OrderConfirmation from './templates/OrderConfirmation'
 import OrderSummary from './templates/OrderSummary'
 import NewOrderNotification from './templates/NewOrderNotification'
-import PasswordReset from './templates/PasswordReset'
 import { render } from '@react-email/components'
 import * as React from 'react'
 
@@ -186,47 +185,3 @@ export async function sendOrderEmails(
   }
 }
 
-export interface PasswordResetEmailParams {
-  to: string
-  brandName: string
-  resetCode: string
-  expiresInMinutes?: number
-}
-
-/**
- * Отправка письма для сброса пароля
- */
-export async function sendPasswordResetEmail(params: PasswordResetEmailParams) {
-  if (!IS_EMAIL_ENABLED) {
-    console.log('[EMAIL DISABLED] Would send password reset to:', params.to)
-    return { success: true, disabled: true }
-  }
-
-  return enqueueEmailSend(async () => {
-    try {
-      const emailHtml = await render(React.createElement(PasswordReset, {
-        brandName: params.brandName,
-        resetCode: params.resetCode,
-        expiresInMinutes: params.expiresInMinutes ?? 30,
-      }))
-
-      const { data, error } = await resend.emails.send({
-        from: `spraby <${FROM_EMAIL}>`,
-        to: params.to,
-        subject: '🔐 Код для сброса пароля',
-        html: emailHtml,
-      })
-
-      if (error) {
-        console.error('[RESEND ERROR] Password reset:', error)
-        return { success: false, error }
-      }
-
-      console.log('[EMAIL SENT] Password reset to:', params.to, '- ID:', data?.id)
-      return { success: true, data }
-    } catch (error) {
-      console.error('[EMAIL ERROR] Password reset:', error)
-      return { success: false, error }
-    }
-  })
-}

@@ -1,21 +1,21 @@
 'use client'
 
 import ProductCart from "@/theme/snippents/ProductCart";
-import {ProductModel} from "@/prisma/types";
+import {ProductCardModel} from "@/prisma/types";
 import HeroShowcase, {HeroCard} from "@/theme/sections/HeroShowcase";
 import PopularCategories, {PopularCategory, CategoryPopularImage} from "@/theme/sections/PopularCategories";
 import Link from "next/link";
 import {getPopularCategoriesByViews} from "@/services/Categories";
 
 type HomePageProps = {
-  topProducts: ProductModel[]
-  latestProducts: ProductModel[]
+  topProducts: ProductCardModel[]
+  latestProducts: ProductCardModel[]
   popularCategories: PopularCategory[]
   popularImages?: Record<string, CategoryPopularImage>
 }
 
-const normalizeProducts = (products: ProductModel[]) => {
-  const result: ProductModel[] = [];
+const normalizeProducts = (products: ProductCardModel[]) => {
+  const result: ProductCardModel[] = [];
   const seen = new Set<string>();
 
   for (const product of products) {
@@ -50,7 +50,7 @@ export default function HomePage({topProducts, latestProducts, popularCategories
   const productsWithImages = normalizeProducts(topProducts);
   const latestProductsWithImages = normalizeProducts(latestProducts);
 
-const renderGrid = (items: ProductModel[], viewAllHref: string, viewAllLabel: string) => {
+const renderGrid = (items: ProductCardModel[], viewAllHref: string, viewAllLabel: string) => {
     const itemCards = items.slice(0, 19).map(product => (
       <ProductCart key={`product-${String(product.id)}`} product={product}/>
     ));

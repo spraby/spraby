@@ -2,12 +2,12 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import ProductCart from "@/theme/snippents/ProductCart";
-import {ProductModel} from "@/prisma/types";
+import {ProductCardModel} from "@/prisma/types";
 
 const PAGE_SIZE = 20;
 
-export default function NewProductsPage({products}: { products: ProductModel[] }) {
-  const [visible, setVisible] = useState<ProductModel[]>(() => products.slice(0, PAGE_SIZE));
+export default function NewProductsPage({products}: { products: ProductCardModel[] }) {
+  const [visible, setVisible] = useState<ProductCardModel[]>(() => products.slice(0, PAGE_SIZE));
   const [page, setPage] = useState(1);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 

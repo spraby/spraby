@@ -96,6 +96,11 @@ export type ProductModel = products & {
   Statistics?: ProductStatisticsModel[]
 }
 
+export type ProductCardModel = ProductModel & {
+  price: string
+  final_price: string
+}
+
 export type VariantModel = variants & {
   Product?: ProductModel
   Image?: ProductImageModel

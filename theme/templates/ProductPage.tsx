@@ -6,7 +6,7 @@ import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
 import {useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject} from "react";
-import {ProductModel, VariantModel} from "@/prisma/types";
+import {ProductModel, ProductCardModel, VariantModel} from "@/prisma/types";
 import Drawer from "@/theme/snippents/Drawer";
 import {AiOutlineClose} from "react-icons/ai";
 import {useForm} from "react-hook-form"
@@ -1345,10 +1345,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   </main>
 }
 
-type RelatedProduct = ProductModel & {
-  price: string
-  final_price: string
-}
+type RelatedProduct = ProductCardModel
 
 type RecentProductStorage = {
   id: string
@@ -1379,7 +1376,7 @@ type CarouselLayout = {
 type RenderCarouselConfig = {
   title: string
   subtitle?: string
-  products: ProductModel[]
+  products: ProductCardModel[]
   carouselRef: MutableRefObject<InstanceType<typeof Splide> | null>
   onPrev: () => void
   onNext: () => void
@@ -1390,7 +1387,7 @@ type RenderCarouselConfig = {
 }
 
 type Props = {
-  product: ProductModel
+  product: ProductCardModel
   informationSettings?: {
     description: string
   }

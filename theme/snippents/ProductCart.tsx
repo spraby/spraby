@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {ProductModel} from "@/prisma/types";
+import {ProductCardModel} from "@/prisma/types";
 import {setStatistic} from "@/services/ProductStatistics";
 
 /**
@@ -74,8 +74,6 @@ const ProductCart = ({product}: Props) => {
 
 export default ProductCart;
 
-type ProductWithStringPrices = ProductModel & { price: string; final_price: string };
-
 type Props = {
-  product: ProductModel | ProductWithStringPrices
+  product: ProductCardModel
 };
