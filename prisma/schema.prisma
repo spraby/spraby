@@ -24,19 +24,20 @@ model users {
 }
 
 model brands {
-  id             BigInt           @id @default(autoincrement())
-  user_id        BigInt?
-  name           String           @db.VarChar(255)
-  description    String?
-  created_at     DateTime?        @db.Timestamp(0)
-  updated_at     DateTime?        @updatedAt @db.Timestamp(0)
-  brand_category brand_category[]
-  brand_image    brand_image[]
-  brand_requests brand_requests[]
-  Settings       brand_settings[]
-  User           users?           @relation(fields: [user_id], references: [id], onUpdate: SetNull, map: "brands_user_id_foreign")
-  orders         orders[]
-  Products       products[]
+  id                    BigInt                  @id @default(autoincrement())
+  user_id               BigInt?
+  name                  String                  @db.VarChar(255)
+  description           String?
+  created_at            DateTime?               @db.Timestamp(0)
+  updated_at            DateTime?               @updatedAt @db.Timestamp(0)
+  brand_category        brand_category[]
+  brand_image           brand_image[]
+  brand_requests        brand_requests[]
+  Settings              brand_settings[]
+  brand_shipping_method brand_shipping_method[]
+  User                  users?                  @relation(fields: [user_id], references: [id], onUpdate: SetNull, map: "brands_user_id_foreign")
+  orders                orders[]
+  Products              products[]
 }
 
 model options {
@@ -114,8 +115,6 @@ model products {
   title       String              @db.VarChar(255)
   description String?
   enabled     Boolean             @default(true)
-  price       Decimal             @default(0) @db.Decimal(10, 2)
-  final_price Decimal             @default(0) @db.Decimal(10, 2)
   created_at  DateTime?           @db.Timestamp(0)
   updated_at  DateTime?           @updatedAt @db.Timestamp(0)
   OrderItems  order_items[]
@@ -480,6 +479,54 @@ model sessions {
 
   @@index([last_activity], map: "sessions_last_activity_index")
   @@index([user_id], map: "sessions_user_id_index")
+}
+
+model addresses {
+  id               BigInt    @id @default(autoincrement())
+  name             String?   @db.VarChar(255)
+  country          String    @db.VarChar(255)
+  province         String?   @db.VarChar(255)
+  city             String    @db.VarChar(255)
+  zip_code         String?   @db.VarChar(255)
+  address1         String?   @db.VarChar(255)
+  address2         String?   @db.VarChar(255)
+  addressable_type String    @db.VarChar(255)
+  addressable_id   BigInt
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+
+  @@index([addressable_type, addressable_id], map: "addresses_addressable_type_addressable_id_index")
+}
+
+model brand_shipping_method {
+  brand_id           BigInt
+  shipping_method_id BigInt
+  brands             brands           @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brand_shipping_method_brand_id_foreign")
+  shipping_methods   shipping_methods @relation(fields: [shipping_method_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brand_shipping_method_shipping_method_id_foreign")
+
+  @@id([brand_id, shipping_method_id])
+}
+
+model contacts {
+  id               BigInt    @id @default(autoincrement())
+  type             String    @db.VarChar(255)
+  value            String    @db.VarChar(255)
+  contactable_type String    @db.VarChar(255)
+  contactable_id   BigInt
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+
+  @@index([contactable_type, contactable_id], map: "contacts_contactable_type_contactable_id_index")
+}
+
+model shipping_methods {
+  id                    BigInt                  @id @default(autoincrement())
+  key                   String                  @unique(map: "shipping_methods_key_unique") @db.VarChar(255)
+  name                  String                  @db.VarChar(255)
+  description           String?                 @db.VarChar(255)
+  created_at            DateTime?               @db.Timestamp(0)
+  updated_at            DateTime?               @db.Timestamp(0)
+  brand_shipping_method brand_shipping_method[]
 }
 
 enum order_status {
