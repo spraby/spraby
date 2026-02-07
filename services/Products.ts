@@ -139,6 +139,10 @@ export async function getProductsOnTrend() {
             Image: true
           }
         },
+        Variants: {
+          where: { enabled: true },
+          take: 1,
+        },
       },
     });
 
@@ -165,7 +169,11 @@ export async function getProductsOnTrend() {
             include: {
               Image: true
             }
-          }
+          },
+          Variants: {
+            where: { enabled: true },
+            take: 1,
+          },
         },
         orderBy: {
           created_at: 'desc'
@@ -179,8 +187,8 @@ export async function getProductsOnTrend() {
     return limitedProducts.slice(0, 19).map(product => {
       return {
         ...product,
-        price: `${product.price}`,
-        final_price: `${product.final_price}`,
+        price: `${product.Variants?.[0]?.price ?? 0}`,
+        final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
         Images: product.Images?.map(i => ({
           ...i,
           Image: {
@@ -242,7 +250,11 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
           include: {
             Image: true
           }
-        }
+        },
+        Variants: {
+          where: { enabled: true },
+          take: 1,
+        },
       }
     });
 
@@ -253,8 +265,8 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
 
     return sortedProducts.map(product => ({
       ...product,
-      price: `${product.price}`,
-      final_price: `${product.final_price}`,
+      price: `${product.Variants?.[0]?.price ?? 0}`,
+      final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
       Images: product.Images?.map(i => ({
         ...i,
         Image: i.Image ? {
@@ -291,14 +303,18 @@ export async function getLatestProducts(limit = 15) {
           include: {
             Image: true
           }
-        }
+        },
+        Variants: {
+          where: { enabled: true },
+          take: 1,
+        },
       }
     });
 
     return products.map(product => ({
       ...product,
-      price: `${product.price}`,
-      final_price: `${product.final_price}`,
+      price: `${product.Variants?.[0]?.price ?? 0}`,
+      final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
       Images: product.Images?.map(i => ({
         ...i,
         Image: {
@@ -325,17 +341,18 @@ export type PaginatedProducts = {
 };
 
 export async function getFilteredProducts(filter: Filter): Promise<PaginatedProducts> {
-  const orderBy: Prisma.productsOrderByWithRelationInput = (() => {
+  const isPriceSort = filter.sort === 'price_asc' || filter.sort === 'price_desc';
+
+  const orderBy: Prisma.productsOrderByWithRelationInput | undefined = (() => {
     switch (filter.sort) {
       case 'oldest':
-        return {created_at: 'asc'};
+        return {created_at: 'asc' as const};
       case 'price_asc':
-        return {final_price: 'asc'};
       case 'price_desc':
-        return {final_price: 'desc'};
+        return undefined;
       case 'newest':
       default:
-        return {created_at: 'desc'};
+        return {created_at: 'desc' as const};
     }
   })();
 
@@ -437,8 +454,8 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
             }
           }
         },
-        orderBy,
-        ...(take ? {skip: (page - 1) * take, take} : {}),
+        ...(orderBy ? { orderBy } : {}),
+        ...(!isPriceSort && take ? {skip: (page - 1) * take, take} : {}),
       }),
       safePrismaCall(() => db.products.count({where}), 0, 'products.getFilteredProducts.count'),
     ]);
@@ -446,8 +463,8 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
     const mappedProducts = products.map(product => {
       return {
         ...product,
-        price: `${product.price}`,
-        final_price: `${product.final_price}`,
+        price: `${product.Variants?.[0]?.price ?? 0}`,
+        final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
         Variants: product.Variants?.map(v => ({
           ...v,
           price: `${v.price}`,
@@ -462,6 +479,21 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
         }))
       };
     }) as (ProductModel & { price: string; final_price: string })[];
+
+    if (isPriceSort) {
+      mappedProducts.sort((a, b) => {
+        const diff = parseFloat(a.final_price) - parseFloat(b.final_price);
+        return filter.sort === 'price_desc' ? -diff : diff;
+      });
+      const start = take ? (page - 1) * take : 0;
+      const sliced = take ? mappedProducts.slice(start, start + take) : mappedProducts;
+      return {
+        items: sliced,
+        total,
+        page,
+        pageSize: take ?? sliced.length,
+      };
+    }
 
     return {
       items: mappedProducts,

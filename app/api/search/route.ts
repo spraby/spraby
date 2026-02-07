@@ -32,32 +32,31 @@ export async function GET(request: Request) {
     ],
   };
 
-  const orderBy =
-    sort === "price_asc"
-      ? {final_price: "asc" as const}
-      : sort === "price_desc"
-        ? {final_price: "desc" as const}
-        : sort === "oldest"
-          ? {created_at: "asc" as const}
-          : {created_at: "desc" as const};
+  const isPriceSort = sort === "price_asc" || sort === "price_desc";
+
+  const orderBy = isPriceSort
+    ? undefined
+    : sort === "oldest"
+      ? {created_at: "asc" as const}
+      : {created_at: "desc" as const};
 
   const [total, products] = await Promise.all([
     db.products.count({where}),
     db.products.findMany({
       where,
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
+      ...(orderBy ? { orderBy } : {}),
+      ...(!isPriceSort ? { skip: (page - 1) * limit, take: limit } : {}),
       include: {
         Brand: true,
         Images: {include: {Image: true}},
+        Variants: {where: {enabled: true}, take: 1},
       },
     }),
   ]);
 
   const domain = process.env.AWS_IMAGE_DOMAIN ?? "";
 
-  const items = products.map((product) => {
+  let items = products.map((product) => {
     const imagePath = product.Images?.[0]?.Image?.src;
     const image = imagePath ? (domain ? `${domain}/${imagePath}` : `/${imagePath}`) : null;
 
@@ -67,10 +66,18 @@ export async function GET(request: Request) {
       description: product.description,
       brand: product.Brand?.name ?? null,
       image,
-      price: product.price.toString(),
-      final_price: product.final_price.toString(),
+      price: (product.Variants?.[0]?.price ?? 0).toString(),
+      final_price: (product.Variants?.[0]?.final_price ?? 0).toString(),
     };
   });
+
+  if (isPriceSort) {
+    items.sort((a, b) => {
+      const diff = parseFloat(a.final_price) - parseFloat(b.final_price);
+      return sort === "price_desc" ? -diff : diff;
+    });
+    items = items.slice((page - 1) * limit, (page - 1) * limit + limit);
+  }
 
   return NextResponse.json({
     items,

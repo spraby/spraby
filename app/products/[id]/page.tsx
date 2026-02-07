@@ -60,6 +60,8 @@ export default async function (props: any) {
 
   const productData = {
     ...product,
+    price: `${product?.Variants?.[0]?.price ?? 0}`,
+    final_price: `${product?.Variants?.[0]?.final_price ?? 0}`,
     Images: product?.Images?.map(i => ({
       ...i,
       Image: {
@@ -87,7 +89,11 @@ export default async function (props: any) {
         include: {
           Image: true
         }
-      }
+      },
+      Variants: {
+        where: { enabled: true },
+        take: 1,
+      },
     },
     orderBy: {
       created_at: 'desc'
@@ -98,8 +104,8 @@ export default async function (props: any) {
   const otherProducts = (rawOtherProducts ?? [])
     .map(item => ({
       ...item,
-      price: `${item.price}`,
-      final_price: `${item.final_price}`,
+      price: `${item.Variants?.[0]?.price ?? 0}`,
+      final_price: `${item.Variants?.[0]?.final_price ?? 0}`,
       Images: (item.Images ?? []).map(image => ({
         ...image,
         Image: image.Image ? {
