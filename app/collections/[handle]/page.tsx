@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: any) {
   };
 }
 
-export default async function (props: any) {
+export default async function CollectionPage(props: any) {
   const PAGE_SIZE = 20;
   const collection = await findFirst({where: {handle: props.params.handle}}) as CollectionModel;
   const options = await getCollectionOptions({handle: props.params.handle});

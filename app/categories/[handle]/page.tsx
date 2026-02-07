@@ -13,7 +13,7 @@ export async function generateMetadata({params}: any) {
   };
 }
 
-export default async function (props: any) {
+export default async function CategoryPage(props: any) {
   const PAGE_SIZE = 20;
   const category = await findFirst({where: {handle: props.params.handle}}) as CategoryModel;
   const options = await getOptions({handle: props.params.handle});
