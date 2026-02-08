@@ -35,7 +35,7 @@ const ProductCart = ({product}: Props) => {
               <Image
                 fill
                 className='h-full w-full object-cover'
-                sizes={'(max-width: 768px) 50px, 20px'}
+                sizes={'(max-width: 768px) 12vw, 7vw'}
                 src={product.Images[0]?.Image?.src as string}
                 alt={product.title}
               />
