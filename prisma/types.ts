@@ -1,7 +1,6 @@
 import {
   users,
   brands,
-  brand_settings,
   options,
   option_values,
   categories,
@@ -50,7 +49,6 @@ export type BrandModel = brands & {
   Products?: ProductModel[]
   brand_category?: BrandCategoryModel[]
   brand_image?: BrandImageModel[]
-  Settings?: BrandSettingsModel[]
   orders?: OrderModel[]
   brand_requests?: BrandRequestModel[]
 }
@@ -133,9 +131,6 @@ export type ProductImageModel = product_images & {
 
 export type SettingsModel = settings & {}
 
-export type BrandSettingsModel = brand_settings & {
-  Brand?: BrandModel
-}
 
 export type CustomerModel = customers & {
   Orders?: OrderModel[]
@@ -181,20 +176,4 @@ export type BrandRequestModel = brand_requests & {
 
 export type ImageConversionModel = image_conversions & {
   Image?: ImageModel
-}
-
-export type BrandSettingsData = {
-  delivery: {
-    description: string
-  }
-  refund: {
-    description: string
-  }
-  phones: string[]
-  emails: string[]
-  socials: {
-    type: 'whatsapp' | 'telegram' | 'instagram'
-    link: string
-  }[]
-  addresses: string[]
 }

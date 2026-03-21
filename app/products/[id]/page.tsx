@@ -25,7 +25,6 @@ export default async function ProductDetailPage(props: any) {
       },
       Brand: {
         include: {
-          Settings: true,
           User: true
         }
       },
