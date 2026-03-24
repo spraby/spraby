@@ -3,6 +3,7 @@ import {findFirst, findMany} from "@/services/Products";
 import {getBreadcrumbs, getInformationSettings} from "@/services/Settings";
 import {serializeObject} from "@/services/utilits";
 import {BreadcrumbItem} from "@/types";
+import db from "@/prisma/db.client";
 
 // export const revalidate = 120
 
@@ -25,7 +26,12 @@ export default async function ProductDetailPage(props: any) {
       },
       Brand: {
         include: {
-          User: true
+          User: true,
+          brand_shipping_method: {
+            include: {
+              shipping_methods: true
+            }
+          }
         }
       },
       Variants: {
@@ -116,6 +122,13 @@ export default async function ProductDetailPage(props: any) {
     .filter(productItem => productItem.Images?.some(image => image?.Image?.src));
 
 
+  const brandContacts = product?.brand_id ? await db.contacts.findMany({
+    where: {
+      contactable_type: 'App\\Models\\Brand',
+      contactable_id: product.brand_id,
+    }
+  }) : [];
+
   const informationSettings = await getInformationSettings() as any;
 
   let breadcrumbs: BreadcrumbItem[] = [];
@@ -131,6 +144,7 @@ export default async function ProductDetailPage(props: any) {
       otherProducts={serializeObject(otherProducts)}
       informationSettings={informationSettings}
       breadcrumbs={breadcrumbs}
+      brandContacts={serializeObject(brandContacts)}
     /> :
     <div>no product</div>
 }

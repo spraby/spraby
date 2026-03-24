@@ -149,7 +149,8 @@ const flattenStrings = (value: unknown): string[] => {
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
   telegram: 'Telegram',
-  whatsapp: 'WhatsApp'
+  whatsapp: 'WhatsApp',
+  facebook: 'Facebook'
 };
 
 const normalizeSocialUrl = (type: string, raw: string): string => {
@@ -200,7 +201,7 @@ type ContactSocial = {
   display: string
 };
 
-export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = []}: Props) {
+export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = [], brandContacts: brandContactsRaw = []}: Props) {
   const router = useRouter();
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
@@ -311,19 +312,30 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     setShowAllTags(false);
   }, [product.id]);
 
-  /**
-   *
-   */
-  const delivery = useMemo(() => {
-    const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'delivery')
-    return (settings?.data as any)?.description ?? '';
+  const shippingMethods = useMemo(() => {
+    return (product.Brand?.brand_shipping_method ?? [])
+      .map((bsm: any) => bsm.shipping_methods)
+      .filter(Boolean);
   }, [product]);
 
-  /**
-   *
-   */
+  const deliveryContent = useMemo(() => {
+    if (!shippingMethods.length) return '';
+    return (
+      <div className="flex flex-col gap-3">
+        {shippingMethods.map((method: any) => (
+          <div key={method.id ?? method.key} className="flex flex-col gap-1 rounded-xl border border-gray-200 px-4 py-3">
+            <span className="text-sm font-semibold text-gray-800">{method.name}</span>
+            {method.description && (
+              <span className="text-xs text-gray-500">{method.description}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }, [shippingMethods]);
+
   const refund = useMemo(() => {
-    const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'refund')
+    const settings = (product.Brand?.Settings ?? []).find((i: any) => i.type === 'refund')
     return (settings?.data as any)?.description ?? '';
   }, [product]);
 
@@ -371,31 +383,18 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   }, [product]);
 
   const brandContacts = useMemo(() => {
-    const settings = product.Brand?.Settings ?? [];
-    const getSetting = (type: string) => settings.find(item => item.type === type)?.data;
-    const phones = Array.from(new Set(flattenStrings(getSetting('phones'))));
-    const emails = Array.from(new Set(flattenStrings(getSetting('emails'))));
-    const socialsRaw = getSetting('socials');
-    const socials: ContactSocial[] = Array.isArray(socialsRaw)
-      ? (socialsRaw as any[]).reduce((acc, item) => {
-        if (!item || typeof item !== 'object') return acc;
-        const {type, link} = item as { type?: string, link?: string };
-        if (typeof type !== 'string' || typeof link !== 'string') return acc;
-        const normalizedType = type.trim().toLowerCase();
-        const normalizedValue = link.trim();
-        if (!normalizedType.length || !normalizedValue.length) return acc;
-        const label = SOCIAL_LABELS[normalizedType] ?? normalizedType;
-        const url = normalizeSocialUrl(normalizedType, normalizedValue);
-        const display = getSocialDisplayValue(normalizedType, normalizedValue) || normalizedValue;
-        acc.push({
-          type: normalizedType,
-          label,
-          value: normalizedValue,
-          url,
-          display
-        });
-        return acc;
-      }, [] as ContactSocial[]) : [];
+    const contacts = brandContactsRaw ?? [];
+    const phones = contacts.filter(c => c.type === 'phone').map(c => c.value);
+    const emails = contacts.filter(c => c.type === 'email').map(c => c.value);
+    const socialTypes = ['whatsapp', 'telegram', 'instagram', 'facebook'];
+    const socials: ContactSocial[] = contacts
+      .filter(c => socialTypes.includes(c.type))
+      .map(c => {
+        const label = SOCIAL_LABELS[c.type] ?? c.type;
+        const url = normalizeSocialUrl(c.type, c.value);
+        const display = getSocialDisplayValue(c.type, c.value) || c.value;
+        return { type: c.type, label, value: c.value, url, display };
+      });
 
     return {
       phones,
@@ -403,7 +402,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       socials,
       hasAny: Boolean(phones.length || emails.length || socials.length)
     };
-  }, [product]);
+  }, [brandContactsRaw]);
 
   const variantDetails = useMemo(() => {
     const details = (variant?.VariantValue ?? []).map(i => {
@@ -1093,7 +1092,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                 },
                 {
                   label: 'Способы доставки',
-                  value: delivery
+                  value: deliveryContent
                 },
                 {
                   label: 'Условия возврата',
@@ -1197,27 +1196,18 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             </div>
 
             {/* Способы доставки */}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <div className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
-                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <span className="font-medium">ЕВРОПОЧТА по РБ</span>
+            {shippingMethods.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                {shippingMethods.map((method: any) => (
+                  <div key={method.id ?? method.key} className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
+                    <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span className="font-medium">{method.name}</span>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
-                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                </svg>
-                <span className="font-medium">Курьером по Минску</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
-                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="font-medium">Самовывоз</span>
-              </div>
-            </div>
+            )}
           </div>
           <VariantSelector
             variants={product?.Variants ?? []}
@@ -1299,7 +1289,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               },
               {
                 label: 'Способы доставки',
-                value: delivery
+                value: deliveryContent
               },
               {
                 label: 'Условия возврата',
@@ -1386,6 +1376,12 @@ type RenderCarouselConfig = {
   ariaLabel: string
 }
 
+type BrandContact = {
+  id: string | number
+  type: string
+  value: string
+}
+
 type Props = {
   product: ProductCardModel
   informationSettings?: {
@@ -1393,6 +1389,7 @@ type Props = {
   }
   breadcrumbs?: BreadcrumbItem[]
   otherProducts?: RelatedProduct[]
+  brandContacts?: BrandContact[]
 }
 
 type Options = {

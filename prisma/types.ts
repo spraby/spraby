@@ -23,10 +23,12 @@ import {
   brand_category,
   brand_image,
   brand_requests,
-  image_conversions,
   order_status,
   delivery_status,
   financial_status,
+  shipping_methods,
+  brand_shipping_method,
+  contacts,
 } from '@prisma/client'
 
 export default Prisma
@@ -44,6 +46,14 @@ export type UserModel = users & {
   brand_requests_brand_requests_user_idTousers?: BrandRequestModel[]
 }
 
+export type ShippingMethodModel = shipping_methods
+
+export type BrandShippingMethodModel = brand_shipping_method & {
+  shipping_methods?: ShippingMethodModel
+}
+
+export type ContactModel = contacts
+
 export type BrandModel = brands & {
   User?: UserModel
   Products?: ProductModel[]
@@ -51,6 +61,7 @@ export type BrandModel = brands & {
   brand_image?: BrandImageModel[]
   orders?: OrderModel[]
   brand_requests?: BrandRequestModel[]
+  brand_shipping_method?: BrandShippingMethodModel[]
 }
 
 export type OptionModel = options & {
@@ -174,6 +185,6 @@ export type BrandRequestModel = brand_requests & {
   User?: UserModel
 }
 
-export type ImageConversionModel = image_conversions & {
+export type ImageConversionModel = {
   Image?: ImageModel
 }
