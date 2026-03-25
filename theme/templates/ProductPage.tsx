@@ -201,7 +201,7 @@ type ContactSocial = {
   display: string
 };
 
-export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = [], brandContacts: brandContactsRaw = []}: Props) {
+export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = [], brandContacts: brandContactsRaw = [], brandAddresses = []}: Props) {
   const router = useRouter();
   const [variant, setVariant] = useState<VariantModel>()
   const [startImage, setStartImage] = useState<string | null>(null);
@@ -335,24 +335,15 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   }, [shippingMethods]);
 
   const refund = useMemo(() => {
-    const settings = (product.Brand?.Settings ?? []).find((i: any) => i.type === 'refund')
-    return (settings?.data as any)?.description ?? '';
+    return product.Brand?.refund_policy ?? '';
   }, [product]);
 
   const brandLocation = useMemo(() => {
-    const settings = (product.Brand?.Settings ?? []).find(i => i.type === 'addresses');
-    if (!settings?.data) return null;
-    const data = settings.data;
-    let raw: unknown = null;
-    if (Array.isArray(data)) {
-      raw = data.find(item => typeof item === 'string' && item.trim().length);
-    } else if (typeof data === 'string') {
-      raw = data;
-    }
-    if (typeof raw !== 'string') return null;
-    const normalized = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    return normalized.length ? normalized : null;
-  }, [product]);
+    const addr = brandAddresses?.[0];
+    if (!addr) return null;
+    const parts = [addr.city, addr.province, addr.country].filter(Boolean);
+    return parts.length ? parts.join(', ') : null;
+  }, [brandAddresses]);
 
   const pluralize = (value: number, forms: [string, string, string]) => {
     const n = Math.abs(value) % 100;
@@ -1088,7 +1079,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               tabs={[
                 {
                   label: 'Описание',
-                  value: product.description
+                  value: product.description ?? ''
                 },
                 {
                   label: 'Способы доставки',
@@ -1285,7 +1276,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             tabs={[
               {
                 label: 'Описание',
-                value: product.description
+                value: product.description ?? ''
               },
               {
                 label: 'Способы доставки',
@@ -1382,6 +1373,17 @@ type BrandContact = {
   value: string
 }
 
+type BrandAddress = {
+  id: string | number
+  name?: string | null
+  country: string
+  province?: string | null
+  city: string
+  zip_code?: string | null
+  address1?: string | null
+  address2?: string | null
+}
+
 type Props = {
   product: ProductCardModel
   informationSettings?: {
@@ -1390,6 +1392,7 @@ type Props = {
   breadcrumbs?: BreadcrumbItem[]
   otherProducts?: RelatedProduct[]
   brandContacts?: BrandContact[]
+  brandAddresses?: BrandAddress[]
 }
 
 type Options = {

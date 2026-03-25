@@ -129,6 +129,14 @@ export default async function ProductDetailPage(props: any) {
     }
   }) : [];
 
+  const brandAddresses = product?.brand_id ? await db.addresses.findMany({
+    where: {
+      addressable_type: 'App\\Models\\Brand',
+      addressable_id: product.brand_id,
+    },
+    take: 1,
+  }) : [];
+
   const informationSettings = await getInformationSettings() as any;
 
   let breadcrumbs: BreadcrumbItem[] = [];
@@ -145,6 +153,7 @@ export default async function ProductDetailPage(props: any) {
       informationSettings={informationSettings}
       breadcrumbs={breadcrumbs}
       brandContacts={serializeObject(brandContacts)}
+      brandAddresses={serializeObject(brandAddresses)}
     /> :
     <div>no product</div>
 }

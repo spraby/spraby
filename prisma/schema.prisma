@@ -14,7 +14,7 @@ model users {
   last_name                                        String?          @db.VarChar(255)
   email                                            String           @unique(map: "users_email_unique") @db.VarChar(255)
   password                                         String           @db.VarChar(255)
-  created_at                                       DateTime?        @default(now()) @db.Timestamp(0)
+  created_at                                       DateTime?        @db.Timestamp(0)
   updated_at                                       DateTime?        @updatedAt @db.Timestamp(0)
   phone                                            String?          @db.VarChar(255)
   audits                                           audits[]
@@ -28,8 +28,10 @@ model brands {
   user_id               BigInt?
   name                  String                  @db.VarChar(255)
   description           String?
-  created_at            DateTime?               @default(now()) @db.Timestamp(0)
+  created_at            DateTime?               @db.Timestamp(0)
   updated_at            DateTime?               @updatedAt @db.Timestamp(0)
+  about                 String?
+  refund_policy         String?
   brand_category        brand_category[]
   brand_image           brand_image[]
   brand_requests        brand_requests[]
@@ -44,7 +46,7 @@ model options {
   name          String            @db.VarChar(255)
   title         String            @db.VarChar(255)
   description   String?
-  created_at    DateTime?         @default(now()) @db.Timestamp(0)
+  created_at    DateTime?         @db.Timestamp(0)
   updated_at    DateTime?         @updatedAt @db.Timestamp(0)
   Categories    category_option[]
   Values        option_values[]
@@ -55,7 +57,7 @@ model option_values {
   id            BigInt           @id @default(autoincrement())
   option_id     BigInt
   value         String           @db.VarChar(255)
-  created_at    DateTime?        @default(now()) @db.Timestamp(0)
+  created_at    DateTime?        @db.Timestamp(0)
   updated_at    DateTime?        @updatedAt @db.Timestamp(0)
   position      Int              @default(0)
   Option        options          @relation(fields: [option_id], references: [id], onDelete: Cascade, map: "option_values_option_id_foreign")
@@ -86,7 +88,7 @@ model categories {
   name               String                @db.VarChar(255)
   title              String                @db.VarChar(255)
   description        String?
-  created_at         DateTime?             @default(now()) @db.Timestamp(0)
+  created_at         DateTime?             @db.Timestamp(0)
   updated_at         DateTime?             @updatedAt @db.Timestamp(0)
   header             String?               @db.VarChar(255)
   brand_category     brand_category[]
@@ -101,7 +103,7 @@ model collections {
   name               String                @db.VarChar(255)
   title              String                @db.VarChar(255)
   description        String?
-  created_at         DateTime?             @default(now()) @db.Timestamp(0)
+  created_at         DateTime?             @db.Timestamp(0)
   updated_at         DateTime?             @updatedAt @db.Timestamp(0)
   meta_title         String?               @db.VarChar(255)
   meta_description   String?
@@ -117,7 +119,7 @@ model products {
   title       String              @db.VarChar(255)
   description String?
   enabled     Boolean             @default(true)
-  created_at  DateTime?           @default(now()) @db.Timestamp(0)
+  created_at  DateTime?           @db.Timestamp(0)
   updated_at  DateTime?           @updatedAt @db.Timestamp(0)
   OrderItems  order_items[]
   Images      product_images[]
@@ -134,7 +136,7 @@ model variants {
   title        String?          @db.VarChar(255)
   price        Decimal          @default(0) @db.Decimal(10, 2)
   final_price  Decimal          @default(0) @db.Decimal(10, 2)
-  created_at   DateTime?        @default(now()) @db.Timestamp(0)
+  created_at   DateTime?        @db.Timestamp(0)
   updated_at   DateTime?        @updatedAt @db.Timestamp(0)
   enabled      Boolean          @default(true)
   order_items  order_items[]
@@ -148,7 +150,7 @@ model variant_values {
   variant_id      BigInt
   option_id       BigInt
   option_value_id BigInt
-  created_at      DateTime?     @default(now()) @db.Timestamp(0)
+  created_at      DateTime?     @db.Timestamp(0)
   updated_at      DateTime?     @updatedAt @db.Timestamp(0)
   Option          options       @relation(fields: [option_id], references: [id], onDelete: Cascade, map: "variant_values_option_id_foreign")
   Value           option_values @relation(fields: [option_value_id], references: [id], onDelete: Cascade, map: "variant_values_option_value_id_foreign")
@@ -163,7 +165,7 @@ model images {
   src           String           @db.VarChar(255)
   alt           String?          @db.VarChar(255)
   meta          String?
-  created_at    DateTime?        @default(now()) @db.Timestamp(0)
+  created_at    DateTime?        @db.Timestamp(0)
   updated_at    DateTime?        @updatedAt @db.Timestamp(0)
   brand_image   brand_image[]
   ProductImages product_images[]
@@ -174,7 +176,7 @@ model product_images {
   product_id  BigInt
   image_id    BigInt
   position    Int           @default(0)
-  created_at  DateTime?     @default(now()) @db.Timestamp(0)
+  created_at  DateTime?     @db.Timestamp(0)
   updated_at  DateTime?     @updatedAt @db.Timestamp(0)
   order_items order_items[]
   Image       images        @relation(fields: [image_id], references: [id], onDelete: Cascade, map: "product_images_image_id_foreign")
@@ -185,7 +187,7 @@ model product_images {
 model settings {
   id         BigInt    @id @default(autoincrement())
   data       Json      @default("[]")
-  created_at DateTime? @default(now()) @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
   updated_at DateTime? @updatedAt @db.Timestamp(0)
   key        String    @unique(map: "settings_key_unique") @db.VarChar(255)
 }
@@ -195,7 +197,7 @@ model customers {
   email      String    @unique(map: "customers_email_unique") @db.VarChar(255)
   name       String    @db.VarChar(255)
   phone      String    @db.VarChar(255)
-  created_at DateTime? @default(now()) @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
   updated_at DateTime? @updatedAt @db.Timestamp(0)
   Orders     orders[]
 }
@@ -209,7 +211,7 @@ model orders {
   status           order_status      @default(pending)
   delivery_status  delivery_status   @default(pending)
   financial_status financial_status  @default(unpaid)
-  created_at       DateTime?         @default(now()) @db.Timestamp(0)
+  created_at       DateTime?         @db.Timestamp(0)
   updated_at       DateTime?         @updatedAt @db.Timestamp(0)
   OrderItems       order_items[]
   OrderShippings   order_shippings[]
@@ -229,7 +231,7 @@ model order_items {
   quantity      Int
   price         Decimal         @default(0) @db.Decimal(10, 2)
   final_price   Decimal         @default(0) @db.Decimal(10, 2)
-  created_at    DateTime?       @default(now()) @db.Timestamp(0)
+  created_at    DateTime?       @db.Timestamp(0)
   updated_at    DateTime?       @updatedAt @db.Timestamp(0)
   Image         product_images? @relation(fields: [image_id], references: [id], onUpdate: SetNull, map: "order_items_image_id_foreign")
   Order         orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_items_order_id_foreign")
@@ -243,7 +245,7 @@ model order_shippings {
   name       String    @db.VarChar(255)
   phone      String    @db.VarChar(255)
   note       String
-  created_at DateTime? @default(now()) @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
   updated_at DateTime? @updatedAt @db.Timestamp(0)
   Order      orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_shippings_order_id_foreign")
 }
@@ -254,7 +256,7 @@ model ProductStatistics {
   client_id  String    @db.VarChar(255)
   type       String    @db.VarChar(255)
   geo        Json
-  created_at DateTime? @default(now()) @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
   updated_at DateTime? @updatedAt @db.Timestamp(0)
   Product    products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "product_statistics_product_id_foreign")
 
@@ -271,7 +273,7 @@ model audits {
   auditable_type String    @db.VarChar(255)
   auditable_id   BigInt
   user_id        BigInt?
-  created_at     DateTime? @default(now()) @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @updatedAt @db.Timestamp(0)
   users          users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "audits_user_id_foreign")
 
@@ -310,8 +312,8 @@ model brand_requests {
   reviewed_by                             BigInt?
   approved_at                             DateTime? @db.Timestamp(0)
   rejected_at                             DateTime? @db.Timestamp(0)
-  created_at                              DateTime? @default(now()) @db.Timestamp(0)
-  updated_at                              DateTime? @default(now()) @db.Timestamp(0)
+  created_at                              DateTime? @db.Timestamp(0)
+  updated_at                              DateTime? @db.Timestamp(0)
   brands                                  brands?   @relation(fields: [brand_id], references: [id], onUpdate: NoAction, map: "brand_requests_brand_id_foreign")
   users_brand_requests_reviewed_byTousers users?    @relation("brand_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "brand_requests_reviewed_by_foreign")
   users_brand_requests_user_idTousers     users?    @relation("brand_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "brand_requests_user_id_foreign")
@@ -394,7 +396,7 @@ model permissions {
   id                    BigInt                  @id @default(autoincrement())
   name                  String                  @db.VarChar(255)
   guard_name            String                  @db.VarChar(255)
-  created_at            DateTime?               @default(now()) @db.Timestamp(0)
+  created_at            DateTime?               @db.Timestamp(0)
   updated_at            DateTime?               @updatedAt @db.Timestamp(0)
   model_has_permissions model_has_permissions[]
   role_has_permissions  role_has_permissions[]
@@ -415,7 +417,7 @@ model roles {
   id                   BigInt                 @id @default(autoincrement())
   name                 String                 @db.VarChar(255)
   guard_name           String                 @db.VarChar(255)
-  created_at           DateTime?              @default(now()) @db.Timestamp(0)
+  created_at           DateTime?              @db.Timestamp(0)
   updated_at           DateTime?              @updatedAt @db.Timestamp(0)
   model_has_roles      model_has_roles[]
   role_has_permissions role_has_permissions[]
@@ -446,7 +448,7 @@ model addresses {
   address2         String?   @db.VarChar(255)
   addressable_type String    @db.VarChar(255)
   addressable_id   BigInt
-  created_at       DateTime? @default(now()) @db.Timestamp(0)
+  created_at       DateTime? @db.Timestamp(0)
   updated_at       DateTime? @updatedAt @db.Timestamp(0)
 
   @@index([addressable_type, addressable_id], map: "addresses_addressable_type_addressable_id_index")
@@ -467,7 +469,7 @@ model contacts {
   value            String    @db.VarChar(255)
   contactable_type String    @db.VarChar(255)
   contactable_id   BigInt
-  created_at       DateTime? @default(now()) @db.Timestamp(0)
+  created_at       DateTime? @db.Timestamp(0)
   updated_at       DateTime? @updatedAt @db.Timestamp(0)
 
   @@unique([contactable_type, contactable_id, type], map: "contacts_contactable_type_contactable_id_type_unique")
@@ -479,7 +481,7 @@ model shipping_methods {
   key                   String                  @unique(map: "shipping_methods_key_unique") @db.VarChar(255)
   name                  String                  @db.VarChar(255)
   description           String?                 @db.VarChar(255)
-  created_at            DateTime?               @default(now()) @db.Timestamp(0)
+  created_at            DateTime?               @db.Timestamp(0)
   updated_at            DateTime?               @updatedAt @db.Timestamp(0)
   brand_shipping_method brand_shipping_method[]
 }
