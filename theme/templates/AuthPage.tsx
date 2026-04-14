@@ -134,7 +134,7 @@ export default function AuthPage() {
                 spraby
               </Link>
               <p className="text-xl font-semibold text-gray-900 sm:text-2xl">Стать продавцом</p>
-              <p className="text-sm text-gray-500">Оставьте заявку и мы свяжемся с вами для создания магазина</p>
+              <p className="text-sm text-gray-500">Оставьте заявку и мы свяжемся с вами для создания магазина.</p>
             </div>
           </div>
 
