@@ -26,7 +26,7 @@ import {Splide, SplideSlide} from "react-splide-ts";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import {useCart} from "@/theme/hooks/useCart";
 import '@splidejs/react-splide/css';
-import {useSearchParams, useRouter} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 
 const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
   <svg
@@ -202,8 +202,15 @@ type ContactSocial = {
 };
 
 export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = [], brandContacts: brandContactsRaw = [], brandAddresses = []}: Props) {
-  const router = useRouter();
-  const [variant, setVariant] = useState<VariantModel>()
+  const searchParams = useSearchParams();
+  const variantIdFromQuery = (searchParams.get('variantId') ?? '').trim() || null;
+  const [variant, setVariant] = useState<VariantModel | undefined>(() => {
+    if (variantIdFromQuery) {
+      const matchedVariant = (product.Variants ?? []).find(item => `${item.id}` === variantIdFromQuery);
+      if (matchedVariant) return matchedVariant;
+    }
+    return (product.Variants ?? [])[0];
+  })
   const [startImage, setStartImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'order' | 'contacts'>('order');
@@ -217,19 +224,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     ready: favoritesReady
   } = useFavorites();
   const { addItem, items: cartItems } = useCart();
-  const searchParams = useSearchParams();
-  const variantIdFromQuery = (searchParams.get('variantId') ?? '').trim() || null;
-
-  const handleDrawerClose = () => {
-    setOpen(false);
-    setOrderNumber(undefined);
-    setDrawerMode('order');
-  };
-
-  const hasDiscount = Number(product.price) > Number(product.final_price);
-  const discountPercent = hasDiscount
-    ? Math.round((1 - Number(product.final_price) / Number(product.price)) * 100)
-    : 0;
 
   const brandDisplayName = useMemo(() => {
     const rawBrandName = typeof product.Brand?.name === 'string' ? product.Brand.name.trim() : '';
@@ -239,6 +233,64 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     const combined = [firstName, lastName].filter(Boolean).join(' ').trim();
     return combined.length ? combined : null;
   }, [product.Brand?.User?.first_name, product.Brand?.User?.last_name, product.Brand?.name]);
+
+  const galleryImages = useMemo(() => {
+    const seen = new Set<string>();
+
+    return (product.Images ?? []).reduce<Array<{
+      key: string
+      src: string
+      productImageId: string
+      sourceImageId: string
+    }>>((acc, image, index) => {
+      const src = normalizeImageSrc(image?.Image?.src);
+      if (!src) return acc;
+
+      const productImageId = toIdString(image?.id);
+      const sourceImageId = toIdString(image?.image_id);
+      const key = productImageId || sourceImageId || `${String(product.id)}-${index}-${src}`;
+      if (seen.has(key)) return acc;
+
+      seen.add(key);
+      acc.push({
+        key,
+        src,
+        productImageId,
+        sourceImageId,
+      });
+
+      return acc;
+    }, []);
+  }, [product.Images, product.id]);
+
+  const galleryImageSources = useMemo(() => galleryImages.map(image => image.src), [galleryImages]);
+
+  const getVariantImageSrc = useCallback((candidate?: VariantModel) => {
+    if (!candidate) return null;
+
+    const variantImageId = toIdString(candidate.image_id);
+    if (variantImageId.length) {
+      const matchedGalleryImage = galleryImages.find(image => {
+        return [image.productImageId, image.sourceImageId].filter(Boolean).includes(variantImageId);
+      });
+      if (matchedGalleryImage?.src) return matchedGalleryImage.src;
+    }
+
+    return normalizeImageSrc(candidate.Image?.Image?.src);
+  }, [galleryImages]);
+
+  const currentPrice = `${variant?.price ?? product.price ?? 0}`;
+  const currentFinalPrice = `${variant?.final_price ?? product.final_price ?? currentPrice}`;
+  const hasDiscount = Number(currentPrice) > Number(currentFinalPrice);
+  const discountPercent = hasDiscount
+    ? Math.round((1 - Number(currentFinalPrice) / Number(currentPrice)) * 100)
+    : 0;
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+    setOrderNumber(undefined);
+    setDrawerMode('order');
+  };
 
   const {
     register,
@@ -250,7 +302,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 
   useEffect(() => {
     setStatistic(product.id, 'view').then();
-  }, []);
+  }, [product.id]);
 
   /**
    *
@@ -273,7 +325,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         }, []);
 
         const sortedOptionVariantValues: string[] = [];
-        categoryOption.Option.Values?.sort((a, b) => a.position - b.position).forEach(i => {
+        [...(categoryOption.Option.Values ?? [])].sort((a, b) => a.position - b.position).forEach(i => {
           const o = optionVariantValues.find(j => j === i.value);
           if (o) sortedOptionVariantValues.push(o);
         });
@@ -337,6 +389,21 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const refund = useMemo(() => {
     return product.Brand?.refund_policy ?? '';
   }, [product]);
+
+  const productTabs = useMemo(() => ([
+    {
+      label: 'Описание',
+      value: product.description ?? ''
+    },
+    {
+      label: 'Способы доставки',
+      value: deliveryContent
+    },
+    {
+      label: 'Условия возврата',
+      value: refund
+    },
+  ]), [deliveryContent, product.description, refund]);
 
   const brandLocation = useMemo(() => {
     const addr = brandAddresses?.[0];
@@ -442,22 +509,55 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return cartItem?.quantity ?? 0;
   }, [cartItemId, cartItems]);
 
-  const productPreviewImage = useMemo(() => {
-    if (variant) {
-      const matchedGalleryImage = (product.Images ?? []).find(image => {
-        const variantId = toIdString(variant.image_id);
-        if (!variantId) return false;
-        const galleryIds = [image.image_id, image.id].map(toIdString).filter(Boolean);
-        return galleryIds.includes(variantId);
-      })?.Image?.src;
-      if (matchedGalleryImage) return normalizeImageSrc(matchedGalleryImage);
-      if (variant.Image?.Image?.src?.length) return normalizeImageSrc(variant.Image.Image.src);
+  const handleImageChange = useCallback((imageSrc: string, index: number) => {
+    const normalizedImage = normalizeImageSrc(imageSrc);
+    if (normalizedImage) {
+      setStartImage(prev => prev === normalizedImage ? prev : normalizedImage);
     }
-    const productImage = (product.Images ?? []).find(image => image.Image?.src?.length)?.Image?.src;
-    if (productImage) return normalizeImageSrc(productImage);
-    const variantImage = (product.Variants ?? []).find(v => v.Image?.Image?.src?.length)?.Image?.Image?.src;
-    return normalizeImageSrc(variantImage);
-  }, [variant, product]);
+
+    const galleryImage = galleryImages[index];
+    if (!galleryImage) return;
+
+    const imageIds = [galleryImage.productImageId, galleryImage.sourceImageId].filter(Boolean);
+    if (!imageIds.length) return;
+
+    const matchedVariant = (product.Variants ?? []).find(item => {
+      const variantImageId = toIdString(item.image_id);
+      return variantImageId.length ? imageIds.includes(variantImageId) : false;
+    });
+
+    if (matchedVariant) {
+      setVariant(prev => `${prev?.id ?? ''}` === `${matchedVariant.id}` ? prev : matchedVariant);
+    }
+  }, [galleryImages, product.Variants]);
+
+  const handleVariantChange = useCallback((nextVariant?: VariantModel) => {
+    setVariant(prev => {
+      if (`${prev?.id ?? ''}` === `${nextVariant?.id ?? ''}`) return prev;
+      return nextVariant;
+    });
+  }, []);
+
+  useEffect(() => {
+    const nextImage = getVariantImageSrc(variant);
+    if (!nextImage) return;
+    setStartImage(prev => prev === nextImage ? prev : nextImage);
+  }, [getVariantImageSrc, variant]);
+
+  const productPreviewImage = useMemo(() => {
+    const currentVariantImage = getVariantImageSrc(variant);
+    if (currentVariantImage) return currentVariantImage;
+
+    const galleryImage = galleryImages[0]?.src;
+    if (galleryImage) return galleryImage;
+
+    return getVariantImageSrc((product.Variants ?? [])[0]);
+  }, [galleryImages, getVariantImageSrc, product.Variants, variant]);
+
+  const sliderImages = useMemo(() => {
+    if (galleryImageSources.length) return galleryImageSources;
+    return productPreviewImage ? [productPreviewImage] : [];
+  }, [galleryImageSources, productPreviewImage]);
 
   const otherProductsToDisplay = useMemo(() => {
     return (otherProducts ?? []).filter(item => item.Images?.some(image => image?.Image?.src));
@@ -482,17 +582,17 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   }, [sellerName]);
 
   const primaryImageSrc = useMemo(() => {
-    const imageFromGallery = (product.Images ?? []).find(image => image.Image?.src)?.Image?.src;
+    const imageFromGallery = galleryImages[0]?.src;
     if (imageFromGallery) return imageFromGallery;
     return productPreviewImage ?? '';
-  }, [product, productPreviewImage]);
+  }, [galleryImages, productPreviewImage]);
 
   const favoriteProductData = useMemo(() => {
     const productId = toIdString(product.id);
     if (!productId) return null;
     const title = typeof product.title === 'string' ? product.title.trim() : '';
-    const rawFinalPrice = `${product.final_price ?? ''}`.trim();
-    const rawPrice = `${product.price ?? ''}`.trim();
+    const rawFinalPrice = `${currentFinalPrice ?? ''}`.trim();
+    const rawPrice = `${currentPrice ?? ''}`.trim();
     const finalPrice = rawFinalPrice.length ? rawFinalPrice : rawPrice;
     if (!title.length || !finalPrice.length) return null;
     const imageCandidate = productPreviewImage ?? primaryImageSrc ?? null;
@@ -514,7 +614,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       variantTitle: variantTitle.length ? variantTitle : null,
       variantOptions: variantDetails,
     };
-  }, [brandDisplayName, primaryImageSrc, product.description, product.final_price, product.id, product.price, product.title, productPreviewImage, variant, variantDetails, variantSummary]);
+  }, [brandDisplayName, currentFinalPrice, currentPrice, primaryImageSrc, product.description, product.id, product.title, productPreviewImage, variant, variantDetails, variantSummary]);
 
   const isInFavorites = useMemo(() => {
     if (!favoriteProductData) return false;
@@ -560,8 +660,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       const currentId = String(product.id);
       const filtered = entries.filter(item => item?.id && item.id !== currentId && item.image && hasValidPrice(item.final_price));
 
-      const finalPriceString = `${product.final_price ?? ''}`;
-      const priceString = `${product.price ?? ''}`;
+      const finalPriceString = `${currentFinalPrice ?? ''}`;
+      const priceString = `${currentPrice ?? ''}`;
 
       const currentEntry: RecentProductStorage | null = (product?.title && primaryImageSrc && hasValidPrice(finalPriceString)) ? {
         id: currentId,
@@ -590,7 +690,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     } catch (error) {
       console.error('Failed to update recent products', error);
     }
-  }, [brandDisplayName, product.id, product.title, product.price, product.final_price, primaryImageSrc, toRelatedRecentProduct]);
+  }, [brandDisplayName, currentFinalPrice, currentPrice, primaryImageSrc, product.id, product.title, toRelatedRecentProduct]);
 
   const createCarouselLayout = useCallback((total: number, minimums: CarouselMinimums = {}): CarouselLayout => {
     const targetDesktop = Math.max(1, minimums.desktop ?? 5);
@@ -763,8 +863,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                           OrderItems: {
                                             createMany: {
                                               data: {
-                                                price: product.price,
-                                                final_price: product.final_price,
+                                                price: currentPrice,
+                                                final_price: currentFinalPrice,
                                                 image_id: variant?.image_id,
                                                 product_id: product.id,
                                                 variant_id: variant.id,
@@ -887,7 +987,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-wide text-gray-500 sm:text-sm">
           <span>Стоимость товара</span>
           <span className="flex items-center gap-2">
-            <Price finalPrice={+product.final_price} price={+product.price} size="lg"/>
+            <Price finalPrice={+currentFinalPrice} price={+currentPrice} size="lg"/>
             {hasDiscount && (
               <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold text-rose-600 sm:text-xs">
                 -{discountPercent}%
@@ -898,7 +998,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         <div className="flex items-center justify-between text-base font-semibold text-gray-900 sm:text-lg">
           <span>Итого</span>
           <span className="flex items-baseline gap-1.5 sm:gap-2 text-purple-600">
-            <Price finalPrice={+product.final_price} size="lg"/>
+            <Price finalPrice={+currentFinalPrice} size="lg"/>
           </span>
         </div>
       </div>
@@ -937,7 +1037,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       <span className="mt-2 block text-base font-semibold text-gray-900 sm:text-lg">Спасибо 🖤</span>
       <p className="mt-3">Заказ № {orderNumber} успешно отправлен!</p>
       <p className="mt-3">
-        Ожидайте, представитель "{product?.Brand?.name ?? 'брэнда'}" свяжется с вами для подтверждения заказа.
+        Ожидайте, представитель &quot;{product?.Brand?.name ?? 'брэнда'}&quot; свяжется с вами для подтверждения заказа.
       </p>
       {
         orderLink && <>
@@ -1067,7 +1167,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       <div className='flex w-full flex-col gap-8 lg:grid lg:grid-cols-12 lg:gap-10'>
         <div className='order-1 lg:order-1 flex flex-col gap-7 lg:col-span-7 xl:col-span-7'>
           <div className='relative'>
-            <DoubleSlider images={(product.Images ?? []).map(i => i.Image?.src as string)} startImage={startImage}/>
+            <DoubleSlider images={sliderImages} startImage={startImage} onImageChange={handleImageChange}/>
             {hasDiscount && discountPercent > 0 && (
               <span className='absolute right-4 top-4 inline-flex items-center rounded-lg bg-purple-500 px-3 py-1.5 text-sm font-semibold text-white shadow-md'>
                 -{discountPercent}%
@@ -1075,22 +1175,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             )}
           </div>
           <div className='hidden lg:flex flex-col gap-7'>
-            <Tabs
-              tabs={[
-                {
-                  label: 'Описание',
-                  value: product.description ?? ''
-                },
-                {
-                  label: 'Способы доставки',
-                  value: deliveryContent
-                },
-                {
-                  label: 'Условия возврата',
-                  value: refund
-                },
-              ]}
-            />
+            <Tabs tabs={productTabs}/>
             <div className='h-px bg-gray-200'></div>
           </div>
         </div>
@@ -1109,7 +1194,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               <HeardIcon color={isInFavorites ? '#db2777' : '#272738'} filled={isInFavorites}/>
             </button>
           </div>
-          <Price finalPrice={+product.final_price} price={+product.price}/>
+          <Price finalPrice={+currentFinalPrice} price={+currentPrice}/>
           {tags.length > 0 && (
             <div className='flex flex-col gap-2'>
               <div className='flex flex-wrap gap-2'>
@@ -1158,8 +1243,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                     title: product.title,
                     variantTitle: variantSummary,
                     image: productPreviewImage,
-                    price: String(product.price),
-                    finalPrice: String(product.final_price),
+                    price: currentPrice,
+                    finalPrice: currentFinalPrice,
                   });
                   setStatistic(product.id, 'add_to_cart').then();
 
@@ -1204,10 +1289,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             variants={product?.Variants ?? []}
             options={options}
             initialVariantId={variantIdFromQuery}
-            onChange={v => {
-              if (v?.Image?.Image?.src?.length) setStartImage(v.Image.Image.src);
-              setVariant(v);
-            }}
+            selectedVariantId={variant ? toIdString(variant.id) : null}
+            onChange={handleVariantChange}
           />
           <div className='h-px bg-gray-200'></div>
           <Accordion className='pb-0'>
@@ -1272,22 +1355,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <div className='h-px bg-gray-200'></div>
         </div>
         <div className='order-3 flex flex-col gap-7 lg:hidden'>
-          <Tabs
-            tabs={[
-              {
-                label: 'Описание',
-                value: product.description ?? ''
-              },
-              {
-                label: 'Способы доставки',
-                value: deliveryContent
-              },
-              {
-                label: 'Условия возврата',
-                value: refund
-              },
-            ]}
-          />
+          <Tabs tabs={productTabs}/>
           <div className='h-px bg-gray-200'></div>
         </div>
       </div>

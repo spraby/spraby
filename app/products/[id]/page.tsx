@@ -38,6 +38,9 @@ export default async function ProductDetailPage(props: any) {
         where: {
           enabled: true,
         },
+        orderBy: {
+          id: 'asc'
+        },
         include: {
           Image: {
             include: {
@@ -67,6 +70,18 @@ export default async function ProductDetailPage(props: any) {
     ...product,
     price: `${product?.Variants?.[0]?.price ?? 0}`,
     final_price: `${product?.Variants?.[0]?.final_price ?? 0}`,
+    Variants: product?.Variants?.map(variant => ({
+      ...variant,
+      price: `${variant.price}`,
+      final_price: `${variant.final_price}`,
+      Image: variant.Image ? {
+        ...variant.Image,
+        Image: variant.Image.Image ? {
+          ...variant.Image.Image,
+          src: variant.Image.Image.src ? `${process.env.AWS_IMAGE_DOMAIN}/${variant.Image.Image.src}` : variant.Image.Image.src
+        } : null
+      } : null
+    })),
     Images: product?.Images?.map(i => ({
       ...i,
       Image: {
@@ -97,7 +112,9 @@ export default async function ProductDetailPage(props: any) {
       },
       Variants: {
         where: { enabled: true },
-        take: 1,
+        orderBy: {
+          id: 'asc'
+        },
       },
     },
     orderBy: {
@@ -111,6 +128,11 @@ export default async function ProductDetailPage(props: any) {
       ...item,
       price: `${item.Variants?.[0]?.price ?? 0}`,
       final_price: `${item.Variants?.[0]?.final_price ?? 0}`,
+      Variants: (item.Variants ?? []).map(variant => ({
+        ...variant,
+        price: `${variant.price}`,
+        final_price: `${variant.final_price}`
+      })),
       Images: (item.Images ?? []).map(image => ({
         ...image,
         Image: image.Image ? {

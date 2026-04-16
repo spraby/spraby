@@ -141,7 +141,9 @@ export async function getProductsOnTrend() {
         },
         Variants: {
           where: { enabled: true },
-          take: 1,
+          orderBy: {
+            id: 'asc'
+          },
         },
       },
     });
@@ -172,7 +174,9 @@ export async function getProductsOnTrend() {
           },
           Variants: {
             where: { enabled: true },
-            take: 1,
+            orderBy: {
+              id: 'asc'
+            },
           },
         },
         orderBy: {
@@ -189,6 +193,11 @@ export async function getProductsOnTrend() {
         ...product,
         price: `${product.Variants?.[0]?.price ?? 0}`,
         final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
+        Variants: product.Variants?.map(v => ({
+          ...v,
+          price: `${v.price}`,
+          final_price: `${v.final_price}`
+        })),
         Images: product.Images?.map(i => ({
           ...i,
           Image: {
@@ -253,7 +262,9 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
         },
         Variants: {
           where: { enabled: true },
-          take: 1,
+          orderBy: {
+            id: 'asc'
+          },
         },
       }
     });
@@ -267,6 +278,11 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
       ...product,
       price: `${product.Variants?.[0]?.price ?? 0}`,
       final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
+      Variants: product.Variants?.map(v => ({
+        ...v,
+        price: `${v.price}`,
+        final_price: `${v.final_price}`
+      })),
       Images: product.Images?.map(i => ({
         ...i,
         Image: i.Image ? {
@@ -306,7 +322,9 @@ export async function getLatestProducts(limit = 15) {
         },
         Variants: {
           where: { enabled: true },
-          take: 1,
+          orderBy: {
+            id: 'asc'
+          },
         },
       }
     });
@@ -315,6 +333,11 @@ export async function getLatestProducts(limit = 15) {
       ...product,
       price: `${product.Variants?.[0]?.price ?? 0}`,
       final_price: `${product.Variants?.[0]?.final_price ?? 0}`,
+      Variants: product.Variants?.map(v => ({
+        ...v,
+        price: `${v.price}`,
+        final_price: `${v.final_price}`
+      })),
       Images: product.Images?.map(i => ({
         ...i,
         Image: {
@@ -438,6 +461,9 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
             }
           },
           Variants: {
+            where: {
+              enabled: true
+            },
             include: {
               Image: true,
               VariantValue: {
@@ -445,7 +471,10 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
                   Value: true,
                   Option: true
                 }
-              }
+              },
+            },
+            orderBy: {
+              id: 'asc'
             }
           },
           Images: {

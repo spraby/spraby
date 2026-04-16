@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 const COLLAPSED_HEIGHT = 320;
 
@@ -25,30 +25,34 @@ const Tabs = ({tabs}: Props) => {
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   const preparedTabs = useMemo(() => normalizeTabs(tabs), [tabs]);
+  const activeTab = preparedTabs[activeIndex];
 
-  const measureOverflow = () => {
+  const measureOverflow = useCallback(() => {
     const node = contentRef.current;
     if (!node) return;
     const needCollapse = node.scrollHeight > COLLAPSED_HEIGHT + 1;
-    setShouldCollapse(needCollapse);
-    if (!needCollapse && expandedTabs[activeIndex]) {
-      setExpandedTabs(prev => ({
-        ...prev,
-        [activeIndex]: false,
-      }));
+    setShouldCollapse(prev => prev === needCollapse ? prev : needCollapse);
+    if (!needCollapse) {
+      setExpandedTabs(prev => {
+        if (!prev[activeIndex]) return prev;
+        return {
+          ...prev,
+          [activeIndex]: false,
+        };
+      });
     }
-  };
+  }, [activeIndex]);
 
   useLayoutEffect(() => {
     measureOverflow();
-  }, [activeIndex, preparedTabs, expandedTabs[activeIndex]]);
+  }, [measureOverflow, activeTab]);
 
   useEffect(() => {
     const handleResize = () => measureOverflow();
     if (typeof window === 'undefined') return;
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [activeIndex, preparedTabs, expandedTabs[activeIndex]]);
+  }, [measureOverflow, activeTab]);
 
   const handleTabChange = (index: number) => {
     if (index === activeIndex) return;
