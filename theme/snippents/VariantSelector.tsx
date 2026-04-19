@@ -1,19 +1,19 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {VariantModel} from "@/prisma/types";
 import {isEqual} from "lodash";
 import {Select, SelectItem} from "@nextui-org/select";
 
-const VariantSelector = ({variants, options = [], onChange, initialVariantId, selectedVariantId}: Props) => {
+const VariantSelector = ({variants, options = [], onChange, selectedVariantId}: Props) => {
   const [activeVariantId, setActiveVariantId] = useState<string | null>(() => (
-    getResolvedVariantId(variants, options, selectedVariantId ?? initialVariantId)
+    getResolvedVariantId(variants, options, selectedVariantId)
   ));
 
   useEffect(() => {
-    const nextVariantId = getResolvedVariantId(variants, options, selectedVariantId ?? initialVariantId);
+    const nextVariantId = getResolvedVariantId(variants, options, selectedVariantId);
     setActiveVariantId(prev => prev === nextVariantId ? prev : nextVariantId);
-  }, [initialVariantId, options, selectedVariantId, variants]);
+  }, [options, selectedVariantId, variants]);
 
   const selectedVariant = useMemo(() => {
     return resolveVariant(variants, options, activeVariantId);
@@ -25,9 +25,14 @@ const VariantSelector = ({variants, options = [], onChange, initialVariantId, se
     return getVariantOptionsData(selectedVariant);
   }, [options.length, selectedVariant]);
 
+  const onChangeRef = useRef(onChange);
   useEffect(() => {
-    if (typeof onChange === 'function') onChange(selectedVariant);
-  }, [onChange, selectedVariant]);
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    onChangeRef.current?.(selectedVariant);
+  }, [selectedVariant]);
 
   const handleOptionChange = (value: string, id: string) => {
     const nextOptions = normalizeSelectedOptions(
@@ -78,7 +83,6 @@ type Props = {
   variants: VariantModel[],
   options?: Options[],
   onChange?: (variant?: VariantModel) => any,
-  initialVariantId?: string | number | bigint | null,
   selectedVariantId?: string | number | bigint | null,
 }
 

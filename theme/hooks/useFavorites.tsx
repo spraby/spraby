@@ -1,6 +1,7 @@
 'use client';
 
 import {createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode} from "react";
+import {normalizeImageSrc, toIdString} from "@/services/utilits";
 
 const FAVORITES_STORAGE_KEY = 'spraby_favorites';
 
@@ -46,13 +47,6 @@ type FavoritesContextValue = {
 
 const FavoritesContext = createContext<FavoritesContextValue | undefined>(undefined);
 
-const toIdString = (value: unknown) => {
-  if (typeof value === 'bigint') return value.toString();
-  if (typeof value === 'number') return Number.isFinite(value) ? value.toString() : '';
-  if (typeof value === 'string') return value.trim();
-  return '';
-};
-
 const toPriceString = (raw: unknown): string | null => {
   if (typeof raw === 'number') {
     return Number.isFinite(raw) ? raw.toString() : null;
@@ -62,16 +56,6 @@ const toPriceString = (raw: unknown): string | null => {
     return trimmed.length ? trimmed : null;
   }
   return null;
-};
-
-const normalizeImageSrc = (raw?: string | null): string | null => {
-  if (!raw) return null;
-  const value = raw.trim();
-  if (!value.length) return null;
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-  if (value.startsWith('/')) return value;
-  const stripped = value.replace(/^\.?\//, '');
-  return stripped.length ? `/${stripped}` : null;
 };
 
 const normalizeVariantOptions = (raw: FavoriteCandidate['variantOptions']): {label: string; value: string}[] => {

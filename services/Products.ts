@@ -464,15 +464,6 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
             where: {
               enabled: true
             },
-            include: {
-              Image: true,
-              VariantValue: {
-                include: {
-                  Value: true,
-                  Option: true
-                }
-              },
-            },
             orderBy: {
               id: 'asc'
             }

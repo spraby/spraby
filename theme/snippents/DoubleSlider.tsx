@@ -4,15 +4,7 @@ import {Splide, SplideSlide} from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import Image from 'next/image';
 import {useEffect, useRef} from 'react';
-
-const normalizeImageSrc = (raw?: string | null) => {
-  if (!raw) return null;
-  const value = raw.trim();
-  if (!value.length) return null;
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-  if (value.startsWith('/')) return value;
-  return `/${value.replace(/^\.?\//, '')}`;
-};
+import {normalizeImageSrc} from '@/services/utilits';
 
 const DoubleSlider = ({images, startImage = null, onImageChange}: Props) => {
   const main = useRef(null);

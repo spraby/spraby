@@ -2,23 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {ProductCardModel, VariantModel} from "@/prisma/types";
 import {setStatistic} from "@/services/ProductStatistics";
+import {normalizeImageSrc, toIdString} from "@/services/utilits";
 import {useEffect, useMemo, useState} from "react";
-
-const toIdString = (value: unknown) => {
-  if (typeof value === 'bigint') return value.toString();
-  if (typeof value === 'number') return value.toString();
-  if (typeof value === 'string') return value;
-  return '';
-};
-
-const normalizeImageSrc = (raw?: string | null) => {
-  if (!raw) return null;
-  const value = raw.trim();
-  if (!value.length) return null;
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-  if (value.startsWith('/')) return value;
-  return `/${value.replace(/^\.?\//, '')}`;
-};
 
 /**
  *
@@ -62,15 +47,8 @@ const ProductCart = ({product}: Props) => {
   }, [product.id]);
 
   useEffect(() => {
-    if (!images.length) {
-      if (activeImageIndex !== 0) setActiveImageIndex(0);
-      return;
-    }
-
-    if (activeImageIndex > images.length - 1) {
-      setActiveImageIndex(0);
-    }
-  }, [activeImageIndex, images.length]);
+    setActiveImageIndex(prev => (images.length && prev <= images.length - 1 ? prev : 0));
+  }, [images.length]);
 
   const handleProductClick = () => {
     setStatistic(product.id, 'click').then();
@@ -155,8 +133,12 @@ const ProductCart = ({product}: Props) => {
                     event.stopPropagation();
                     setActiveImageIndex(index);
                   }}
-                  className={`pointer-events-auto h-1.5 flex-1 rounded-full transition ${activeImageIndex === index ? 'bg-white shadow-sm' : 'bg-white/55 hover:bg-white/80'}`}
-                />
+                  className='pointer-events-auto group flex flex-1 items-center justify-center py-3 -my-3 bg-transparent'
+                >
+                  <span
+                    className={`block h-1.5 w-full rounded-full transition ${activeImageIndex === index ? 'bg-white shadow-sm' : 'bg-white/55 group-hover:bg-white/80'}`}
+                  />
+                </button>
               ))}
             </div>
           )

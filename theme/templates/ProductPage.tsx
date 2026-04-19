@@ -25,6 +25,7 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import {Splide, SplideSlide} from "react-splide-ts";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import {useCart} from "@/theme/hooks/useCart";
+import {normalizeImageSrc, toIdString} from "@/services/utilits";
 import '@splidejs/react-splide/css';
 import {useSearchParams} from "next/navigation";
 
@@ -54,23 +55,6 @@ const hasValidPrice = (raw?: string | null) => {
   if (!trimmed.length) return false;
   const value = Number(trimmed);
   return Number.isFinite(value);
-};
-
-const normalizeImageSrc = (raw?: string | null) => {
-  if (!raw) return null;
-  const value = raw.trim();
-  if (!value.length) return null;
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-  if (value.startsWith('/')) return value;
-  const stripped = value.replace(/^\.?\//, '');
-  return `/${stripped}`;
-};
-
-const toIdString = (value: unknown) => {
-  if (typeof value === 'bigint') return value.toString();
-  if (typeof value === 'number') return value.toString();
-  if (typeof value === 'string') return value;
-  return '';
 };
 
 const sanitizeDescription = (value?: string | null) => {
@@ -211,7 +195,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     }
     return (product.Variants ?? [])[0];
   })
-  const [startImage, setStartImage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'order' | 'contacts'>('order');
   const [orderNumber, setOrderNumber] = useState<string>();
@@ -509,12 +492,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return cartItem?.quantity ?? 0;
   }, [cartItemId, cartItems]);
 
-  const handleImageChange = useCallback((imageSrc: string, index: number) => {
-    const normalizedImage = normalizeImageSrc(imageSrc);
-    if (normalizedImage) {
-      setStartImage(prev => prev === normalizedImage ? prev : normalizedImage);
-    }
-
+  const handleImageChange = useCallback((_imageSrc: string, index: number) => {
     const galleryImage = galleryImages[index];
     if (!galleryImage) return;
 
@@ -538,11 +516,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     });
   }, []);
 
-  useEffect(() => {
-    const nextImage = getVariantImageSrc(variant);
-    if (!nextImage) return;
-    setStartImage(prev => prev === nextImage ? prev : nextImage);
-  }, [getVariantImageSrc, variant]);
+  const startImage = useMemo(() => getVariantImageSrc(variant), [getVariantImageSrc, variant]);
 
   const productPreviewImage = useMemo(() => {
     const currentVariantImage = getVariantImageSrc(variant);
@@ -1288,7 +1262,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <VariantSelector
             variants={product?.Variants ?? []}
             options={options}
-            initialVariantId={variantIdFromQuery}
             selectedVariantId={variant ? toIdString(variant.id) : null}
             onChange={handleVariantChange}
           />
