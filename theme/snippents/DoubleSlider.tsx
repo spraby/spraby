@@ -4,8 +4,9 @@ import {Splide, SplideSlide} from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import Image from 'next/image';
 import {useEffect, useRef} from 'react';
+import {normalizeImageSrc} from '@/services/utilits';
 
-const DoubleSlider = ({images, startImage = null}: Props) => {
+const DoubleSlider = ({images, startImage = null, onImageChange}: Props) => {
   const main = useRef(null);
   const thumbnails = useRef(null);
 
@@ -17,7 +18,8 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
       main.current.sync(thumbnails.current.splide);
     }
     if (startImage) {
-      const imageIndex = images.findIndex(i => i.includes(startImage));
+      const normalizedStartImage = normalizeImageSrc(startImage);
+      const imageIndex = images.findIndex(image => normalizeImageSrc(image) === normalizedStartImage);
       // @ts-ignore
       if (imageIndex != -1) thumbnails.current.go(imageIndex);
     }
@@ -27,6 +29,10 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
     <div className='product-gallery flex flex-col gap-4'>
       <Splide
         ref={main}
+        onMoved={(_splide: unknown, newIndex: number) => {
+          const nextImage = images[newIndex];
+          if (nextImage) onImageChange?.(nextImage, newIndex);
+        }}
         options={{
           type: 'fade',
           heightRatio: 0.65,
@@ -95,6 +101,7 @@ const DoubleSlider = ({images, startImage = null}: Props) => {
 type Props = {
   images: string[];
   startImage?: string | null;
+  onImageChange?: (image: string, index: number) => void;
 };
 
 export default DoubleSlider;
