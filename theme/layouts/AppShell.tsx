@@ -5,7 +5,7 @@ import {ReactNode, useEffect} from "react";
 import ThemeLayout from "@/theme/layouts/ThemeLayout";
 import {MenuItem} from "@/types";
 
-const AUTH_PATHS = new Set(["/login", "/register"]);
+const AUTH_PATHS = new Set(["/register"]);
 
 export default function AppShell({children, menu}: { children: ReactNode, menu: MenuItem[] }) {
   const pathname = usePathname();

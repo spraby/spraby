@@ -5,14 +5,11 @@ import {type FormEvent, useState} from "react";
 import {Input} from "@nextui-org/input";
 import {createRequest} from "@/services/BrandRequests";
 
-export type AuthMode = "login" | "register";
-
 type FormState = {
   name: string;
   email: string;
   phone: string;
   brandName: string;
-  password: string;
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -22,7 +19,6 @@ const initialFormState: FormState = {
   email: "",
   phone: "",
   brandName: "",
-  password: "",
 };
 
 const normalizeDigits = (value: string) => value.replace(/\D/g, "");
@@ -57,8 +53,7 @@ const formatBelarusPhone = (value: string) => {
 
 const getPhoneDigitsCount = (value: string) => normalizeDigits(value.replace(/^375/, "")).length;
 
-export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
-  const isLogin = mode === "login";
+export default function AuthPage() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -85,13 +80,6 @@ export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
       nextErrors.email = "Проверьте email";
     }
 
-    if (isLogin) {
-      if (!form.password.trim()) {
-        nextErrors.password = "Введите пароль";
-      }
-      return nextErrors;
-    }
-
     if (!form.name.trim()) {
       nextErrors.name = "Укажите имя";
     }
@@ -110,12 +98,6 @@ export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
     const validation = validate();
     if (Object.keys(validation).length) {
       setErrors(validation);
-      setStatus("idle");
-      setErrorMessage(null);
-      return;
-    }
-
-    if (isLogin) {
       setStatus("idle");
       setErrorMessage(null);
       return;
@@ -170,35 +152,27 @@ export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
                   spraby
                 </Link>
               </div>
-              <p className="text-xl font-semibold text-gray-900 sm:text-2xl">
-                {isLogin ? "Вход" : "Стать продавцом"}
-              </p>
-              <p className="text-sm text-gray-500">
-                {isLogin
-                  ? "Введите почту и пароль для входа в аккаунт."
-                  : "Оставьте заявку и мы свяжемся с вами для создания магазина."}
-              </p>
+              <p className="text-xl font-semibold text-gray-900 sm:text-2xl">Стать продавцом</p>
+              <p className="text-sm text-gray-500">Оставьте заявку и мы свяжемся с вами для создания магазина.</p>
             </div>
           </div>
 
           <form className="space-y-5 px-6 py-6 sm:px-7 sm:py-7" onSubmit={handleSubmit}>
-            {!isLogin && (
-              <Input
-                label="Имя"
-                variant="bordered"
-                radius="sm"
-                value={form.name}
-                onValueChange={(value) => handleChange("name", value)}
-                isInvalid={!!errors.name}
-                errorMessage={errors.name}
-                isDisabled={isLoading}
-                classNames={{
-                  label: "text-sm font-semibold text-gray-700",
-                  inputWrapper: "bg-white",
-                }}
-                placeholder="Как к вам обращаться"
-              />
-            )}
+            <Input
+              label="Имя"
+              variant="bordered"
+              radius="sm"
+              value={form.name}
+              onValueChange={(value) => handleChange("name", value)}
+              isInvalid={!!errors.name}
+              errorMessage={errors.name}
+              isDisabled={isLoading}
+              classNames={{
+                label: "text-sm font-semibold text-gray-700",
+                inputWrapper: "bg-white",
+              }}
+              placeholder="Как к вам обращаться"
+            />
 
             <Input
               type="email"
@@ -217,79 +191,48 @@ export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
               placeholder="hello@spra.by"
             />
 
-            {isLogin ? (
-              <div className="space-y-2">
-                <Input
-                  type="password"
-                  label="Пароль"
-                  variant="bordered"
-                  radius="sm"
-                  value={form.password}
-                  onValueChange={(value) => handleChange("password", value)}
-                  isInvalid={!!errors.password}
-                  errorMessage={errors.password}
-                  isDisabled={isLoading}
-                  classNames={{
-                    label: "text-sm font-semibold text-gray-700",
-                    inputWrapper: "bg-white",
-                  }}
-                  placeholder="Введите пароль"
-                />
-                <div className="flex justify-end">
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-semibold text-purple-700 transition hover:text-purple-800"
-                  >
-                    Забыли пароль?
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <Input
-                type="tel"
-                label="Телефон"
-                variant="bordered"
-                radius="sm"
-                value={form.phone}
-                onValueChange={(value) => handleChange("phone", formatBelarusPhone(value))}
-                isInvalid={!!errors.phone}
-                errorMessage={errors.phone}
-                isDisabled={isLoading}
-                classNames={{
-                  label: "text-sm font-semibold text-gray-700",
-                  inputWrapper: "bg-white",
-                }}
-                placeholder="+375 (29) 000-00-00"
-              />
-            )}
+            <Input
+              type="tel"
+              label="Телефон"
+              variant="bordered"
+              radius="sm"
+              value={form.phone}
+              onValueChange={(value) => handleChange("phone", formatBelarusPhone(value))}
+              isInvalid={!!errors.phone}
+              errorMessage={errors.phone}
+              isDisabled={isLoading}
+              classNames={{
+                label: "text-sm font-semibold text-gray-700",
+                inputWrapper: "bg-white",
+              }}
+              placeholder="+375 (29) 000-00-00"
+            />
 
-            {!isLogin && (
-              <Input
-                label="Название бренда"
-                variant="bordered"
-                radius="sm"
-                value={form.brandName}
-                onValueChange={(value) => handleChange("brandName", value)}
-                isInvalid={!!errors.brandName}
-                errorMessage={errors.brandName}
-                isDisabled={isLoading}
-                classNames={{
-                  label: "text-sm font-semibold text-gray-700",
-                  inputWrapper: "bg-white",
-                }}
-                placeholder="Название вашего магазина"
-              />
-            )}
+            <Input
+              label="Название бренда"
+              variant="bordered"
+              radius="sm"
+              value={form.brandName}
+              onValueChange={(value) => handleChange("brandName", value)}
+              isInvalid={!!errors.brandName}
+              errorMessage={errors.brandName}
+              isDisabled={isLoading}
+              classNames={{
+                label: "text-sm font-semibold text-gray-700",
+                inputWrapper: "bg-white",
+              }}
+              placeholder="Название вашего магазина"
+            />
 
             <button
               type="submit"
               disabled={isLoading}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition duration-150 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isLoading ? "Отправка..." : isLogin ? "Войти" : "Отправить заявку"}
+              {isLoading ? "Отправка..." : "Отправить заявку"}
             </button>
 
-            {!isLogin && status === "success" && (
+            {status === "success" && (
               <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-600 text-[10px] font-semibold text-white">
                   ✓
@@ -301,7 +244,7 @@ export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
               </div>
             )}
 
-            {!isLogin && status === "error" && (
+            {status === "error" && (
               <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
                   !
@@ -313,16 +256,6 @@ export default function AuthPage({mode = "register"}: { mode?: AuthMode }) {
               </div>
             )}
           </form>
-
-          <div className="border-t border-gray-100 px-6 py-4 text-center text-sm text-gray-600 sm:px-7">
-            {isLogin ? "Нет аккаунта? " : "Уже есть аккаунт? "}
-            <Link
-              href={isLogin ? "/register" : "/login"}
-              className="font-semibold text-purple-700 transition hover:text-purple-800"
-            >
-              {isLogin ? "Регистрация" : "Войти"}
-            </Link>
-          </div>
         </div>
       </div>
     </section>

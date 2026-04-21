@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  env: {
+    LOGIN_URL: process.env.LOGIN_URL,
+  },
   images: {
     remotePatterns: [
       {

@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function RegisterPage() {
-  return <AuthPage mode="register"/>;
+  return <AuthPage/>;
 }
