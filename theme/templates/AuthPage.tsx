@@ -74,13 +74,14 @@ export default function AuthPage() {
     const nextErrors: FormErrors = {};
     const emailRegex = /\S+@\S+\.\S+/;
 
-    if (!form.name.trim()) {
-      nextErrors.name = "Укажите имя";
-    }
     if (!form.email.trim()) {
       nextErrors.email = "Нужен email";
     } else if (!emailRegex.test(form.email.trim())) {
       nextErrors.email = "Проверьте email";
+    }
+
+    if (!form.name.trim()) {
+      nextErrors.name = "Укажите имя";
     }
     const phoneDigits = getPhoneDigitsCount(form.phone);
     if (form.phone.trim() && phoneDigits < 9) {
@@ -130,11 +131,29 @@ export default function AuthPage() {
         <div className="rounded-2xl border border-gray-100 bg-white shadow-lg shadow-slate-200/60">
           <div className="border-b border-gray-100 px-6 py-5 sm:px-7">
             <div className="flex flex-col gap-2">
-              <Link href="/" className="text-base font-semibold lowercase tracking-tight text-purple-700 hover:text-purple-800">
-                spraby
-              </Link>
+              <div className="flex items-center justify-between gap-3">
+                <Link
+                  href="/"
+                  aria-label="Вернуться на главную"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-100 bg-purple-50 text-purple-700 transition hover:border-purple-200 hover:bg-purple-100 hover:text-purple-800"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+                    <path
+                      d="M15 5L8 12L15 19"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+
+                <Link href="/" className="text-base font-semibold lowercase tracking-tight text-purple-700 hover:text-purple-800">
+                  spraby
+                </Link>
+              </div>
               <p className="text-xl font-semibold text-gray-900 sm:text-2xl">Стать продавцом</p>
-              <p className="text-sm text-gray-500">Оставьте заявку и мы свяжемся с вами для создания магазина</p>
+              <p className="text-sm text-gray-500">Оставьте заявку и мы свяжемся с вами для создания магазина.</p>
             </div>
           </div>
 

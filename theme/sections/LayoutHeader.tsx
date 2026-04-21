@@ -186,10 +186,14 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
                   <Link href='/register' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
                     Регистрация
                   </Link>
-                  <div className='h-4 w-px bg-gray-200'/>
-                  <Link href='/login' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
-                    Войти
-                  </Link>
+                  {process.env.LOGIN_URL && (
+                    <>
+                      <div className='h-4 w-px bg-gray-200'/>
+                      <a href={process.env.LOGIN_URL} className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
+                        Войти
+                      </a>
+                    </>
+                  )}
                 </div>
 
                 <div className='flex items-center gap-4 text-gray-500'>
