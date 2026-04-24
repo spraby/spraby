@@ -2,10 +2,9 @@
 
 import ProductCart from "@/theme/snippents/ProductCart";
 import {ProductCardModel} from "@/prisma/types";
-import HeroShowcase, {HeroCard} from "@/theme/sections/HeroShowcase";
 import PopularCategories, {PopularCategory, CategoryPopularImage} from "@/theme/sections/PopularCategories";
 import Link from "next/link";
-import {getPopularCategoriesByViews} from "@/services/Categories";
+import SprabyHero from "@/theme/sections/SprabyHero";
 
 type HomePageProps = {
   topProducts: ProductCardModel[]
@@ -50,7 +49,7 @@ export default function HomePage({topProducts, latestProducts, popularCategories
   const productsWithImages = normalizeProducts(topProducts);
   const latestProductsWithImages = normalizeProducts(latestProducts);
 
-const renderGrid = (items: ProductCardModel[], viewAllHref: string, viewAllLabel: string) => {
+  const renderGrid = (items: ProductCardModel[], viewAllHref: string, viewAllLabel: string) => {
     const itemCards = items.slice(0, 19).map(product => (
       <ProductCart key={`product-${String(product.id)}`} product={product}/>
     ));
@@ -65,9 +64,9 @@ const renderGrid = (items: ProductCardModel[], viewAllHref: string, viewAllLabel
     );
   };
 
-  return <main className="px-4 pt-6 pb-20 sm:px-6 lg:px-8">
+  return <main className="px-4 pb-20 sm:px-6 lg:px-8">
     <div className="mx-auto flex max-w-6xl flex-col gap-12 sm:gap-16">
-      <HeroShowcase cards={HERO_CARDS}/>
+      <SprabyHero/>
 
       {productsWithImages.length > 0 && (
         <section className="flex flex-col gap-6">
@@ -96,45 +95,6 @@ const renderGrid = (items: ProductCardModel[], viewAllHref: string, viewAllLabel
     </div>
   </main>
 }
-
-const HERO_CARDS: HeroCard[] = [
-  {
-    id: 'artisan-table',
-    eyebrow: 'Гастро‑подборка',
-    title: 'Фермерские продукты',
-    subtitle: 'Мёд, сыры и домашняя выпечка',
-    description: 'Собрали локальные деликатесы: свежий хлеб, сливочный сыр, ореховые пасты и ягодные джемы — идеально для уютного стола.',
-    cta: {label: 'Попробовать', href: '/collections/food'},
-    image: {src: '/img/food.png', alt: 'Фермерский хлеб, сыр, ягоды и мёд на столе'},
-  },
-  {
-    id: 'home-cozy',
-    eyebrow: 'Уют для дома',
-    title: 'Уютный дом',
-    subtitle: 'Свечи, пледы и керамика',
-    description: 'Создайте спокойную атмосферу с натуральными свечами, плетёными корзинами и мягким текстилем в спокойной гамме.',
-    cta: {label: 'Создать уют', href: '/collections/home'},
-    image: {src: '/img/home.png', alt: 'Свечи, керамика и плетёный плед в интерьере'},
-  },
-  {
-    id: 'leather-essentials',
-    eyebrow: 'Новая коллекция',
-    title: 'Кожаные аксессуары',
-    subtitle: 'Сумки, кошельки и ремни',
-    description: 'Лаконичные формы, натуральная кожа и тёплый карамельный оттенок — для работы, поездок и повседневных образов.',
-    cta: {label: 'Посмотреть', href: '/collections/leather'},
-    image: {src: '/img/leather.png', alt: 'Кожаные сумки, кошелёк и ремень карамельного цвета'},
-  },
-  {
-    id: 'linen-summer',
-    eyebrow: 'Сезон капсул',
-    title: 'Льняная капсула',
-    subtitle: 'Платья, кардиганы и аксессуары',
-    description: 'Льняные платья, вязаные кардиганы и соломенные сумки в природных оттенках — лёгкая капсула для тёплых дней.',
-    cta: {label: 'Собрать лук', href: '/collections/linen'},
-    image: {src: '/img/wear.png', alt: 'Льняное платье, кардиган и соломенные аксессуары'},
-  },
-];
 
 const POPULAR_CATEGORY_ITEMS: PopularCategory[] = [
   {id: 'tees', title: 'Футболки', href: '/categories/tees'},
