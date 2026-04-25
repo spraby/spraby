@@ -1,8 +1,8 @@
-'use client'
-
 import Image from "next/image";
 import Link from "next/link";
 import type {CSSProperties, ReactNode} from "react";
+
+import "./SprabyHero.css";
 
 type CSSVariables = CSSProperties & Record<`--${string}`, string>;
 
@@ -16,6 +16,7 @@ type HeroTagConfig = {
 
 type HeroProductConfig = {
   id: string
+  src: string
   width: number
   height: number
   className: string
@@ -28,6 +29,7 @@ type HeroProductConfig = {
 
 type HeroMobileProductConfig = {
   id: string
+  src: string
   width: number
   height: number
   className: string
@@ -35,7 +37,7 @@ type HeroMobileProductConfig = {
 }
 
 const HERO_LOGO = {
-  src: "/img/hero/spraby-logo.png",
+  src: "/img/hero/spraby-logo.webp",
   width: 720,
   height: 720,
 };
@@ -74,6 +76,7 @@ const HERO_TAGS: HeroTagConfig[] = [
 const HERO_PRODUCTS: HeroProductConfig[] = [
   {
     id: "hero-product-1",
+    src: "/img/hero/hero-product-1.webp",
     width: 192,
     height: 189,
     className: "right-[-1%] bottom-[3%] w-[58px] -rotate-[9deg] lg:right-[-7%] lg:bottom-[1%] lg:w-[74px]",
@@ -85,6 +88,7 @@ const HERO_PRODUCTS: HeroProductConfig[] = [
   },
   {
     id: "hero-product-2",
+    src: "/img/hero/hero-product-2.webp",
     width: 138,
     height: 192,
     className: "left-[15%] top-[-5%] w-[46px] rotate-[16deg] lg:left-[17%] lg:top-[-8%] lg:w-[56px]",
@@ -96,6 +100,7 @@ const HERO_PRODUCTS: HeroProductConfig[] = [
   },
   {
     id: "hero-product-3",
+    src: "/img/hero/hero-product-3.webp",
     width: 170,
     height: 192,
     className: "left-[-3%] top-[22%] w-[62px] -rotate-[13deg] lg:left-[-9%] lg:top-[20%] lg:w-[84px]",
@@ -107,6 +112,7 @@ const HERO_PRODUCTS: HeroProductConfig[] = [
   },
   {
     id: "hero-product-4",
+    src: "/img/hero/hero-product-4.webp",
     width: 182,
     height: 192,
     className: "right-[-3%] top-[16%] w-[64px] rotate-[11deg] lg:right-[-10%] lg:top-[12%] lg:w-[86px]",
@@ -118,6 +124,7 @@ const HERO_PRODUCTS: HeroProductConfig[] = [
   },
   {
     id: "hero-product-5",
+    src: "/img/hero/hero-product-5.webp",
     width: 192,
     height: 190,
     className: "left-[5%] bottom-[1%] w-[43px] rotate-[13deg] lg:left-[2%] lg:bottom-[-2%] lg:w-[54px]",
@@ -129,6 +136,7 @@ const HERO_PRODUCTS: HeroProductConfig[] = [
   },
   {
     id: "hero-product-6",
+    src: "/img/hero/hero-product-6.webp",
     width: 185,
     height: 192,
     className: "right-[12%] top-[-5%] w-[58px] rotate-[9deg] lg:right-[18%] lg:top-[-8%] lg:w-[70px]",
@@ -143,6 +151,7 @@ const HERO_PRODUCTS: HeroProductConfig[] = [
 const HERO_MOBILE_PRODUCTS: HeroMobileProductConfig[] = [
   {
     id: "hero-product-1",
+    src: HERO_PRODUCTS[0].src,
     width: HERO_PRODUCTS[0].width,
     height: HERO_PRODUCTS[0].height,
     className: "left-[1%] top-[11%] w-[50px] -rotate-[12deg] sm:left-[8%] sm:top-[10%] sm:w-[62px]",
@@ -150,6 +159,7 @@ const HERO_MOBILE_PRODUCTS: HeroMobileProductConfig[] = [
   },
   {
     id: "hero-product-2",
+    src: HERO_PRODUCTS[1].src,
     width: HERO_PRODUCTS[1].width,
     height: HERO_PRODUCTS[1].height,
     className: "right-[3%] top-[5%] w-[42px] rotate-[10deg] sm:right-[10%] sm:top-[6%] sm:w-[54px]",
@@ -157,6 +167,7 @@ const HERO_MOBILE_PRODUCTS: HeroMobileProductConfig[] = [
   },
   {
     id: "hero-product-3",
+    src: HERO_PRODUCTS[2].src,
     width: HERO_PRODUCTS[2].width,
     height: HERO_PRODUCTS[2].height,
     className: "left-[2%] bottom-[8%] w-[50px] rotate-[8deg] sm:left-[9%] sm:bottom-[9%] sm:w-[62px]",
@@ -164,6 +175,7 @@ const HERO_MOBILE_PRODUCTS: HeroMobileProductConfig[] = [
   },
   {
     id: "hero-product-4",
+    src: HERO_PRODUCTS[3].src,
     width: HERO_PRODUCTS[3].width,
     height: HERO_PRODUCTS[3].height,
     className: "right-[1%] bottom-[10%] w-[52px] -rotate-[7deg] sm:right-[8%] sm:bottom-[11%] sm:w-[62px]",
@@ -241,253 +253,6 @@ export default function SprabyHero() {
         </div>
       </div>
 
-      <style jsx global>{`
-        .spraby-hero-logo {
-          animation: spraby-logo-in 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        .spraby-hero-title,
-        .spraby-hero-copy,
-        .spraby-hero-action,
-        .spraby-hero-mobile-tags {
-          animation: spraby-fade-up 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        .spraby-hero-title {
-          animation-delay: 120ms;
-        }
-
-        .spraby-hero-copy {
-          animation-delay: 220ms;
-        }
-
-        .spraby-hero-action {
-          animation-delay: 320ms;
-        }
-
-        .spraby-hero-mobile-tags {
-          animation-delay: 120ms;
-        }
-
-        .spraby-hero-tag-shell {
-          animation: spraby-tag-in 640ms cubic-bezier(0.22, 1, 0.36, 1) var(--appear-delay, 0ms) both;
-          transform: translate3d(0, 0, 0);
-        }
-
-        .spraby-hero-tag {
-          animation: spraby-tag-float 5800ms ease-in-out var(--float-delay, 0ms) infinite;
-          transform: translate3d(0, 0, 0);
-          transform-origin: center;
-          will-change: transform;
-        }
-
-        .spraby-hero-product-shell {
-          animation: spraby-product-in 760ms cubic-bezier(0.22, 1, 0.36, 1) var(--appear-delay, 0ms) both;
-          opacity: 0;
-        }
-
-        .spraby-hero-product-float {
-          animation: spraby-product-float 7600ms ease-in-out var(--float-delay, 0ms) infinite;
-          height: 100%;
-          transform: translate3d(0, 0, 0);
-          transform-origin: center;
-          width: 100%;
-          will-change: transform;
-        }
-
-        .spraby-hero-product-art {
-          height: 100%;
-          width: 100%;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-size: contain;
-          filter: drop-shadow(0 14px 22px rgba(30, 41, 59, 0.16));
-          transform: translateZ(0);
-        }
-
-        @media (min-width: 768px) {
-          .spraby-hero-desktop-products .spraby-hero-product-art--hero-product-1 {
-            background-image: url("/img/hero/hero-product-1.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-1.webp") type("image/webp"),
-              url("/img/hero/hero-product-1.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-desktop-products .spraby-hero-product-art--hero-product-2 {
-            background-image: url("/img/hero/hero-product-2.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-2.webp") type("image/webp"),
-              url("/img/hero/hero-product-2.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-desktop-products .spraby-hero-product-art--hero-product-3 {
-            background-image: url("/img/hero/hero-product-3.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-3.webp") type("image/webp"),
-              url("/img/hero/hero-product-3.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-desktop-products .spraby-hero-product-art--hero-product-4 {
-            background-image: url("/img/hero/hero-product-4.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-4.webp") type("image/webp"),
-              url("/img/hero/hero-product-4.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-desktop-products .spraby-hero-product-art--hero-product-5 {
-            background-image: url("/img/hero/hero-product-5.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-5.webp") type("image/webp"),
-              url("/img/hero/hero-product-5.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-desktop-products .spraby-hero-product-art--hero-product-6 {
-            background-image: url("/img/hero/hero-product-6.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-6.webp") type("image/webp"),
-              url("/img/hero/hero-product-6.png") type("image/png")
-            );
-          }
-        }
-
-        @media (max-width: 767px) {
-          .spraby-hero-mobile-products .spraby-hero-product-art {
-            filter: drop-shadow(0 10px 16px rgba(30, 41, 59, 0.12));
-          }
-
-          .spraby-hero-mobile-products .spraby-hero-product-art--hero-product-1 {
-            background-image: url("/img/hero/hero-product-1.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-1.webp") type("image/webp"),
-              url("/img/hero/hero-product-1.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-mobile-products .spraby-hero-product-art--hero-product-2 {
-            background-image: url("/img/hero/hero-product-2.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-2.webp") type("image/webp"),
-              url("/img/hero/hero-product-2.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-mobile-products .spraby-hero-product-art--hero-product-3 {
-            background-image: url("/img/hero/hero-product-3.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-3.webp") type("image/webp"),
-              url("/img/hero/hero-product-3.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-mobile-products .spraby-hero-product-art--hero-product-4 {
-            background-image: url("/img/hero/hero-product-4.png");
-            background-image: image-set(
-              url("/img/hero/hero-product-4.webp") type("image/webp"),
-              url("/img/hero/hero-product-4.png") type("image/png")
-            );
-          }
-
-          .spraby-hero-mobile-tags {
-            animation: none;
-            transform: translate3d(0, 0, 0);
-          }
-
-          .spraby-hero-mobile-tags .spraby-hero-tag-shell {
-            animation: none;
-            opacity: 1 !important;
-          }
-
-          .spraby-hero-mobile-tags .spraby-hero-tag {
-            animation: none;
-            transform: translate3d(0, 0, 0);
-            -webkit-backdrop-filter: blur(8px);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 8px 20px rgba(30, 41, 59, 0.055);
-            backface-visibility: hidden;
-          }
-        }
-
-        @keyframes spraby-logo-in {
-          from {
-            opacity: 0;
-            transform: translateY(12px) scale(0.96);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes spraby-fade-up {
-          from {
-            opacity: 0;
-            transform: translateY(18px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes spraby-tag-in {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 12px, 0) scale(0.96);
-          }
-
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-        }
-
-        @keyframes spraby-tag-float {
-          0%,
-          100% {
-            transform: translate3d(0, 0, 0);
-          }
-
-          50% {
-            transform: translate3d(0, -7px, 0);
-          }
-        }
-
-        @keyframes spraby-product-in {
-          from {
-            opacity: 0;
-          }
-
-          to {
-            opacity: var(--product-opacity, 0.78);
-          }
-        }
-
-        @keyframes spraby-product-float {
-          0%,
-          100% {
-            transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-          }
-
-          50% {
-            transform: translate3d(var(--float-x, 4px), var(--float-y, -8px), 0) rotate(1.2deg) scale(1.015);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .spraby-hero-logo,
-          .spraby-hero-title,
-          .spraby-hero-copy,
-          .spraby-hero-action,
-          .spraby-hero-mobile-tags {
-            animation: none;
-          }
-        }
-      `}</style>
     </section>
   );
 }
@@ -516,7 +281,7 @@ const HeroTag = ({children, appearDelay, floatDelay}: HeroTagProps) => (
 );
 
 const HeroProduct = ({
-  id,
+  src,
   width,
   height,
   className,
@@ -539,13 +304,20 @@ const HeroProduct = ({
     } as CSSVariables}
   >
     <div className="spraby-hero-product-float">
-      <div className={`spraby-hero-product-art spraby-hero-product-art--${id}`} />
+      <Image
+        src={src}
+        alt=""
+        width={width}
+        height={height}
+        sizes="(max-width: 1024px) 70px, 90px"
+        className="spraby-hero-product-art"
+      />
     </div>
   </div>
 );
 
 const HeroMobileProduct = ({
-  id,
+  src,
   width,
   height,
   className,
@@ -555,6 +327,13 @@ const HeroMobileProduct = ({
     className={`absolute ${className}`}
     style={{opacity: productOpacity, aspectRatio: `${width} / ${height}`} as CSSProperties}
   >
-    <div className={`spraby-hero-product-art spraby-hero-product-art--${id}`} />
+    <Image
+      src={src}
+      alt=""
+      width={width}
+      height={height}
+      sizes="70px"
+      className="spraby-hero-product-art"
+    />
   </div>
 );
