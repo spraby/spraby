@@ -8,9 +8,10 @@ import {useRouter} from "next/navigation";
 
 type MobileMenuProps = {
   menu: MenuItem[];
+  adminLoginUrl?: string;
 };
 
-export default function MobileMenu({menu}: MobileMenuProps) {
+export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [trail, setTrail] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
@@ -282,6 +283,32 @@ export default function MobileMenu({menu}: MobileMenuProps) {
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
               Быстрый доступ
             </p>
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Link
+                href="/register"
+                onClick={handleClose}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700 active:scale-[0.98]"
+              >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-600">
+                  <RegisterIcon/>
+                </span>
+                <span>Регистрация</span>
+              </Link>
+
+              {adminLoginUrl && (
+                <a
+                  href={adminLoginUrl}
+                  onClick={handleClose}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700 active:scale-[0.98]"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-600">
+                    <LoginIcon/>
+                  </span>
+                  <span>Войти</span>
+                </a>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-2">
               {quickLinks(menu).map((link) => (
                 <Link
@@ -361,6 +388,43 @@ const ArrowOutIcon = () => (
       d="M5.5 10.5L10.5 5.5M6 5.5h4.5V10"
       stroke="currentColor"
       strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const RegisterIcon = () => (
+  <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <path
+      d="M8.5 10.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3 17a5.5 5.5 0 0111 0"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.5 6.5v4M13.5 8.5h4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const LoginIcon = () => (
+  <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <path
+      d="M8 5.5V4a1.5 1.5 0 011.5-1.5H15A1.5 1.5 0 0116.5 4v12A1.5 1.5 0 0115 17.5H9.5A1.5 1.5 0 018 16v-1.5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3.5 10h8M8.5 7l3 3-3 3"
+      stroke="currentColor"
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
