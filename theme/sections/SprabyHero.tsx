@@ -294,7 +294,6 @@ const HeroProduct = ({
   <div
     className={`spraby-hero-product-shell absolute ${className}`}
     style={{
-      opacity: 0,
       aspectRatio: `${width} / ${height}`,
       "--appear-delay": appearDelay,
       "--float-delay": floatDelay,
