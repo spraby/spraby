@@ -5,6 +5,7 @@ import {MenuItem} from "@/types";
 import {Fragment, useEffect, useMemo, useState} from "react";
 import {useBodyScrollLock} from "@/theme/hooks/useBodyScrollLock";
 import {useRouter} from "next/navigation";
+import MoneyWithBynIcon from "@/theme/snippents/MoneyWithBynIcon";
 
 type MobileMenuProps = {
   menu: MenuItem[];
@@ -16,7 +17,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
   const [trail, setTrail] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
   const [openSuggest, setOpenSuggest] = useState(false);
-  const [suggestions, setSuggestions] = useState<{loading: boolean; items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>}>({loading: false, items: []});
+  const [suggestions, setSuggestions] = useState<{loading: boolean; items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; discount_percent: number; image?: string | null}>}>({loading: false, items: []});
   const router = useRouter();
 
   const currentItems = useMemo(() => {
@@ -73,7 +74,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=12`, {signal: controller.signal});
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: {items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>} = await res.json();
+        const data: {items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; discount_percent: number; image?: string | null}>} = await res.json();
         if (!isActive) return;
         setSuggestions({loading: false, items: data.items ?? []});
         setOpenSuggest(true);
@@ -177,7 +178,8 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
                       <div className="px-4 py-3 text-sm text-gray-500">Ищем…</div>
                     )}
                     {!suggestions.loading && suggestions.items.map((item) => {
-                      const hasDiscount = Number(item.final_price) < Number(item.price);
+                      const discountPercent = item.discount_percent ?? 0;
+                      const hasDiscount = discountPercent > 0;
                       return (
                         <button
                           key={item.id}
@@ -203,8 +205,25 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
                               {item.brand && <span className="text-xs text-gray-500">{item.brand}</span>}
                             </div>
                           </div>
-                          <div className="text-xs font-semibold text-gray-900">
-                            {item.final_price} BYN {hasDiscount && <span className="text-[11px] text-gray-400 line-through ml-1">{item.price} BYN</span>}
+                          <div className="flex shrink-0 flex-col items-end gap-0.5 text-xs text-gray-900">
+                            <MoneyWithBynIcon
+                              value={item.final_price}
+                              className="text-purple-500"
+                              valueClassName="text-xs font-semibold"
+                            />
+                            {hasDiscount && (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <MoneyWithBynIcon
+                                  value={item.price}
+                                  className="text-gray-400 line-through"
+                                  valueClassName="text-[11px]"
+                                  showIcon={false}
+                                />
+                                <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-rose-600">
+                                  -{discountPercent}%
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </button>
                       );

@@ -12,6 +12,7 @@ import {
   Column,
   Img,
 } from '@react-email/components'
+import { formatEmailMoney } from '../format'
 import { EmailOrderItem } from '../types'
 
 interface OrderConfirmationProps {
@@ -59,9 +60,9 @@ export default function OrderConfirmation({
   const totalOriginal = Number(price)
   const totalFinal = Number(finalPrice)
   const totalDiscount = totalOriginal > totalFinal ? totalOriginal - totalFinal : 0
-  const totalOriginalText = totalOriginal.toFixed(2)
-  const totalFinalText = totalFinal.toFixed(2)
-  const totalDiscountText = totalDiscount.toFixed(2)
+  const totalOriginalText = formatEmailMoney(totalOriginal)
+  const totalFinalText = formatEmailMoney(totalFinal)
+  const totalDiscountText = formatEmailMoney(totalDiscount)
 
   const getVariantOptions = (value?: string) => (
     value
@@ -178,10 +179,10 @@ export default function OrderConfirmation({
 
                         <div style={priceContainer}>
                           {hasDiscount && (
-                            <Text style={oldPrice}>{item.price} BYN</Text>
+                            <Text style={oldPrice}>{formatEmailMoney(item.price)} BYN</Text>
                           )}
                           <span style={finalPriceGroup}>
-                            <Text style={finalPriceText}>{item.finalPrice} BYN</Text>
+                            <Text style={finalPriceText}>{formatEmailMoney(item.finalPrice)} BYN</Text>
                             {hasDiscount && discountPercent > 0 && (
                               <span style={discountBadge}>-{discountPercent}%</span>
                             )}

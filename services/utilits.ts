@@ -7,8 +7,32 @@ export const serializeObject = (obj: any) => {
   return JSON.parse(json);
 };
 
-export const toMoney = (value: number, template: string = '{{amount}} BYN') => {
-  const formattedValue = (Math.round(value * 100) / 100).toFixed(2);
+const moneyFormatter = new Intl.NumberFormat('ru-RU', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export type MoneyInput = number | string | null | undefined;
+
+export const parseMoneyAmount = (value: MoneyInput): number | undefined => {
+  if (value == null || value === '') return undefined;
+
+  const normalizedValue = typeof value === 'string'
+    ? value.replace(/\s/g, '').replace(',', '.')
+    : value;
+  const numericValue = Number(normalizedValue);
+
+  return Number.isFinite(numericValue) ? numericValue : undefined;
+};
+
+export const formatMoneyAmount = (value: MoneyInput, fallback = '') => {
+  const numericValue = parseMoneyAmount(value);
+
+  return numericValue === undefined ? fallback : moneyFormatter.format(numericValue);
+};
+
+export const toMoney = (value: number, template: string = '{{amount}}') => {
+  const formattedValue = formatMoneyAmount(value);
   return template.replaceAll('{{amount}}', formattedValue);
 }
 

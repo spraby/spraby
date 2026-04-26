@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {ProductCardModel, VariantModel} from "@/prisma/types";
 import {setStatistic} from "@/services/ProductStatistics";
 import {normalizeImageSrc, toIdString} from "@/services/utilits";
+import MoneyWithBynIcon from "@/theme/snippents/MoneyWithBynIcon";
 import {useEffect, useMemo, useState} from "react";
 
 /**
@@ -154,10 +155,19 @@ const ProductCart = ({product}: Props) => {
         }
         {
           <div className='mt-1 flex items-baseline gap-2'>
-            <span className='text-base font-semibold text-purple-500'>{+currentFinalPrice} BYN</span>
+            <MoneyWithBynIcon
+              value={currentFinalPrice}
+              className="text-purple-500"
+              valueClassName="text-base font-semibold"
+            />
             {
               +currentPrice > +currentFinalPrice &&
-              <span className="text-xs text-gray-400 line-through">{+currentPrice}</span>
+              <MoneyWithBynIcon
+                value={currentPrice}
+                className="text-gray-400 line-through"
+                valueClassName="text-xs"
+                showIcon={false}
+              />
             }
           </div>
         }

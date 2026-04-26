@@ -6,6 +6,7 @@ import {MouseEvent, useMemo} from "react";
 import {AiOutlineClose} from "react-icons/ai";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import HeardIcon from "@/theme/assets/HeardIcon";
+import MoneyWithBynIcon from "@/theme/snippents/MoneyWithBynIcon";
 
 type FavoriteViewModel = {
   id: string;
@@ -212,11 +213,18 @@ export default function FavoritePage() {
                             )}
                           </div>
                           <div className='flex items-baseline gap-2'>
-                            <span className='text-base font-semibold text-purple-500'>{item.finalPriceValue} BYN</span>
+                            <MoneyWithBynIcon
+                              value={item.finalPriceValue}
+                              className="text-purple-500"
+                              valueClassName="text-base font-semibold"
+                            />
                             {hasDiscount && (
-                              <span className='text-xs text-gray-400 line-through'>
-                                {item.priceValue}
-                              </span>
+                              <MoneyWithBynIcon
+                                value={item.priceValue}
+                                className="text-gray-400 line-through"
+                                valueClassName="text-xs"
+                                showIcon={false}
+                              />
                             )}
                           </div>
                         </div>

@@ -8,7 +8,7 @@ import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
 import {Snippet} from "@nextui-org/react";
-import Price from "@/theme/snippents/Price";
+import MoneyWithBynIcon from "@/theme/snippents/MoneyWithBynIcon";
 import {createWithNotifications, sendCustomerOrderSummaryEmail} from "@/services/Orders";
 import {format} from "date-fns";
 import {useRouter} from "next/navigation";
@@ -474,17 +474,20 @@ export default function CheckoutPage() {
                                   +
                                 </button>
                               </div>
-                              <div className="flex flex-col items-end gap-1 pointer-events-none">
-                                <div className="flex items-center gap-2.5">
-                                  {hasDiscount && (
-                                    <span className="text-xs text-gray-400 line-through">
-                                      {Number(item.price).toFixed(2)} BYN
-                                    </span>
-                                  )}
-                                  <span className="text-base font-bold text-purple-600">
-                                    {Number(item.finalPrice).toFixed(2)} BYN
-                                  </span>
-                                </div>
+                              <div className="flex flex-wrap items-center justify-end gap-2.5 pointer-events-none">
+                                <MoneyWithBynIcon
+                                  value={item.finalPrice}
+                                  className="text-purple-600"
+                                  valueClassName="text-base font-bold"
+                                />
+                                {hasDiscount && (
+                                  <MoneyWithBynIcon
+                                    value={item.price}
+                                    className="text-gray-400 line-through"
+                                    valueClassName="text-xs"
+                                    showIcon={false}
+                                  />
+                                )}
                                 {hasDiscount && (
                                   <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">
                                     -{discountPercent}%
@@ -519,18 +522,22 @@ export default function CheckoutPage() {
               <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>Товары ({cartItems.length})</span>
-                  <span>{originalTotal.toFixed(2)} BYN</span>
+                  <MoneyWithBynIcon value={originalTotal}/>
                 </div>
                 {totalDiscount > 0 && (
                   <div className="flex items-center justify-between text-sm text-green-600">
                     <span>Скидка</span>
-                    <span>-{totalDiscount.toFixed(2)} BYN</span>
+                    <MoneyWithBynIcon value={-totalDiscount}/>
                   </div>
                 )}
                 <div className="h-px bg-gray-200"></div>
                 <div className="flex items-center justify-between text-lg font-bold text-gray-900">
                   <span>Итого</span>
-                  <span className="text-purple-600">{totalPrice.toFixed(2)} BYN</span>
+                  <MoneyWithBynIcon
+                    value={totalPrice}
+                    className="text-purple-600"
+                    valueClassName="text-lg font-bold"
+                  />
                 </div>
               </div>
 

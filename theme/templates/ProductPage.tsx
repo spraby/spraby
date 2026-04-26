@@ -199,6 +199,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const [drawerMode, setDrawerMode] = useState<'order' | 'contacts'>('order');
   const [orderNumber, setOrderNumber] = useState<string>();
   const [submiting, setSubmiting] = useState(false);
+  const [quickOrderQuantity, setQuickOrderQuantity] = useState(1);
   const [recentProducts, setRecentProducts] = useState<RelatedProduct[]>([]);
   const [addedToCart, setAddedToCart] = useState(false);
   const {
@@ -268,6 +269,11 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const discountPercent = hasDiscount
     ? Math.round((1 - Number(currentFinalPrice) / Number(currentPrice)) * 100)
     : 0;
+  const quickOrderTotalFinalPrice = Number(currentFinalPrice) * quickOrderQuantity;
+
+  const updateQuickOrderQuantity = useCallback((quantity: number) => {
+    setQuickOrderQuantity(Math.max(1, quantity));
+  }, []);
 
   const handleDrawerClose = () => {
     setOpen(false);
@@ -842,7 +848,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                                 image_id: variant?.image_id,
                                                 product_id: product.id,
                                                 variant_id: variant.id,
-                                                quantity: 1,
+                                                quantity: quickOrderQuantity,
                                                 title: product.title,
                                                 variant_title: variantSummary
                                               }
@@ -959,7 +965,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
         </div>
         <div className="h-px bg-gray-100"></div>
         <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-wide text-gray-500 sm:text-sm">
-          <span>Стоимость товара</span>
+          <span>Стоимость</span>
           <span className="flex items-center gap-2">
             <Price finalPrice={+currentFinalPrice} price={+currentPrice} size="lg"/>
             {hasDiscount && (
@@ -969,10 +975,39 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             )}
           </span>
         </div>
+        <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-wide text-gray-500 sm:text-sm">
+          <span>Количество</span>
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white normal-case tracking-normal">
+            <button
+              type="button"
+              onClick={() => updateQuickOrderQuantity(quickOrderQuantity - 1)}
+              disabled={submiting || quickOrderQuantity <= 1}
+              aria-label="Уменьшить количество"
+              className="px-3 py-1 text-gray-600 transition hover:text-purple-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              −
+            </button>
+            <span className="min-w-[1.5rem] text-center text-sm font-medium text-gray-900">
+              {quickOrderQuantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => updateQuickOrderQuantity(quickOrderQuantity + 1)}
+              disabled={submiting}
+              aria-label="Увеличить количество"
+              className="px-3 py-1 text-gray-600 transition hover:text-purple-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+        </div>
         <div className="flex items-center justify-between text-base font-semibold text-gray-900 sm:text-lg">
           <span>Итого</span>
           <span className="flex items-baseline gap-1.5 sm:gap-2 text-purple-600">
-            <Price finalPrice={+currentFinalPrice} size="lg"/>
+            <Price
+              finalPrice={quickOrderTotalFinalPrice}
+              size="lg"
+            />
           </span>
         </div>
       </div>
@@ -1198,6 +1233,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                   if (!variant) return;
                   setDrawerMode('order');
                   setOrderNumber(undefined);
+                  setQuickOrderQuantity(1);
                   setOpen(true);
                 }}
                 className={`w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60`}
