@@ -7,11 +7,6 @@ export const serializeObject = (obj: any) => {
   return JSON.parse(json);
 };
 
-const moneyFormatter = new Intl.NumberFormat('ru-RU', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
 export type MoneyInput = number | string | null | undefined;
 
 export const parseMoneyAmount = (value: MoneyInput): number | undefined => {
@@ -28,7 +23,7 @@ export const parseMoneyAmount = (value: MoneyInput): number | undefined => {
 export const formatMoneyAmount = (value: MoneyInput, fallback = '') => {
   const numericValue = parseMoneyAmount(value);
 
-  return numericValue === undefined ? fallback : moneyFormatter.format(numericValue);
+  return numericValue === undefined ? fallback : numericValue.toFixed(2);
 };
 
 export const toMoney = (value: number, template: string = '{{amount}}') => {

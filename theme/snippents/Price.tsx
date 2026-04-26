@@ -26,14 +26,14 @@ const OLD_PRICE_SIZES: Record<PriceSize, string> = {
   '3xl': 'text-2xl'
 }
 
-const Price = ({finalPrice, price, size = '2xl'}: Props) => {
+const Price = ({finalPrice, price, size = '2xl', finalPriceClassName = 'text-purple-500'}: Props) => {
 
   const finalPriceMarkup = useMemo(() => {
-    return <span className={`inline-flex items-baseline gap-1.5 text-purple-500 ${PRICE_SIZES[size]} font-semibold`}>
+    return <span className={`inline-flex items-baseline gap-1.5 ${finalPriceClassName} ${PRICE_SIZES[size]} font-semibold`}>
       <span>{toMoney(finalPrice)}</span>
       <BynCurrencyIcon className="h-[1cap] w-[0.81cap] shrink-0"/>
     </span>;
-  }, [finalPrice, size])
+  }, [finalPrice, finalPriceClassName, size])
 
   const priceMarkup = useMemo(() => {
     if (!price || finalPrice >= price) return undefined;
@@ -52,6 +52,7 @@ type Props = {
   finalPrice: number,
   price?: number
   size?: PriceSize
+  finalPriceClassName?: string
 };
 
 export default Price;

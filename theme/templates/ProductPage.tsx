@@ -1203,7 +1203,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
               <HeardIcon color={isInFavorites ? '#db2777' : '#272738'} filled={isInFavorites}/>
             </button>
           </div>
-          <Price finalPrice={+currentFinalPrice} price={+currentPrice}/>
+          <Price finalPrice={+currentFinalPrice} price={+currentPrice} finalPriceClassName="text-gray-900"/>
           {tags.length > 0 && (
             <div className='flex flex-col gap-2'>
               <div className='flex flex-wrap gap-2'>
