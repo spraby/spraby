@@ -32,7 +32,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
           <div className='flex flex-col gap-4'>
             <Link href='/' className='flex items-center gap-2 text-purple-600'>
               <Image
-                src="/img/favicon.svg"
+                src="/img/spraby.svg"
                 alt="Spraby логотип"
                 width={34}
                 height={34}
