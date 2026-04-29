@@ -102,9 +102,9 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
                   <Image
                     src="/img/spraby.svg"
                     alt="Spraby логотип"
-                    width={38}
-                    height={38}
-                    className="h-9 w-auto"
+                    width={32}
+                    height={32}
+                    className="h-8 w-auto"
                     priority
                   />
                   <span className="leading-none">spraby</span>

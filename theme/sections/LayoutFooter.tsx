@@ -34,8 +34,8 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
               <Image
                 src="/img/spraby.svg"
                 alt="Spraby логотип"
-                width={34}
-                height={34}
+                width={32}
+                height={32}
                 className="h-8 w-auto"
                 priority
               />
