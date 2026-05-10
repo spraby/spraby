@@ -7,6 +7,7 @@ import {
   sendOrderConfirmationEmail,
   sendOrderEmails,
 } from "@/lib/email/send";
+import {calculateDiscountPercent} from "@/services/utilits";
 
 type NotificationOptions = {
   sendCustomerEmail?: boolean
@@ -200,9 +201,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
       productImage,
     } = buildOrderEmailData(order)
 
-    const discountPercent = totalPrice > totalFinalPrice && totalPrice > 0
-      ? Math.round((1 - (totalFinalPrice / totalPrice)) * 100)
-      : undefined
+    const calculatedDiscount = calculateDiscountPercent(totalPrice, totalFinalPrice)
+    const discountPercent = calculatedDiscount > 0 ? calculatedDiscount : undefined
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://spraby.com'
     // URL для просмотра заказа в панели продавца

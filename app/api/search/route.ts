@@ -1,5 +1,6 @@
 import {NextResponse} from "next/server";
 import db from "@/prisma/db.client";
+import {calculateDiscountPercent} from "@/services/utilits";
 
 const toNumber = (value: string | null, fallback: number) => {
   const parsed = Number(value);
@@ -7,12 +8,6 @@ const toNumber = (value: string | null, fallback: number) => {
 };
 
 const normalizeLimit = (raw: number) => Math.min(Math.max(raw, 1), 50);
-
-const calculateDiscountPercent = (price: number, finalPrice: number) => (
-  price > 0 && finalPrice < price
-    ? Math.max(1, Math.round((1 - finalPrice / price) * 100))
-    : 0
-);
 
 export async function GET(request: Request) {
   const {searchParams} = new URL(request.url);

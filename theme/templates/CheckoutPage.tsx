@@ -7,8 +7,8 @@ import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
-import {Snippet} from "@nextui-org/react";
-import MoneyWithBynIcon from "@/theme/snippents/MoneyWithBynIcon";
+import Money from "@/theme/snippents/Money";
+import {calculateDiscountPercent} from "@/services/utilits";
 import {createWithNotifications, sendCustomerOrderSummaryEmail} from "@/services/Orders";
 import {format} from "date-fns";
 import {useRouter} from "next/navigation";
@@ -386,10 +386,8 @@ export default function CheckoutPage() {
                     )}
 
                     {brand.items.map((item) => {
-                      const hasDiscount = Number(item.price) > Number(item.finalPrice);
-                      const discountPercent = hasDiscount
-                        ? Math.round((1 - Number(item.finalPrice) / Number(item.price)) * 100)
-                        : 0;
+                      const discountPercent = calculateDiscountPercent(Number(item.price), Number(item.finalPrice));
+                      const hasDiscount = discountPercent > 0;
 
                       // Формируем ссылку на товар с параметром variantId
                       const productUrl = item.variantId
@@ -475,17 +473,12 @@ export default function CheckoutPage() {
                                 </button>
                               </div>
                               <div className="flex flex-wrap items-center justify-end gap-2.5 pointer-events-none">
-                                <MoneyWithBynIcon
-                                  value={item.finalPrice}
-                                  className="text-purple-600"
-                                  valueClassName="text-base font-bold"
-                                />
+                                <Money value={item.finalPrice} className="text-purple-600 text-base font-bold"/>
                                 {hasDiscount && (
-                                  <MoneyWithBynIcon
+                                  <Money
                                     value={item.price}
-                                    className="text-gray-400 line-through"
-                                    valueClassName="text-xs"
                                     showIcon={false}
+                                    className="text-gray-400 line-through text-xs"
                                   />
                                 )}
                                 {hasDiscount && (
@@ -522,22 +515,18 @@ export default function CheckoutPage() {
               <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>Товары ({cartItems.length})</span>
-                  <MoneyWithBynIcon value={originalTotal}/>
+                  <Money value={originalTotal}/>
                 </div>
                 {totalDiscount > 0 && (
                   <div className="flex items-center justify-between text-sm text-green-600">
                     <span>Скидка</span>
-                    <MoneyWithBynIcon value={-totalDiscount}/>
+                    <Money value={-totalDiscount}/>
                   </div>
                 )}
                 <div className="h-px bg-gray-200"></div>
                 <div className="flex items-center justify-between text-lg font-bold text-gray-900">
                   <span>Итого</span>
-                  <MoneyWithBynIcon
-                    value={totalPrice}
-                    className="text-purple-600"
-                    valueClassName="text-lg font-bold"
-                  />
+                  <Money value={totalPrice} className="text-purple-600 text-lg font-bold"/>
                 </div>
               </div>
 

@@ -3,27 +3,9 @@
 import Link from "next/link";
 import {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "next/navigation";
-import type {ProductSort} from "@/types";
+import type {ProductSort, SearchResponse, SearchSuggestion} from "@/types";
 import {useCallback, useRef} from "react";
-import MoneyWithBynIcon from "@/theme/snippents/MoneyWithBynIcon";
-
-type SearchItem = {
-  id: number | string;
-  title: string;
-  description: string | null;
-  brand: string | null;
-  image: string | null;
-  price: string;
-  final_price: string;
-  discount_percent: number;
-};
-
-type SearchResponse = {
-  items: SearchItem[];
-  total: number;
-  page: number;
-  pages: number;
-};
+import Money from "@/theme/snippents/Money";
 
 const normalizeEntries = (params: URLSearchParams | null) => {
   if (!params) return [];
@@ -54,7 +36,7 @@ export default function SearchPageContent() {
   const initialSort = useMemo<ProductSort>(() => (searchParams?.get("sort") as ProductSort) ?? "newest", [searchParams]);
   const querySummary = useMemo(() => normalizeEntries(searchParams), [searchParams]);
 
-  const [results, setResults] = useState<SearchItem[]>([]);
+  const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [meta, setMeta] = useState<{total: number; page: number; pages: number}>({total: 0, page: 1, pages: 0});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -266,18 +248,16 @@ export default function SearchPageContent() {
                             <p className="line-clamp-2 text-xs text-gray-500">{stripHtml(item.description)}</p>
                           )}
                           <div className="mt-1 flex items-baseline gap-2">
-                            <MoneyWithBynIcon
+                            <Money
                               value={price.current}
                               fallback={price.fallback}
-                              className="text-purple-500"
-                              valueClassName="text-base font-semibold"
+                              className="text-purple-500 text-base font-semibold"
                             />
                             {price.old !== null && (
-                              <MoneyWithBynIcon
+                              <Money
                                 value={price.old}
-                                className="text-gray-400 line-through"
-                                valueClassName="text-xs"
                                 showIcon={false}
+                                className="text-gray-400 line-through text-xs"
                               />
                             )}
                           </div>

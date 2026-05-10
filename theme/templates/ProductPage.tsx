@@ -25,7 +25,7 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import {Splide, SplideSlide} from "react-splide-ts";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import {useCart} from "@/theme/hooks/useCart";
-import {normalizeImageSrc, toIdString} from "@/services/utilits";
+import {calculateDiscountPercent, normalizeImageSrc, toIdString} from "@/services/utilits";
 import '@splidejs/react-splide/css';
 import {useSearchParams} from "next/navigation";
 
@@ -48,6 +48,7 @@ const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
 
 const RECENT_PRODUCTS_STORAGE_KEY = 'spraby_recent_products';
 const MAX_RECENT_PRODUCTS = 12;
+const MAX_QUICK_ORDER_QUANTITY = 100;
 
 const hasValidPrice = (raw?: string | null) => {
   if (typeof raw !== 'string') return false;
@@ -265,20 +266,15 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 
   const currentPrice = `${variant?.price ?? product.price ?? 0}`;
   const currentFinalPrice = `${variant?.final_price ?? product.final_price ?? currentPrice}`;
-  const hasDiscount = Number(currentPrice) > Number(currentFinalPrice);
-  const discountPercent = hasDiscount
-    ? Math.round((1 - Number(currentFinalPrice) / Number(currentPrice)) * 100)
-    : 0;
+  const discountPercent = calculateDiscountPercent(Number(currentPrice), Number(currentFinalPrice));
+  const hasDiscount = discountPercent > 0;
   const quickOrderTotalFinalPrice = Number(currentFinalPrice) * quickOrderQuantity;
-
-  const updateQuickOrderQuantity = useCallback((quantity: number) => {
-    setQuickOrderQuantity(Math.max(1, quantity));
-  }, []);
 
   const handleDrawerClose = () => {
     setOpen(false);
     setOrderNumber(undefined);
     setDrawerMode('order');
+    setQuickOrderQuantity(1);
   };
 
   const {
@@ -980,7 +976,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white normal-case tracking-normal">
             <button
               type="button"
-              onClick={() => updateQuickOrderQuantity(quickOrderQuantity - 1)}
+              onClick={() => setQuickOrderQuantity(prev => Math.max(1, prev - 1))}
               disabled={submiting || quickOrderQuantity <= 1}
               aria-label="Уменьшить количество"
               className="px-3 py-1 text-gray-600 transition hover:text-purple-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -992,8 +988,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             </span>
             <button
               type="button"
-              onClick={() => updateQuickOrderQuantity(quickOrderQuantity + 1)}
-              disabled={submiting}
+              onClick={() => setQuickOrderQuantity(prev => Math.min(MAX_QUICK_ORDER_QUANTITY, prev + 1))}
+              disabled={submiting || quickOrderQuantity >= MAX_QUICK_ORDER_QUANTITY}
               aria-label="Увеличить количество"
               className="px-3 py-1 text-gray-600 transition hover:text-purple-600 disabled:cursor-not-allowed disabled:opacity-40"
             >

@@ -1,22 +1,14 @@
+import {cx} from "@/lib/cx";
+
 type BynCurrencyIconProps = {
   className?: string;
 };
 
-const cx = (...classes: Array<string | false | undefined>) => classes.filter(Boolean).join(' ');
-
-const hasHeightClass = (className = '') => /(?:^|\s)(?:h-|size-|\[height:)/.test(className);
-const hasWidthClass = (className = '') => /(?:^|\s)(?:w-|size-|\[width:)/.test(className);
-
-export function BynCurrencyIcon({className}: BynCurrencyIconProps) {
+export default function BynCurrencyIcon({className}: BynCurrencyIconProps) {
   return (
     <svg
       aria-hidden="true"
-      className={cx(
-        !hasHeightClass(className) && 'h-[1cap]',
-        !hasWidthClass(className) && 'w-[0.81cap]',
-        className,
-      )}
-      overflow="visible"
+      className={cx('h-[1cap] w-[0.81cap] shrink-0', className)}
       viewBox="0 0 360.67 446.4"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -32,5 +24,3 @@ export function BynCurrencyIcon({className}: BynCurrencyIconProps) {
     </svg>
   );
 }
-
-export default BynCurrencyIcon;

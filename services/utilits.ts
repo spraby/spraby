@@ -9,7 +9,7 @@ export const serializeObject = (obj: any) => {
 
 export type MoneyInput = number | string | null | undefined;
 
-export const parseMoneyAmount = (value: MoneyInput): number | undefined => {
+const parseMoneyAmount = (value: MoneyInput): number | undefined => {
   if (value == null || value === '') return undefined;
 
   const normalizedValue = typeof value === 'string'
@@ -20,16 +20,16 @@ export const parseMoneyAmount = (value: MoneyInput): number | undefined => {
   return Number.isFinite(numericValue) ? numericValue : undefined;
 };
 
-export const formatMoneyAmount = (value: MoneyInput, fallback = '') => {
+export const toMoney = (value: MoneyInput, fallback = ''): string => {
   const numericValue = parseMoneyAmount(value);
-
   return numericValue === undefined ? fallback : numericValue.toFixed(2);
 };
 
-export const toMoney = (value: number, template: string = '{{amount}}') => {
-  const formattedValue = formatMoneyAmount(value);
-  return template.replaceAll('{{amount}}', formattedValue);
-}
+export const calculateDiscountPercent = (price: number, finalPrice: number): number => (
+  price > 0 && finalPrice < price
+    ? Math.max(1, Math.round((1 - finalPrice / price) * 100))
+    : 0
+);
 
 export const toIdString = (value: unknown): string => {
   if (typeof value === 'bigint') return value.toString();

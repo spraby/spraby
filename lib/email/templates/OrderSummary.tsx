@@ -12,7 +12,7 @@ import {
   Column,
   Img,
 } from '@react-email/components'
-import { formatEmailMoney } from '../format'
+import { calculateDiscountPercent, toMoney } from '@/services/utilits'
 import { EmailOrderSummary } from '../types'
 
 interface OrderSummaryProps {
@@ -94,10 +94,8 @@ export default function OrderSummary({
                 {order.items.map((item, index) => {
                   const priceValue = Number(item.price)
                   const finalPriceValue = Number(item.finalPrice)
-                  const hasDiscount = priceValue > finalPriceValue
-                  const discountPercent = hasDiscount && priceValue > 0
-                    ? Math.round((1 - (finalPriceValue / priceValue)) * 100)
-                    : 0
+                  const discountPercent = calculateDiscountPercent(priceValue, finalPriceValue)
+                  const hasDiscount = discountPercent > 0
                   const variantOptions = getVariantOptions(item.variantTitle)
                   const cardStyle = index < order.items.length - 1 ? productCardWithSpacing : productCard
 
@@ -166,11 +164,11 @@ export default function OrderSummary({
 
                             <div style={priceContainer}>
                               {hasDiscount && (
-                                <Text style={oldPrice}>{formatEmailMoney(item.price)} BYN</Text>
+                                <Text style={oldPrice}>{toMoney(item.price)} BYN</Text>
                               )}
                               <span style={finalPriceGroup}>
-                                <Text style={finalPriceText}>{formatEmailMoney(item.finalPrice)} BYN</Text>
-                                {hasDiscount && discountPercent > 0 && (
+                                <Text style={finalPriceText}>{toMoney(item.finalPrice)} BYN</Text>
+                                {hasDiscount && (
                                   <span style={discountBadge}>-{discountPercent}%</span>
                                 )}
                               </span>
@@ -186,12 +184,12 @@ export default function OrderSummary({
                   <table cellPadding="0" cellSpacing="0" border={0} width="100%" style={totalsTable}>
                     <tr>
                       <td style={totalsLabel}>Товары ({order.itemsCount})</td>
-                      <td style={totalsValue}>{formatEmailMoney(order.totalPrice)} BYN</td>
+                      <td style={totalsValue}>{toMoney(order.totalPrice)} BYN</td>
                     </tr>
                     {Number(order.totalDiscount) > 0 && (
                       <tr>
                         <td style={totalsDiscountLabel}>Скидка</td>
-                        <td style={totalsDiscountValue}>-{formatEmailMoney(order.totalDiscount)} BYN</td>
+                        <td style={totalsDiscountValue}>-{toMoney(order.totalDiscount)} BYN</td>
                       </tr>
                     )}
                   </table>
@@ -199,7 +197,7 @@ export default function OrderSummary({
                   <table cellPadding="0" cellSpacing="0" border={0} width="100%">
                     <tr>
                       <td style={totalsTotalLabel}>Итого</td>
-                      <td style={totalsTotalValue}>{formatEmailMoney(order.totalFinalPrice)} BYN</td>
+                      <td style={totalsTotalValue}>{toMoney(order.totalFinalPrice)} BYN</td>
                     </tr>
                   </table>
                 </div>
