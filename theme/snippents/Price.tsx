@@ -1,46 +1,54 @@
 'use client';
 
-import {toMoney} from "@/services/utilits";
-import {useMemo} from "react";
+import Money from "@/theme/snippents/Money";
 
-const SIZES: { [key: string]: string[] } = {
-  'sm': ['text-sm', 'text-xs'],
-  'base': ['text-base', 'text-sm'],
-  'lg': ['text-lg', 'text-base'],
-  'xl': ['text-xl', 'text-lg'],
-  '2xl': ['text-2xl', 'text-xl'],
-  '3xl': ['text-3xl', 'text-2xl']
-}
+type PriceSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl';
 
-const Price = ({finalPrice, price, size = '2xl'}: Props) => {
+const PRICE_SIZES: Record<PriceSize, string> = {
+  'xs': 'text-xs',
+  'sm': 'text-sm',
+  'base': 'text-base',
+  'lg': 'text-lg',
+  'xl': 'text-xl',
+  '2xl': 'text-2xl',
+  '3xl': 'text-3xl'
+};
 
-  const finalPriceMarkup = useMemo(() => {
-    const value = toMoney(finalPrice).split('.');
-    return value?.length === 2 ? <span>
-      <span className={`${SIZES[size][0]} font-semibold`}>{value[0]}.</span>
-      <span className={`${SIZES[size][1]} font-semibold`}>{value[1]}</span>
-    </span> : undefined;
-  }, [finalPrice])
-
-  const priceMarkup = useMemo(() => {
-    if (!price || finalPrice >= price) return undefined;
-    const value = toMoney(price).split('.');
-    return value?.length === 2 ? <span className={'line-through-block'}>
-      <span className={`${SIZES[size][0]} text-gray-400`}>{value[0]}.</span>
-      <span className={`${SIZES[size][1]} text-gray-400`}>{value[1]}</span>
-    </span> : undefined;
-  }, [price, finalPrice])
-
-  return <span className={'flex gap-3 items-baseline'}>
-    {finalPriceMarkup}
-    {priceMarkup}
-  </span>
+const OLD_PRICE_SIZES: Record<PriceSize, string> = {
+  'xs': 'text-[11px]',
+  'sm': 'text-xs',
+  'base': 'text-xs',
+  'lg': 'text-sm',
+  'xl': 'text-base',
+  '2xl': 'text-xl',
+  '3xl': 'text-2xl'
 };
 
 type Props = {
-  finalPrice: number,
-  price?: number
-  size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl'
+  finalPrice: number;
+  price?: number;
+  size?: PriceSize;
+  finalPriceClassName?: string;
+};
+
+const Price = ({finalPrice, price, size = '2xl', finalPriceClassName = 'text-purple-500'}: Props) => {
+  const showOldPrice = !!price && finalPrice < price;
+
+  return (
+    <span className="flex gap-3 items-baseline">
+      <Money
+        value={finalPrice}
+        className={`${finalPriceClassName} ${PRICE_SIZES[size]} font-semibold`}
+      />
+      {showOldPrice && (
+        <Money
+          value={price}
+          showIcon={false}
+          className={`line-through-block text-gray-400 ${OLD_PRICE_SIZES[size]}`}
+        />
+      )}
+    </span>
+  );
 };
 
 export default Price;

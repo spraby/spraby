@@ -2,7 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {ProductCardModel, VariantModel} from "@/prisma/types";
 import {setStatistic} from "@/services/ProductStatistics";
-import {normalizeImageSrc, toIdString} from "@/services/utilits";
+import {calculateDiscountPercent, normalizeImageSrc, toIdString} from "@/services/utilits";
+import Money from "@/theme/snippents/Money";
 import {useEffect, useMemo, useState} from "react";
 
 /**
@@ -78,10 +79,8 @@ const ProductCart = ({product}: Props) => {
   const currentPrice = `${activeVariant?.price ?? product.price ?? 0}`;
   const currentFinalPrice = `${activeVariant?.final_price ?? product.final_price ?? currentPrice}`;
 
-  const hasDiscount = Number(currentPrice) > Number(currentFinalPrice);
-  const discountPercent = hasDiscount
-    ? Math.round((1 - Number(currentFinalPrice) / Number(currentPrice)) * 100)
-    : 0;
+  const discountPercent = calculateDiscountPercent(Number(currentPrice), Number(currentFinalPrice));
+  const hasDiscount = discountPercent > 0;
   const brandName =
     (product.Brand?.name && product.Brand.name.trim()) ||
     [product.Brand?.User?.first_name, product.Brand?.User?.last_name]
@@ -154,11 +153,14 @@ const ProductCart = ({product}: Props) => {
         }
         {
           <div className='mt-1 flex items-baseline gap-2'>
-            <span className='text-base font-semibold text-purple-500'>{+currentFinalPrice} BYN</span>
-            {
-              +currentPrice > +currentFinalPrice &&
-              <span className="text-xs text-gray-400 line-through">{+currentPrice}</span>
-            }
+            <Money value={currentFinalPrice} className="text-purple-500 text-base font-semibold"/>
+            {hasDiscount && (
+              <Money
+                value={currentPrice}
+                showIcon={false}
+                className="text-gray-400 line-through text-xs"
+              />
+            )}
           </div>
         }
       </div>

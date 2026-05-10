@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import {MenuItem} from "@/types";
-import {Fragment, useEffect, useMemo, useState} from "react";
+import {Fragment, useMemo, useState} from "react";
 import {useBodyScrollLock} from "@/theme/hooks/useBodyScrollLock";
 import {useRouter} from "next/navigation";
+import {useProductSuggestions} from "@/theme/hooks/useProductSuggestions";
+import SearchSuggestionItem from "@/theme/snippents/SearchSuggestionItem";
 
 type MobileMenuProps = {
   menu: MenuItem[];
@@ -15,8 +17,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [trail, setTrail] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
-  const [openSuggest, setOpenSuggest] = useState(false);
-  const [suggestions, setSuggestions] = useState<{loading: boolean; items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>}>({loading: false, items: []});
+  const {suggestions, open: openSuggest, setOpen: setOpenSuggest} = useProductSuggestions(search);
   const router = useRouter();
 
   const currentItems = useMemo(() => {
@@ -58,38 +59,6 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
     event.preventDefault();
     navigateToSearch();
   };
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const query = search.trim();
-    if (query.length < 2) {
-      setSuggestions((prev) => ({...prev, items: []}));
-      setOpenSuggest(false);
-      return;
-    }
-    let isActive = true;
-    setSuggestions((prev) => ({...prev, loading: true}));
-    const timeout = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=12`, {signal: controller.signal});
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: {items: Array<{id: number | string; title: string; brand: string | null; price: string; final_price: string; image?: string | null}>} = await res.json();
-        if (!isActive) return;
-        setSuggestions({loading: false, items: data.items ?? []});
-        setOpenSuggest(true);
-      } catch (err) {
-        if (!isActive || (err instanceof DOMException && err.name === "AbortError")) return;
-        setSuggestions({loading: false, items: []});
-        setOpenSuggest(false);
-      }
-    }, 200);
-
-    return () => {
-      isActive = false;
-      controller.abort();
-      clearTimeout(timeout);
-    };
-  }, [search]);
 
   const activeCategory = trail[trail.length - 1];
   const isRoot = !trail.length;
@@ -176,39 +145,17 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
                     {suggestions.loading && (
                       <div className="px-4 py-3 text-sm text-gray-500">Ищем…</div>
                     )}
-                    {!suggestions.loading && suggestions.items.map((item) => {
-                      const hasDiscount = Number(item.final_price) < Number(item.price);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            router.push(`/products/${item.id}`);
-                            setOpenSuggest(false);
-                            handleClose();
-                          }}
-                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-12 w-12 overflow-hidden rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center">
-                              {item.image ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={item.image} alt={item.title} className="h-full w-full object-cover"/>
-                              ) : (
-                                <span className="text-[11px] text-gray-400">Нет фото</span>
-                              )}
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-semibold text-gray-900 line-clamp-1">{item.title}</span>
-                              {item.brand && <span className="text-xs text-gray-500">{item.brand}</span>}
-                            </div>
-                          </div>
-                          <div className="text-xs font-semibold text-gray-900">
-                            {item.final_price} BYN {hasDiscount && <span className="text-[11px] text-gray-400 line-through ml-1">{item.price} BYN</span>}
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {!suggestions.loading && suggestions.items.map((item) => (
+                      <SearchSuggestionItem
+                        key={item.id}
+                        item={item}
+                        onSelect={() => {
+                          router.push(`/products/${item.id}`);
+                          setOpenSuggest(false);
+                          handleClose();
+                        }}
+                      />
+                    ))}
                     {!suggestions.loading && suggestions.items.length === 0 && (
                       <div className="px-4 py-3 text-sm text-gray-500">Ничего не найдено</div>
                     )}
