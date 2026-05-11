@@ -7,6 +7,7 @@ import {
   sendOrderConfirmationEmail,
   sendOrderEmails,
 } from "@/lib/email/send";
+import {calculateDiscountPercent} from "@/services/utilits";
 import {SITE_URL} from "@/lib/config";
 
 type NotificationOptions = {
@@ -201,9 +202,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
       productImage,
     } = buildOrderEmailData(order)
 
-    const discountPercent = totalPrice > totalFinalPrice && totalPrice > 0
-      ? Math.round((1 - (totalFinalPrice / totalPrice)) * 100)
-      : undefined
+    const calculatedDiscount = calculateDiscountPercent(totalPrice, totalFinalPrice)
+    const discountPercent = calculatedDiscount > 0 ? calculatedDiscount : undefined
 
     // URL для просмотра заказа в панели продавца
     const orderUrl = `${SITE_URL}/admin/orders/${order.id}`

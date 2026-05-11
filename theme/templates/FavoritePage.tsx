@@ -6,6 +6,8 @@ import {MouseEvent, useMemo} from "react";
 import {AiOutlineClose} from "react-icons/ai";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import HeardIcon from "@/theme/assets/HeardIcon";
+import Money from "@/theme/snippents/Money";
+import {calculateDiscountPercent} from "@/services/utilits";
 
 type FavoriteViewModel = {
   id: string;
@@ -125,10 +127,10 @@ export default function FavoritePage() {
           ) : (
             <div className='grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
               {preparedFavorites.map((item) => {
-                const hasDiscount = item.priceValue !== undefined && item.priceValue > item.finalPriceValue;
-                const discountPercent = hasDiscount
-                ? Math.round((1 - item.finalPriceValue / (item.priceValue ?? item.finalPriceValue)) * 100)
-                : 0;
+                const discountPercent = item.priceValue !== undefined
+                  ? calculateDiscountPercent(item.priceValue, item.finalPriceValue)
+                  : 0;
+                const hasDiscount = discountPercent > 0;
 
                   return (
                     <div key={item.id} className='relative'>
@@ -212,11 +214,13 @@ export default function FavoritePage() {
                             )}
                           </div>
                           <div className='flex items-baseline gap-2'>
-                            <span className='text-base font-semibold text-purple-500'>{item.finalPriceValue} BYN</span>
+                            <Money value={item.finalPriceValue} className="text-purple-500 text-base font-semibold"/>
                             {hasDiscount && (
-                              <span className='text-xs text-gray-400 line-through'>
-                                {item.priceValue}
-                              </span>
+                              <Money
+                                value={item.priceValue}
+                                showIcon={false}
+                                className="text-gray-400 line-through text-xs"
+                              />
                             )}
                           </div>
                         </div>
