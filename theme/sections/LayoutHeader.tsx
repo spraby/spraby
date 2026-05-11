@@ -101,8 +101,8 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
                 <Link href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight flex items-center gap-2.5'>
                   <Image
                     src="/img/spraby.svg"
-                    alt="Spraby логотип"
-                    width={32}
+                    alt="spraby — логотип"
+                    width={40}
                     height={32}
                     className="h-8 w-auto"
                     priority

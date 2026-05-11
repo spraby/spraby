@@ -7,6 +7,7 @@ import {
   sendOrderConfirmationEmail,
   sendOrderEmails,
 } from "@/lib/email/send";
+import {SITE_URL} from "@/lib/config";
 
 type NotificationOptions = {
   sendCustomerEmail?: boolean
@@ -204,11 +205,10 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
       ? Math.round((1 - (totalFinalPrice / totalPrice)) * 100)
       : undefined
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://spraby.com'
     // URL для просмотра заказа в панели продавца
-    const orderUrl = `${siteUrl}/admin/orders/${order.id}`
+    const orderUrl = `${SITE_URL}/admin/orders/${order.id}`
     // Публичная ссылка для отслеживания статуса заказа (для покупателя)
-    const trackingUrl = `${siteUrl}/purchases/${order.name.replace('#', '')}`
+    const trackingUrl = `${SITE_URL}/purchases/${order.name.replace('#', '')}`
 
     // Отправляем письма
     let customerResult: { success: boolean; skipped?: boolean; data?: unknown; error?: unknown; disabled?: boolean } = { success: true, skipped: true }
@@ -342,7 +342,6 @@ export async function sendCustomerOrderSummaryEmail(orderIds: Array<string | big
       return { success: false, error: 'Missing shipping data' }
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://spraby.com'
     const orderMap = new Map(orders.map(order => [order.id.toString(), order]))
     const orderedList = normalizedIds
       .map(id => orderMap.get(id.toString()))
@@ -355,7 +354,7 @@ export async function sendCustomerOrderSummaryEmail(orderIds: Array<string | big
       return {
         brandName: order.Brand.name,
         orderNumber: order.name,
-        trackingUrl: `${siteUrl}/purchases/${order.name.replace('#', '')}`,
+        trackingUrl: `${SITE_URL}/purchases/${order.name.replace('#', '')}`,
         items: orderItems,
         totalPrice: totalPrice.toFixed(2),
         totalFinalPrice: totalFinalPrice.toFixed(2),

@@ -2,15 +2,13 @@ import type {Metadata, Viewport} from "next";
 import '../styles/index.scss';
 import {getMainMenu} from "@/services/Settings";
 import AppShell from "@/theme/layouts/AppShell";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://spra.by";
-const siteDescription = "spraby — маркетплейс изделий ручной работы от мастеров и ремесленников.";
+import {SITE_DESCRIPTION, SITE_URL} from "@/lib/config";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   applicationName: "spraby",
   title: "spraby",
-  description: siteDescription,
+  description: SITE_DESCRIPTION,
   icons: {
     icon: [
       {url: "/img/favicon.svg", type: "image/svg+xml", sizes: "any"},
@@ -24,21 +22,12 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "spraby",
     title: "spraby",
-    description: siteDescription,
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "spraby",
-      },
-    ],
+    description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
     title: "spraby",
-    description: siteDescription,
-    images: ["/opengraph-image"],
+    description: SITE_DESCRIPTION,
   },
 };
 
