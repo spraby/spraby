@@ -69,11 +69,11 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
               <div className='flex items-center gap-3'>
                 <Link href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight flex items-center gap-2.5'>
                   <Image
-                    src="/img/favicon.svg"
-                    alt="Spraby логотип"
-                    width={38}
-                    height={38}
-                    className="h-9 w-auto"
+                    src="/img/spraby.svg"
+                    alt="spraby — логотип"
+                    width={40}
+                    height={32}
+                    className="h-8 w-auto"
                     priority
                   />
                   <span className="leading-none">spraby</span>
