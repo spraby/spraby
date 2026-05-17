@@ -19,11 +19,11 @@ export default async function CategoryPage(props: any) {
   const options = await getOptions({handle: props.params.handle});
   const filter = await convertOptionsToFilter(options);
   const params = props?.searchParams ?? {}
-  const data: any = await convertSearchParamsToQueryParams(params, filter);
+  const optionGroups = await convertSearchParamsToQueryParams(params, filter);
   const breadcrumbs = await getBreadcrumbs(`/categories/${props.params.handle}`);
 
   const {items: products, total} = await getFilteredProducts({
-    options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
+    optionGroups,
     categoryHandles: [props.params.handle],
     limit: PAGE_SIZE,
     page: 1,

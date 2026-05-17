@@ -2,7 +2,7 @@
 import db from "@/prisma/db.client";
 import Prisma, {OptionModel} from "@/prisma/types";
 import {transliterate as tr} from "transliteration";
-import {FilterItem} from "@/types";
+import {FilterGroup, FilterItem} from "@/types";
 
 /**
  *
@@ -86,31 +86,46 @@ export async function convertOptionsToFilter(option: OptionModel[]) {
 }
 
 /**
+ * Convert URL search params into filter groups for the products query.
  *
- * @param searchParams
- * @param filter
+ * Returns one FilterGroup per UI filter key. Inside a group, the same selected
+ * value may produce multiple clauses (one per option_id it belongs to) — these
+ * are combined with OR by the consumer. Different groups are combined with AND.
  */
 export async function convertSearchParamsToQueryParams(searchParams: {
   [key: string]: string | number
-}, filter: FilterItem[]) {
-  const data: any = {};
+}, filter: FilterItem[]): Promise<FilterGroup[]> {
+  const groups: FilterGroup[] = [];
 
-  Object.entries(searchParams).map(([key, value]) => {
-    const values = `${value}`.split(',').map((i: string) => i.trim())
+  Object.entries(searchParams).forEach(([key, rawValue]) => {
     const filterItem = filter.find(i => i.key === key);
+    if (!filterItem) return;
 
-    if (filterItem) {
-      values.map((value: string) => {
-        const filterValue = filterItem.values.find(i => value === i.value);
-        if (filterValue) {
-          filterValue.optionIds.map((id: bigint) => {
-            if (!data[`${id}`]) data[`${id}`] = [];
-            data[`${id}`] = Array.from(new Set([...data[`${id}`], filterValue.value]))
-          })
-        }
-      })
-    }
-  })
+    const selectedValues = `${rawValue}`.split(',').map(v => v.trim()).filter(Boolean);
+    if (!selectedValues.length) return;
 
-  return data;
+    const byOptionId = new Map<string, Set<string>>();
+
+    selectedValues.forEach(val => {
+      const filterValue = filterItem.values.find(i => i.value === val);
+      if (!filterValue) return;
+      filterValue.optionIds.forEach(id => {
+        const optionKey = `${id}`;
+        if (!byOptionId.has(optionKey)) byOptionId.set(optionKey, new Set());
+        byOptionId.get(optionKey)!.add(filterValue.value);
+      });
+    });
+
+    if (!byOptionId.size) return;
+
+    groups.push({
+      key,
+      clauses: Array.from(byOptionId.entries()).map(([optionId, values]) => ({
+        optionId,
+        values: Array.from(values),
+      })),
+    });
+  });
+
+  return groups;
 }

@@ -7,6 +7,14 @@ export type FilterItem = {
   }[]
 }
 
+export type FilterGroup = {
+  key: string,
+  clauses: {
+    optionId: string,
+    values: string[]
+  }[]
+}
+
 export type BreadcrumbItem = {
   title: string;
   url: string;
