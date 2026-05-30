@@ -4,12 +4,27 @@ import {getBreadcrumbs, getInformationSettings} from "@/services/Settings";
 import {serializeObject} from "@/services/utilits";
 import {BreadcrumbItem} from "@/types";
 import db from "@/prisma/db.client";
+import {notFound} from "next/navigation";
+import {cache} from "react";
+import {buildProductJsonLd, createMissingProductMetadata, createProductMetadata, stringifyJsonLd} from "./seo";
 
 // export const revalidate = 120
 
-export default async function ProductDetailPage(props: any) {
-  const product = await findFirst({
-    where: {id: props.params.id},
+const MAX_POSTGRES_BIGINT = BigInt("9223372036854775807");
+
+function parseProductId(value: unknown) {
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+
+  const id = BigInt(value);
+  return id > BigInt(0) && id <= MAX_POSTGRES_BIGINT ? id : null;
+}
+
+const getProductDetail = cache(async (productId: bigint) => {
+  return findFirst({
+    where: {
+      id: productId,
+      enabled: true,
+    },
     include: {
       Category: {
         include: {
@@ -64,7 +79,38 @@ export default async function ProductDetailPage(props: any) {
         }
       }
     }
-  })
+  });
+});
+
+export async function generateMetadata({params}: any) {
+  const productId = parseProductId(params.id);
+  const path = `/products/${params.id}`;
+
+  if (!productId) {
+    return createMissingProductMetadata(path);
+  }
+
+  const product = await getProductDetail(productId);
+
+  if (!product) {
+    return createMissingProductMetadata(path);
+  }
+
+  return createProductMetadata(product, path);
+}
+
+export default async function ProductDetailPage(props: any) {
+  const productId = parseProductId(props.params.id);
+
+  if (!productId) {
+    notFound();
+  }
+
+  const product = await getProductDetail(productId);
+
+  if (!product) {
+    notFound();
+  }
 
   const productData = {
     ...product,
@@ -168,14 +214,24 @@ export default async function ProductDetailPage(props: any) {
     breadcrumbs = await getBreadcrumbs('/') ?? [];
   }
 
-  return !!productData ?
-    <ProductPage
-      product={serializeObject(productData)}
-      otherProducts={serializeObject(otherProducts)}
-      informationSettings={informationSettings}
-      breadcrumbs={breadcrumbs}
-      brandContacts={serializeObject(brandContacts)}
-      brandAddresses={serializeObject(brandAddresses)}
-    /> :
-    <div>no product</div>
+  const productJsonLd = buildProductJsonLd(product, `/products/${props.params.id}`);
+
+  return (
+    <>
+      {productJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{__html: stringifyJsonLd(productJsonLd)}}
+        />
+      ) : null}
+      <ProductPage
+        product={serializeObject(productData)}
+        otherProducts={serializeObject(otherProducts)}
+        informationSettings={informationSettings}
+        breadcrumbs={breadcrumbs}
+        brandContacts={serializeObject(brandContacts)}
+        brandAddresses={serializeObject(brandAddresses)}
+      />
+    </>
+  );
 }

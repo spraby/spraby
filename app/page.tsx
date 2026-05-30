@@ -1,8 +1,16 @@
 import HomePage from "@/theme/templates/HomePage";
 import {getLatestProducts, getProductsOnTrend} from "@/services/Products";
 import {getPopularCategoriesByViews} from "@/services/Categories";
+import {createMetadata} from "@/lib/seo";
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = createMetadata({
+  title: "Маркетплейс авторских товаров",
+  description: "Покупайте авторские товары, изделия ручной работы и вещи независимых брендов на spraby. Уникальные находки от мастеров с удобным заказом онлайн.",
+  path: "/",
+  image: "/img/hero/hero-product-1.webp",
+});
 
 // Функция для получения популярных изображений категорий
 async function getCategoryPopularImages() {

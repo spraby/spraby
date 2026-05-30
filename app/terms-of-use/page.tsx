@@ -1,10 +1,11 @@
-import type {Metadata} from "next";
 import Link from "next/link";
+import {createMetadata} from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Пользовательское соглашение — spraby",
-  description: "Пользовательское соглашение маркетплейса spraby",
-};
+export const metadata = createMetadata({
+  title: "Пользовательское соглашение",
+  description: "Пользовательское соглашение spraby: правила покупки, продажи и использования маркетплейса авторских товаров.",
+  path: "/terms-of-use",
+});
 
 export default function TermsOfUsePage() {
   return (

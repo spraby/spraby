@@ -1,9 +1,10 @@
-import type {Metadata} from "next";
+import {createMetadata} from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Контакты — spraby",
-  description: "Свяжитесь с командой spraby — маркетплейса изделий мастеров и ремесленников",
-};
+export const metadata = createMetadata({
+  title: "Контакты",
+  description: "Свяжитесь с командой spraby по вопросам покупок, сотрудничества с мастерами, поддержки продавцов и работы маркетплейса.",
+  path: "/contacts",
+});
 
 export default function ContactsPage() {
   return (
