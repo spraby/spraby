@@ -7,10 +7,29 @@ export const serializeObject = (obj: any) => {
   return JSON.parse(json);
 };
 
-export const toMoney = (value: number, template: string = '{{amount}} BYN') => {
-  const formattedValue = (Math.round(value * 100) / 100).toFixed(2);
-  return template.replaceAll('{{amount}}', formattedValue);
-}
+export type MoneyInput = number | string | null | undefined;
+
+const parseMoneyAmount = (value: MoneyInput): number | undefined => {
+  if (value == null || value === '') return undefined;
+
+  const normalizedValue = typeof value === 'string'
+    ? value.replace(/\s/g, '').replace(',', '.')
+    : value;
+  const numericValue = Number(normalizedValue);
+
+  return Number.isFinite(numericValue) ? numericValue : undefined;
+};
+
+export const toMoney = (value: MoneyInput, fallback = ''): string => {
+  const numericValue = parseMoneyAmount(value);
+  return numericValue === undefined ? fallback : numericValue.toFixed(2);
+};
+
+export const calculateDiscountPercent = (price: number, finalPrice: number): number => (
+  price > 0 && finalPrice < price
+    ? Math.max(1, Math.round((1 - finalPrice / price) * 100))
+    : 0
+);
 
 export const toIdString = (value: unknown): string => {
   if (typeof value === 'bigint') return value.toString();

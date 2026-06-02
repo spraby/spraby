@@ -39,11 +39,11 @@ export default async function Page(props: any) {
   const options = await getCollectionOptions({handle: props.params.handle});
   const filter = await convertOptionsToFilter(options);
   const params = props?.searchParams ?? {};
-  const data: any = await convertSearchParamsToQueryParams(params, filter);
+  const optionGroups = await convertSearchParamsToQueryParams(params, filter);
   const breadcrumbs = await getBreadcrumbs(`/collections/${props.params.handle}`);
 
   const {items: products, total} = await getFilteredProducts({
-    options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
+    optionGroups,
     collectionHandles: [props.params.handle],
     limit: PAGE_SIZE,
     page: 1,

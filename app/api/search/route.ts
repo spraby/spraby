@@ -1,5 +1,6 @@
 import {NextResponse} from "next/server";
 import db from "@/prisma/db.client";
+import {calculateDiscountPercent} from "@/services/utilits";
 
 const toNumber = (value: string | null, fallback: number) => {
   const parsed = Number(value);
@@ -59,6 +60,9 @@ export async function GET(request: Request) {
   let items = products.map((product) => {
     const imagePath = product.Images?.[0]?.Image?.src;
     const image = imagePath ? (domain ? `${domain}/${imagePath}` : `/${imagePath}`) : null;
+    const variant = product.Variants?.[0];
+    const price = Number(variant?.price ?? 0);
+    const finalPrice = Number(variant?.final_price ?? 0);
 
     return {
       id: product.id.toString(),
@@ -66,8 +70,9 @@ export async function GET(request: Request) {
       description: product.description,
       brand: product.Brand?.name ?? null,
       image,
-      price: (product.Variants?.[0]?.price ?? 0).toString(),
-      final_price: (product.Variants?.[0]?.final_price ?? 0).toString(),
+      price: (variant?.price ?? 0).toString(),
+      final_price: (variant?.final_price ?? 0).toString(),
+      discount_percent: calculateDiscountPercent(price, finalPrice),
     };
   });
 

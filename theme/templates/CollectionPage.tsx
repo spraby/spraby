@@ -75,9 +75,9 @@ export default function CollectionPage({
   }, [defaultProducts, defaultTotal]);
 
   const performFetch = useCallback(async (params: Record<string, string>, sortValue: ProductSort, pageToLoad: number) => {
-    const data: any = await convertSearchParamsToQueryParams(params, filter);
+    const optionGroups = await convertSearchParamsToQueryParams(params, filter);
     return await getFilteredProducts({
-      options: Object.entries(data).map(([optionId, values]: any) => ({optionId, values})),
+      optionGroups,
       ...(collection?.handle ? {collectionHandles: [collection.handle]} : {}),
       ...(category?.handle ? {categoryHandles: [category.handle]} : {}),
       sort: sortValue,

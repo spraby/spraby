@@ -3,25 +3,9 @@
 import Link from "next/link";
 import {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "next/navigation";
-import type {ProductSort} from "@/types";
+import type {ProductSort, SearchResponse, SearchSuggestion} from "@/types";
 import {useCallback, useRef} from "react";
-
-type SearchItem = {
-  id: number | string;
-  title: string;
-  description: string | null;
-  brand: string | null;
-  image: string | null;
-  price: string;
-  final_price: string;
-};
-
-type SearchResponse = {
-  items: SearchItem[];
-  total: number;
-  page: number;
-  pages: number;
-};
+import Money from "@/theme/snippents/Money";
 
 const normalizeEntries = (params: URLSearchParams | null) => {
   if (!params) return [];
@@ -38,11 +22,12 @@ const formatPrice = (price: string, finalPrice: string) => {
   if (Number.isFinite(base) && Number.isFinite(final)) {
     const hasDiscount = final < base;
     return {
-      text: hasDiscount ? `${final} BYN` : `${base} BYN`,
-      old: hasDiscount ? `${base} BYN` : null,
+      current: hasDiscount ? final : base,
+      old: hasDiscount ? base : null,
+      fallback: '—',
     };
   }
-  return {text: finalPrice || price || "—", old: null};
+  return {current: null, old: null, fallback: finalPrice || price || "—"};
 };
 
 export default function SearchPageContent() {
@@ -51,7 +36,7 @@ export default function SearchPageContent() {
   const initialSort = useMemo<ProductSort>(() => (searchParams?.get("sort") as ProductSort) ?? "newest", [searchParams]);
   const querySummary = useMemo(() => normalizeEntries(searchParams), [searchParams]);
 
-  const [results, setResults] = useState<SearchItem[]>([]);
+  const [results, setResults] = useState<SearchSuggestion[]>([]);
   const [meta, setMeta] = useState<{total: number; page: number; pages: number}>({total: 0, page: 1, pages: 0});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -229,10 +214,8 @@ export default function SearchPageContent() {
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {results.map((item) => {
                     const price = formatPrice(item.price, item.final_price);
-                    const hasDiscount = Number(item.final_price) < Number(item.price);
-                    const discountPercent = hasDiscount
-                      ? Math.max(1, Math.round((1 - Number(item.final_price) / Number(item.price)) * 100))
-                      : 0;
+                    const discountPercent = item.discount_percent ?? 0;
+                    const hasDiscount = discountPercent > 0;
                     return (
                       <Link
                         key={item.id}
@@ -265,8 +248,18 @@ export default function SearchPageContent() {
                             <p className="line-clamp-2 text-xs text-gray-500">{stripHtml(item.description)}</p>
                           )}
                           <div className="mt-1 flex items-baseline gap-2">
-                            <span className="text-base font-semibold text-purple-500">{price.text}</span>
-                            {price.old && <span className="text-xs text-gray-400 line-through">{price.old}</span>}
+                            <Money
+                              value={price.current}
+                              fallback={price.fallback}
+                              className="text-purple-500 text-base font-semibold"
+                            />
+                            {price.old !== null && (
+                              <Money
+                                value={price.old}
+                                showIcon={false}
+                                className="text-gray-400 line-through text-xs"
+                              />
+                            )}
                           </div>
                         </div>
                       </Link>

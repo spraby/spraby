@@ -2,7 +2,7 @@
 import db from "@/prisma/db.client";
 import {handlePrismaError, safePrismaCall} from "@/prisma/safeCall";
 import Prisma, {ProductModel} from "@/prisma/types";
-import type {ProductSort} from "@/types";
+import type {FilterGroup, ProductSort} from "@/types";
 
 /**
  *
@@ -389,6 +389,12 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
     pageSize: take ?? 0,
   };
 
+  const optionGroups = filter?.optionGroups?.filter(g => g.clauses.length > 0) ?? [];
+  const hasOptionFilters = optionGroups.length > 0;
+  const allOptionIds = hasOptionFilters
+    ? Array.from(new Set(optionGroups.flatMap(g => g.clauses.map(c => +c.optionId))))
+    : [];
+
   try {
     const where: Prisma.productsWhereInput = {
       enabled: true,
@@ -409,33 +415,35 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
             }
           },
         } : {}),
-        ...(filter?.options?.length ? {
+        ...(hasOptionFilters ? {
           CategoryOption: {
             some: {
               Option: {
                 id: {
-                  in: filter.options.map(i => +i.optionId)
+                  in: allOptionIds
                 }
               }
             }
           }
         } : {}),
       },
-      ...(filter?.options?.length ? {
+      ...(hasOptionFilters ? {
         Variants: {
           some: {
             enabled: true,
-            AND: filter.options.map(option => ({
-              VariantValue: {
-                some: {
-                  Value: {
-                    option_id: +option.optionId,
-                    value: {
-                      in: option.values
+            AND: optionGroups.map(group => ({
+              OR: group.clauses.map(clause => ({
+                VariantValue: {
+                  some: {
+                    Value: {
+                      option_id: +clause.optionId,
+                      value: {
+                        in: clause.values
+                      }
                     }
                   }
                 }
-              }
+              }))
             }))
           }
         }
@@ -529,10 +537,7 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
 type Filter = {
   categoryHandles?: string[],
   collectionHandles?: string[],
-  options?: {
-    optionId: number,
-    values: string[]
-  }[],
+  optionGroups?: FilterGroup[],
   sort?: ProductSort,
   limit?: number,
   page?: number

@@ -12,6 +12,7 @@ import {
   Column,
   Img,
 } from '@react-email/components'
+import { calculateDiscountPercent, toMoney } from '@/services/utilits'
 import { EmailOrderItem } from '../types'
 
 interface OrderConfirmationProps {
@@ -59,9 +60,9 @@ export default function OrderConfirmation({
   const totalOriginal = Number(price)
   const totalFinal = Number(finalPrice)
   const totalDiscount = totalOriginal > totalFinal ? totalOriginal - totalFinal : 0
-  const totalOriginalText = totalOriginal.toFixed(2)
-  const totalFinalText = totalFinal.toFixed(2)
-  const totalDiscountText = totalDiscount.toFixed(2)
+  const totalOriginalText = toMoney(totalOriginal)
+  const totalFinalText = toMoney(totalFinal)
+  const totalDiscountText = toMoney(totalDiscount)
 
   const getVariantOptions = (value?: string) => (
     value
@@ -106,10 +107,8 @@ export default function OrderConfirmation({
             {items.map((item, index) => {
               const priceValue = Number(item.price)
               const finalPriceValue = Number(item.finalPrice)
-              const hasDiscount = priceValue > finalPriceValue
-              const discountPercent = hasDiscount && priceValue > 0
-                ? Math.round((1 - (finalPriceValue / priceValue)) * 100)
-                : 0
+              const discountPercent = calculateDiscountPercent(priceValue, finalPriceValue)
+              const hasDiscount = discountPercent > 0
               const variantOptions = getVariantOptions(item.variantTitle)
               const cardStyle = index < items.length - 1 ? productCardWithSpacing : productCard
 
@@ -178,11 +177,11 @@ export default function OrderConfirmation({
 
                         <div style={priceContainer}>
                           {hasDiscount && (
-                            <Text style={oldPrice}>{item.price} BYN</Text>
+                            <Text style={oldPrice}>{toMoney(item.price)} BYN</Text>
                           )}
                           <span style={finalPriceGroup}>
-                            <Text style={finalPriceText}>{item.finalPrice} BYN</Text>
-                            {hasDiscount && discountPercent > 0 && (
+                            <Text style={finalPriceText}>{toMoney(item.finalPrice)} BYN</Text>
+                            {hasDiscount && (
                               <span style={discountBadge}>-{discountPercent}%</span>
                             )}
                           </span>

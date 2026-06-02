@@ -26,12 +26,12 @@ export default async function RootLayout({children}: Readonly<{ children: React.
   const menu = await getMainMenu();
 
   return (
-    <html lang="ru">
-    <body>
-    <AppShell menu={menu}>
-      {children}
-    </AppShell>
-    </body>
-    </html>
+      <html lang="ru">
+      <body>
+      <AppShell menu={menu}>
+        {children}
+      </AppShell>
+      </body>
+      </html>
   );
 }
