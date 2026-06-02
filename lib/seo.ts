@@ -1,14 +1,8 @@
 import type {Metadata} from "next";
-
-export const SITE_NAME = "spraby";
-export const DEFAULT_SITE_URL = "https://spra.by";
+import {DEFAULT_SITE_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL} from "@/lib/config";
 
 const TITLE_MAX_LENGTH = 62;
 const DESCRIPTION_MAX_LENGTH = 158;
-
-export const DEFAULT_TITLE = "spraby - маркетплейс авторских товаров";
-export const DEFAULT_DESCRIPTION =
-  "spraby - маркетплейс авторских товаров, изделий ручной работы и независимых брендов. Находите уникальные вещи и заказывайте онлайн.";
 
 type SeoMetadataInput = {
   title?: string | null;
@@ -20,17 +14,15 @@ type SeoMetadataInput = {
 };
 
 export function getSiteUrl() {
-  const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL;
-
   try {
-    return new URL(rawUrl);
+    return new URL(SITE_URL);
   } catch {
     return new URL(DEFAULT_SITE_URL);
   }
 }
 
 export function isIndexingAllowed() {
-  return process.env.NEXT_PUBLIC_ALLOW_INDEXING?.toLowerCase() === "true";
+  return process.env.NEXT_PUBLIC_ALLOW_INDEXING?.toLowerCase() !== "false";
 }
 
 export function cleanText(value?: string | null) {
@@ -63,7 +55,7 @@ function hasBrand(value: string) {
 }
 
 export function buildSeoTitle(title?: string | null) {
-  const baseTitle = cleanText(title) || DEFAULT_TITLE;
+  const baseTitle = cleanText(title) || SITE_TITLE;
 
   if (hasBrand(baseTitle)) {
     return truncateText(baseTitle, TITLE_MAX_LENGTH);
@@ -73,7 +65,7 @@ export function buildSeoTitle(title?: string | null) {
   return `${truncateText(baseTitle, TITLE_MAX_LENGTH - suffix.length)}${suffix}`;
 }
 
-export function buildSeoDescription(description?: string | null, fallback = DEFAULT_DESCRIPTION) {
+export function buildSeoDescription(description?: string | null, fallback = SITE_DESCRIPTION) {
   return truncateText(cleanText(description) || fallback, DESCRIPTION_MAX_LENGTH);
 }
 
@@ -122,7 +114,7 @@ export function createMetadata({
       images: imageUrl ? [{url: imageUrl}] : undefined,
     },
     twitter: {
-      card: imageUrl ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: seoTitle,
       description: seoDescription,
       images: imageUrl ? [imageUrl] : undefined,
@@ -152,7 +144,7 @@ export function categoryDescription(title?: string | null, description?: string 
   const categoryTitle = cleanText(title).toLowerCase();
   const fallback = categoryTitle
     ? `Выбирайте ${categoryTitle} от мастеров и независимых брендов на spraby: авторские товары, ручная работа и удобный заказ онлайн.`
-    : DEFAULT_DESCRIPTION;
+    : SITE_DESCRIPTION;
 
   return buildSeoDescription(description, fallback);
 }
@@ -161,7 +153,7 @@ export function collectionDescription(title?: string | null, description?: strin
   const collectionTitle = cleanText(title);
   const fallback = collectionTitle
     ? `${collectionTitle} на spraby: подборка авторских товаров, изделий ручной работы и вещей от независимых брендов.`
-    : DEFAULT_DESCRIPTION;
+    : SITE_DESCRIPTION;
 
   return buildSeoDescription(description, fallback);
 }

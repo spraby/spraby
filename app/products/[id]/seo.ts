@@ -4,8 +4,6 @@ type ProductSeoData = {
   id?: {toString(): string} | string | number | bigint | null;
   title?: string | null;
   description?: string | null;
-  price?: unknown;
-  final_price?: unknown;
   Brand?: {
     name?: string | null;
   } | null;
@@ -53,7 +51,13 @@ function productImageUrl(src?: string | null) {
 }
 
 function getProductPrice(product: ProductSeoData) {
-  return product.final_price || product.price || product.Variants?.[0]?.final_price || product.Variants?.[0]?.price;
+  for (const variant of product.Variants ?? []) {
+    for (const candidate of [variant?.final_price, variant?.price]) {
+      if (getPriceAmount(candidate) !== null) return candidate;
+    }
+  }
+
+  return undefined;
 }
 
 export function createMissingProductMetadata(path: string) {
@@ -123,5 +127,10 @@ export function buildProductJsonLd(product: ProductSeoData, path: string): Produ
 }
 
 export function stringifyJsonLd(value: ProductJsonLd) {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
