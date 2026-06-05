@@ -1,11 +1,12 @@
-import type {Metadata} from "next";
 import Image from "next/image";
 import Link from "next/link";
+import {createMetadata} from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "О нас — spraby",
-  description: "Познакомьтесь с командой spraby — маркетплейса изделий мастеров и ремесленников",
-};
+export const metadata = createMetadata({
+  title: "О нас",
+  description: "Познакомьтесь с командой spraby - маркетплейса авторских товаров, изделий ручной работы и вещей от независимых мастеров.",
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

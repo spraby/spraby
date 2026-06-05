@@ -2,32 +2,19 @@ import type {Metadata, Viewport} from "next";
 import '../styles/index.scss';
 import {getMainMenu} from "@/services/Settings";
 import AppShell from "@/theme/layouts/AppShell";
-import {SITE_DESCRIPTION, SITE_URL} from "@/lib/config";
+import {createMetadata} from "@/lib/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  applicationName: "spraby",
-  title: "spraby",
-  description: SITE_DESCRIPTION,
+  ...createMetadata({
+    path: "/",
+    image: "/img/hero/hero-product-1.webp",
+  }),
   icons: {
     icon: [
-      {url: "/img/favicon.svg", type: "image/svg+xml", sizes: "any"},
+      {url: "/img/favicon.svg", type: "image/svg+xml"},
     ],
     shortcut: "/img/favicon.svg",
     apple: "/img/favicon.svg",
-  },
-  openGraph: {
-    type: "website",
-    locale: "ru_BY",
-    url: "/",
-    siteName: "spraby",
-    title: "spraby",
-    description: SITE_DESCRIPTION,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "spraby",
-    description: SITE_DESCRIPTION,
   },
 };
 
@@ -39,12 +26,12 @@ export default async function RootLayout({children}: Readonly<{ children: React.
   const menu = await getMainMenu();
 
   return (
-    <html lang="ru">
-    <body>
-    <AppShell menu={menu}>
-      {children}
-    </AppShell>
-    </body>
-    </html>
+      <html lang="ru">
+      <body>
+      <AppShell menu={menu}>
+        {children}
+      </AppShell>
+      </body>
+      </html>
   );
 }

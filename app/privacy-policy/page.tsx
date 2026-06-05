@@ -1,9 +1,10 @@
-import type {Metadata} from "next";
+import {createMetadata} from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Политика конфиденциальности — spraby",
-  description: "Политика конфиденциальности маркетплейса spraby",
-};
+export const metadata = createMetadata({
+  title: "Политика конфиденциальности",
+  description: "Политика конфиденциальности spraby: порядок обработки и защиты персональных данных пользователей маркетплейса.",
+  path: "/privacy-policy",
+});
 
 export default function PrivacyPolicyPage() {
   return (

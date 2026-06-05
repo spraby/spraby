@@ -1,3 +1,0 @@
-# Закрыто от индексации (development/staging)
-User-agent: *
-Disallow: /

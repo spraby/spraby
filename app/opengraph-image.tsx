@@ -1,8 +1,8 @@
 import {ImageResponse} from "next/og";
-import {SITE_DESCRIPTION} from "@/lib/config";
+import {SITE_NAME, SITE_TAGLINE} from "@/lib/config";
 
 export const runtime = "edge";
-export const alt = "spraby — маркетплейс изделий ручной работы";
+export const alt = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const size = {
   width: 1200,
   height: 630,
@@ -74,7 +74,7 @@ export default async function OpenGraphImage() {
                 maxWidth: 610,
               }}
             >
-              {SITE_DESCRIPTION.replace(/^spraby\s—\s/, "").replace(/\.$/, "")}
+              {SITE_TAGLINE}
             </div>
           </div>
         </div>

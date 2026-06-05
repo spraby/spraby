@@ -1,7 +1,16 @@
 import {Suspense} from "react";
 import SearchPageContent from "./SearchPageContent";
+import {createMetadata} from "@/lib/seo";
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = createMetadata({
+  title: "Поиск товаров",
+  description: "Поиск авторских товаров, изделий ручной работы и товаров независимых брендов на spraby.",
+  path: "/search",
+  noIndex: true,
+  follow: true,
+});
 
 const SearchPageFallback = () => (
   <main className="px-4 py-10 sm:px-6 lg:px-8">
