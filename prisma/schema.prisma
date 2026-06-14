@@ -12,15 +12,29 @@ model users {
   id                                               BigInt           @id @default(autoincrement())
   first_name                                       String?          @db.VarChar(255)
   last_name                                        String?          @db.VarChar(255)
-  email                                            String           @unique(map: "users_email_unique") @db.VarChar(255)
-  password                                         String           @db.VarChar(255)
-  created_at                                       DateTime?        @default(now()) @db.Timestamp(0)
-  updated_at                                       DateTime?        @updatedAt @db.Timestamp(0)
-  phone                                            String?          @db.VarChar(255)
+  email                                            String                  @unique(map: "users_email_unique") @db.VarChar(255)
+  password                                         String?                 @db.VarChar(255)
+  created_at                                       DateTime?               @default(now()) @db.Timestamp(0)
+  updated_at                                       DateTime?               @updatedAt @db.Timestamp(0)
+  phone                                            String?                 @db.VarChar(255)
   audits                                           audits[]
-  brand_requests_brand_requests_reviewed_byTousers brand_requests[] @relation("brand_requests_reviewed_byTousers")
-  brand_requests_brand_requests_user_idTousers     brand_requests[] @relation("brand_requests_user_idTousers")
+  brand_requests_brand_requests_reviewed_byTousers brand_requests[]        @relation("brand_requests_reviewed_byTousers")
+  brand_requests_brand_requests_user_idTousers     brand_requests[]        @relation("brand_requests_user_idTousers")
   Brands                                           brands[]
+  password_setup_tokens                            password_setup_tokens[]
+}
+
+model password_setup_tokens {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  token      String    @unique @db.VarChar(64)
+  expires_at DateTime  @db.Timestamp(0)
+  used_at    DateTime? @db.Timestamp(0)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "password_setup_tokens_user_id_foreign")
+
+  @@index([user_id])
 }
 
 model brands {
@@ -312,6 +326,7 @@ model brand_requests {
   reviewed_by                             BigInt?
   approved_at                             DateTime? @db.Timestamp(0)
   rejected_at                             DateTime? @db.Timestamp(0)
+  notified_at                             DateTime? @db.Timestamp(0)
   created_at                              DateTime? @default(now()) @db.Timestamp(0)
   updated_at                              DateTime? @updatedAt @db.Timestamp(0)
   brands                                  brands?   @relation(fields: [brand_id], references: [id], onUpdate: NoAction, map: "brand_requests_brand_id_foreign")
