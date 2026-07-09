@@ -22,6 +22,14 @@ import {setStatistic} from "@/services/ProductStatistics";
 import {differenceInMonths, format} from "date-fns";
 import {BreadcrumbItem} from "@/types";
 import ProductCart from "@/theme/snippents/ProductCart";
+import ShippingMethodPicker, {
+  buildOrderShippingData,
+  emptyShippingSelection,
+  normalizeShippingMethods,
+  validateShippingSelection,
+  type ShippingErrors,
+  type ShippingSelection,
+} from "@/theme/snippents/ShippingMethodPicker";
 import {Splide, SplideSlide} from "react-splide-ts";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import {useCart} from "@/theme/hooks/useCart";
@@ -349,18 +357,23 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     setShowAllTags(false);
   }, [product.id]);
 
+  // Название/описание — из конструктора, поля — из снапшотов записи бренда.
+  // Используется и для инфо-блоков, и для выбора доставки в быстром заказе.
   const shippingMethods = useMemo(() => {
-    return (product.Brand?.brand_shipping_method ?? [])
-      .map((bsm: any) => bsm.shipping_methods)
-      .filter(Boolean);
+    return normalizeShippingMethods(
+      (product.Brand?.brand_shipping_method ?? []).map((bsm: any) => bsm.shipping_methods)
+    );
   }, [product]);
+
+  const [quickOrderShipping, setQuickOrderShipping] = useState<ShippingSelection>(emptyShippingSelection);
+  const [quickOrderShippingErrors, setQuickOrderShippingErrors] = useState<ShippingErrors | null>(null);
 
   const deliveryContent = useMemo(() => {
     if (!shippingMethods.length) return '';
     return (
       <div className="flex flex-col gap-3">
         {shippingMethods.map((method: any) => (
-          <div key={method.id ?? method.key} className="flex flex-col gap-1 rounded-xl border border-gray-200 px-4 py-3">
+          <div key={method.id} className="flex flex-col gap-1 rounded-xl border border-gray-200 px-4 py-3">
             <span className="text-sm font-semibold text-gray-800">{method.name}</span>
             {method.description && (
               <span className="text-xs text-gray-500">{method.description}</span>
@@ -815,6 +828,11 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                 onSubmit={
                                   handleSubmit((data) => {
                                     if (variant && product) {
+                                      const shippingValidation = validateShippingSelection(shippingMethods, quickOrderShipping);
+                                      if (shippingValidation) {
+                                        setQuickOrderShippingErrors(shippingValidation);
+                                        return;
+                                      }
                                       setSubmiting(true);
                                       createWithNotifications({
                                         data: {
@@ -855,7 +873,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                               data: {
                                                 name: data.name,
                                                 phone: `${data.phone}`,
-                                                note: data?.description ?? ''
+                                                note: data?.description ?? '',
+                                                ...buildOrderShippingData(shippingMethods, quickOrderShipping)
                                               }
                                             }
                                           }
@@ -923,6 +942,21 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           classNames={compactInputClassNames}
         />
       </div>
+      {shippingMethods.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:text-sm">Доставка</span>
+          <ShippingMethodPicker
+            methods={shippingMethods}
+            selection={quickOrderShipping}
+            errors={quickOrderShippingErrors}
+            disabled={submiting}
+            onChange={(selection) => {
+              setQuickOrderShipping(selection);
+              setQuickOrderShippingErrors(null);
+            }}
+          />
+        </div>
+      )}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
           <div className="relative h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-gray-100 sm:h-[80px] sm:w-[80px]">
@@ -1281,7 +1315,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             {shippingMethods.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 pt-2">
                 {shippingMethods.map((method: any) => (
-                  <div key={method.id ?? method.key} className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
+                  <div key={method.id} className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
                     <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>

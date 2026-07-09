@@ -2,16 +2,25 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import {useState, useMemo} from "react";
+import {useState, useMemo, useEffect} from "react";
 import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import {Input, Textarea} from "@nextui-org/input";
 import Money from "@/theme/snippents/Money";
+import ShippingMethodPicker, {
+  buildOrderShippingData,
+  emptyShippingSelection,
+  normalizeShippingMethods,
+  validateShippingSelection,
+  type ShippingErrors,
+  type ShippingSelection,
+  type StoreShippingMethod,
+} from "@/theme/snippents/ShippingMethodPicker";
 import {calculateDiscountPercent} from "@/services/utilits";
 import {createWithNotifications, sendCustomerOrderSummaryEmail} from "@/services/Orders";
+import {getShippingMethodsByBrandIds} from "@/services/ShippingMethods";
 import {format} from "date-fns";
-import {useRouter} from "next/navigation";
 import {useCart} from "@/theme/hooks/useCart";
 
 const schema = yup
@@ -50,7 +59,6 @@ type OrderResult = {
 }
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [completedOrders, setCompletedOrders] = useState<OrderResult[]>([]);
   const { items: cartItems, removeItem, updateQuantity, clearCart } = useCart();
@@ -83,6 +91,58 @@ export default function CheckoutPage() {
 
   const brandsCount = itemsByBrand.length;
 
+  // Способы доставки брендов из корзины + выбор/значения покупателя по брендам.
+  // Пока способы не загружены (или загрузка упала), оформить заказ нельзя —
+  // иначе валидация обязательного выбора доставки пройдёт по пустому списку.
+  const [shippingMethodsByBrand, setShippingMethodsByBrand] = useState<Record<string, StoreShippingMethod[]>>({});
+  const [shippingReady, setShippingReady] = useState(false);
+  const [shippingLoadFailed, setShippingLoadFailed] = useState(false);
+  const [shippingRetryNonce, setShippingRetryNonce] = useState(0);
+  const [shippingSelections, setShippingSelections] = useState<Record<string, ShippingSelection>>({});
+  const [shippingErrors, setShippingErrors] = useState<Record<string, ShippingErrors | null>>({});
+
+  const brandIdsKey = useMemo(
+    () => itemsByBrand.map(brand => brand.brandId).sort().join(','),
+    [itemsByBrand]
+  );
+
+  useEffect(() => {
+    const brandIds = brandIdsKey ? brandIdsKey.split(',') : [];
+    if (!brandIds.length) {
+      setShippingMethodsByBrand({});
+      setShippingLoadFailed(false);
+      setShippingReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setShippingReady(false);
+    setShippingLoadFailed(false);
+    getShippingMethodsByBrandIds(brandIds)
+      .then(grouped => {
+        if (cancelled) return;
+        const normalized: Record<string, StoreShippingMethod[]> = {};
+        for (const brandId of brandIds) {
+          normalized[brandId] = normalizeShippingMethods(grouped[brandId] ?? []);
+        }
+        setShippingMethodsByBrand(normalized);
+        setShippingReady(true);
+      })
+      .catch(error => {
+        console.error('Failed to load shipping methods', error);
+        if (!cancelled) setShippingLoadFailed(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [brandIdsKey, shippingRetryNonce]);
+
+  const updateShippingSelection = (brandId: string, selection: ShippingSelection) => {
+    setShippingSelections(prev => ({...prev, [brandId]: selection}));
+    setShippingErrors(prev => ({...prev, [brandId]: null}));
+  };
+
   const totalPrice = useMemo(() => {
     return cartItems.reduce((sum, item) => {
       return sum + (Number(item.finalPrice) * item.quantity);
@@ -110,7 +170,23 @@ export default function CheckoutPage() {
   }), []);
 
   const onSubmit = async (data: any) => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || !shippingReady) return;
+
+    // Выбор способа доставки обязателен для брендов, у которых способы есть
+    const nextErrors: Record<string, ShippingErrors | null> = {};
+    let hasShippingErrors = false;
+    for (const brand of itemsByBrand) {
+      const errors = validateShippingSelection(
+        shippingMethodsByBrand[brand.brandId] ?? [],
+        shippingSelections[brand.brandId] ?? emptyShippingSelection(),
+      );
+      nextErrors[brand.brandId] = errors;
+      if (errors) hasShippingErrors = true;
+    }
+    if (hasShippingErrors) {
+      setShippingErrors(nextErrors);
+      return;
+    }
 
     const isMultiBrand = itemsByBrand.length > 1;
     setSubmitting(true);
@@ -155,7 +231,11 @@ export default function CheckoutPage() {
                 data: {
                   name: data.name,
                   phone: `${data.phone}`,
-                  note: data?.description ?? ''
+                  note: data?.description ?? '',
+                  ...buildOrderShippingData(
+                    shippingMethodsByBrand[brand.brandId] ?? [],
+                    shippingSelections[brand.brandId] ?? emptyShippingSelection(),
+                  )
                 }
               }
             }
@@ -530,9 +610,22 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {shippingLoadFailed && (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-600">
+                  Не удалось загрузить способы доставки.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShippingRetryNonce(nonce => nonce + 1)}
+                    className="font-semibold underline underline-offset-2 hover:text-rose-700"
+                  >
+                    Повторить
+                  </button>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={submitting || cartItems.length === 0}
+                disabled={submitting || cartItems.length === 0 || !shippingReady}
                 className="w-full mt-6 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3.5 text-base font-semibold text-white shadow-sm transition hover:from-purple-700 hover:to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? 'Оформляем заказ...' : 'Оформить заказ'}
@@ -616,6 +709,29 @@ export default function CheckoutPage() {
                 />
               </div>
             </div>
+
+            {itemsByBrand.map((brand) => {
+              const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+              if (!methods.length) return null;
+
+              return (
+                <div key={brand.brandId} className="rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-gray-100">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Доставка</h2>
+                  {brandsCount > 1 && (
+                    <p className="text-xs text-gray-500 mb-4">Продавец: {brand.brandName}</p>
+                  )}
+                  <div className={brandsCount > 1 ? '' : 'mt-4'}>
+                    <ShippingMethodPicker
+                      methods={methods}
+                      selection={shippingSelections[brand.brandId] ?? emptyShippingSelection()}
+                      errors={shippingErrors[brand.brandId] ?? null}
+                      disabled={submitting}
+                      onChange={(selection) => updateShippingSelection(brand.brandId, selection)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </form>
       </div>

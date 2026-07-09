@@ -43,8 +43,18 @@ const getProductDetail = cache(async (productId: bigint) => {
         include: {
           User: true,
           brand_shipping_method: {
+            // Способы деактивированных конструкторов не показываем и не продаём
+            where: {
+              shipping_methods: {
+                shipping_method_constructors: {active: true}
+              }
+            },
             include: {
-              shipping_methods: true
+              shipping_methods: {
+                include: {
+                  shipping_method_constructors: true
+                }
+              }
             }
           }
         }

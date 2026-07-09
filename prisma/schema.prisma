@@ -254,14 +254,18 @@ model order_items {
 }
 
 model order_shippings {
-  id         BigInt    @id @default(autoincrement())
-  order_id   BigInt
-  name       String    @db.VarChar(255)
-  phone      String    @db.VarChar(255)
-  note       String
-  created_at DateTime? @default(now()) @db.Timestamp(0)
-  updated_at DateTime? @updatedAt @db.Timestamp(0)
-  Order      orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_shippings_order_id_foreign")
+  id                   BigInt            @id @default(autoincrement())
+  order_id             BigInt
+  name                 String            @db.VarChar(255)
+  phone                String            @db.VarChar(255)
+  note                 String
+  shipping_method_id   BigInt?
+  shipping_method_name String?           @db.VarChar(255)
+  customer_settings    Json              @default("[]")
+  created_at           DateTime?         @default(now()) @db.Timestamp(0)
+  updated_at           DateTime?         @updatedAt @db.Timestamp(0)
+  Order                orders            @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_shippings_order_id_foreign")
+  ShippingMethod       shipping_methods? @relation(fields: [shipping_method_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "order_shippings_shipping_method_id_foreign")
 }
 
 model ProductStatistics {
@@ -491,14 +495,30 @@ model contacts {
   @@index([contactable_type, contactable_id], map: "contacts_contactable_type_contactable_id_index")
 }
 
+model shipping_method_constructors {
+  id                BigInt             @id @default(autoincrement())
+  key               String?            @unique(map: "shipping_method_constructors_key_unique") @db.VarChar(255)
+  name              String             @db.VarChar(255)
+  description       String?            @db.VarChar(255)
+  active            Boolean            @default(false)
+  position          Int                @default(0)
+  merchant_settings Json               @default("{\"fields\": []}")
+  customer_settings Json               @default("{\"fields\": []}")
+  created_at        DateTime?          @default(now()) @db.Timestamp(0)
+  updated_at        DateTime?          @updatedAt @db.Timestamp(0)
+  shipping_methods  shipping_methods[]
+}
+
 model shipping_methods {
-  id                    BigInt                  @id @default(autoincrement())
-  key                   String                  @unique(map: "shipping_methods_key_unique") @db.VarChar(255)
-  name                  String                  @db.VarChar(255)
-  description           String?                 @db.VarChar(255)
-  created_at            DateTime?               @default(now()) @db.Timestamp(0)
-  updated_at            DateTime?               @updatedAt @db.Timestamp(0)
-  brand_shipping_method brand_shipping_method[]
+  id                             BigInt                       @id @default(autoincrement())
+  shipping_method_constructor_id BigInt
+  merchant_settings              Json                         @default("[]")
+  customer_settings              Json                         @default("[]")
+  created_at                     DateTime?                    @default(now()) @db.Timestamp(0)
+  updated_at                     DateTime?                    @updatedAt @db.Timestamp(0)
+  shipping_method_constructors   shipping_method_constructors @relation(fields: [shipping_method_constructor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shipping_methods_shipping_method_constructor_id_foreign")
+  brand_shipping_method          brand_shipping_method[]
+  order_shippings                order_shippings[]
 }
 
 enum order_status {
