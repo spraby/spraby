@@ -12,6 +12,8 @@ import ShippingMethodPicker, {
   buildOrderShippingData,
   emptyShippingSelection,
   normalizeShippingMethods,
+  shippingMethodCost,
+  shippingSelectionComment,
   validateShippingSelection,
   type ShippingErrors,
   type ShippingSelection,
@@ -28,7 +30,6 @@ const schema = yup
     name: yup.string().trim().required('Введите имя'),
     phone: yup.string().trim().required('Добавьте телефон'),
     email: yup.string().trim().email('Проверьте email').required('Укажите email'),
-    description: yup.string().trim()
   })
   .required()
 
@@ -59,56 +60,29 @@ type OrderResult = {
 }
 
 const VISIBLE_ITEMS_PER_BRAND = 3;
-const SHIPPING_PRICE_FIELD_KEY = 'shipping_price';
-const FREE_SHIPPING_THRESHOLD_FIELD_KEY = 'free_shipping_threshold';
-const PICKUP_CUSTOMER_FIELD_KEY = 'pickup_point';
-const PICKUP_MERCHANT_FIELD_KEY = 'pickup_points';
 
-const selectedShippingMethod = (
-  methods: StoreShippingMethod[],
-  methodId?: string | null,
-): StoreShippingMethod | null => {
-  if (!methodId) return null;
-  return methods.find(method => method.id === methodId) ?? null;
-};
+type CartItems = ReturnType<typeof useCart>['items'];
 
-const shippingMethodFieldValue = (method: StoreShippingMethod | null, fieldKey: string): string | null => {
-  const value = method?.merchantFields.find(field => field.key === fieldKey)?.value;
-  if (Array.isArray(value)) return null;
-
-  const normalized = `${value ?? ''}`.trim();
-  return normalized.length ? normalized : null;
-};
-
-const parseShippingAmount = (value: string | null): number | null => {
-  if (!value) return null;
-
-  const normalized = value.replace(/\s/g, '').replace(',', '.');
-  const amount = Number(normalized);
-  return Number.isFinite(amount) ? amount : null;
-};
-
-const isPickupShippingMethod = (method: StoreShippingMethod | null): boolean => {
-  if (!method) return false;
-
-  return method.customerFields.some(field => field.key === PICKUP_CUSTOMER_FIELD_KEY)
-    || method.merchantFields.some(field => field.key === PICKUP_MERCHANT_FIELD_KEY);
-};
-
-const brandItemsTotal = (items: ReturnType<typeof useCart>['items']): number => {
-  return items.reduce((sum, item) => sum + Number(item.finalPrice) * item.quantity, 0);
-};
-
-const shippingMethodCost = (method: StoreShippingMethod | null, brandTotal: number): number | null => {
-  const price = parseShippingAmount(shippingMethodFieldValue(method, SHIPPING_PRICE_FIELD_KEY));
-  if (price === null) return isPickupShippingMethod(method) ? 0 : null;
-
-  const freeThreshold = parseShippingAmount(shippingMethodFieldValue(method, FREE_SHIPPING_THRESHOLD_FIELD_KEY));
-  if (freeThreshold !== null && freeThreshold > 0 && brandTotal >= freeThreshold) {
-    return 0;
+/** Чипы опций варианта: структурированные, с фолбэком на разбор variantTitle. */
+const variantChipsFor = (item: CartItems[number]): { label: string, value: string, hasLabel: boolean }[] => {
+  if (item.variantOptions?.length) {
+    return item.variantOptions.map(option => ({label: option.label, value: option.value, hasLabel: true}));
   }
+  if (!item.variantTitle) return [];
 
-  return price;
+  return item.variantTitle.split(', ').map(option => {
+    const [label, ...valueParts] = option.split(': ');
+    return {label, value: valueParts.join(': ') || label, hasLabel: valueParts.length > 0};
+  });
+};
+
+type BrandSummary = {
+  total: number;
+  original: number;
+  units: number;
+  methods: StoreShippingMethod[];
+  method: StoreShippingMethod | null;
+  cost: number | null;
 };
 
 export default function CheckoutPage() {
@@ -222,60 +196,68 @@ export default function CheckoutPage() {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }, [cartItems]);
 
-  const shippingSummary = useMemo(() => {
-    if (!shippingReady) {
-      return {
-        selected: 0,
-        required: 0,
-        withoutMethods: 0,
-        amount: null as number | null,
-        label: 'Загружаем доставку',
+  // Единый источник сумм/метода/стоимости бренда для карточки, сайдбара и итога
+  const brandSummaries = useMemo(() => {
+    const summaries: Record<string, BrandSummary> = {};
+
+    for (const brand of itemsByBrand) {
+      const total = brand.items.reduce((sum, item) => sum + Number(item.finalPrice) * item.quantity, 0);
+      const original = brand.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+      const units = brand.items.reduce((sum, item) => sum + item.quantity, 0);
+      const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+      const methodId = shippingSelections[brand.brandId]?.methodId;
+      const method = methodId ? methods.find(item => item.id === methodId) ?? null : null;
+
+      summaries[brand.brandId] = {
+        total,
+        original,
+        units,
+        methods,
+        method,
+        cost: method ? shippingMethodCost(method, total) : null,
       };
     }
 
-    const required = itemsByBrand.filter(brand => (shippingMethodsByBrand[brand.brandId] ?? []).length > 0).length;
-    const selected = itemsByBrand.filter(brand => {
-      const methods = shippingMethodsByBrand[brand.brandId] ?? [];
-      return methods.length > 0 && Boolean(shippingSelections[brand.brandId]?.methodId);
-    }).length;
-    const withoutMethods = itemsByBrand.length - required;
-    let amount: number | null = null;
-    let hasUnknownCost = false;
+    return summaries;
+  }, [itemsByBrand, shippingMethodsByBrand, shippingSelections]);
 
-    if (required > 0 && selected === required) {
-      amount = 0;
+  // Известные стоимости суммируем всегда; неизвестные/невыбранные считаем
+  // отдельно, чтобы «Итого» не занижалось молча
+  const shippingSummary = useMemo(() => {
+    let knownAmount = 0;
+    let unknownCount = 0;
+    let unselectedCount = 0;
+    let required = 0;
 
+    if (shippingReady) {
       for (const brand of itemsByBrand) {
-        const methods = shippingMethodsByBrand[brand.brandId] ?? [];
-        if (methods.length === 0) continue;
+        const summary = brandSummaries[brand.brandId];
+        if (!summary || summary.methods.length === 0) continue;
 
-        const method = selectedShippingMethod(methods, shippingSelections[brand.brandId]?.methodId);
-        const cost = shippingMethodCost(method, brandItemsTotal(brand.items));
-        if (cost === null) {
-          hasUnknownCost = true;
-          break;
+        required += 1;
+        if (!summary.method) {
+          unselectedCount += 1;
+        } else if (summary.cost === null) {
+          unknownCount += 1;
+        } else {
+          knownAmount += summary.cost;
         }
-
-        amount += cost;
       }
     }
 
     return {
-      selected,
+      ready: shippingReady,
+      knownAmount,
+      unknownCount,
+      unselectedCount,
       required,
-      withoutMethods,
-      amount: hasUnknownCost ? null : amount,
-      label: required > 0
-        ? selected === required
-          ? hasUnknownCost ? 'Согласуется' : ''
-          : `${selected} из ${required} выбрано`
-        : 'Согласуется продавцами',
+      withoutMethods: itemsByBrand.length - required,
     };
-  }, [itemsByBrand, shippingMethodsByBrand, shippingReady, shippingSelections]);
+  }, [brandSummaries, itemsByBrand, shippingReady]);
 
   const checkoutTotal = useMemo(() => {
-    return totalPrice + (shippingSummary.amount ?? 0);
-  }, [shippingSummary.amount, totalPrice]);
+    return totalPrice + shippingSummary.knownAmount;
+  }, [shippingSummary.knownAmount, totalPrice]);
 
   const compactInputClassNames = useMemo(() => ({
     input: "text-sm",
@@ -307,6 +289,7 @@ export default function CheckoutPage() {
     try {
       // Создаем заказы для каждого бренда
       const orderPromises = itemsByBrand.map(async (brand) => {
+        const brandSelection = shippingSelections[brand.brandId] ?? emptyShippingSelection();
         const order = await createWithNotifications({
           data: {
             name: `#${format(new Date(), 'yyMMdd-HHmmssSSS')}`,
@@ -345,10 +328,11 @@ export default function CheckoutPage() {
                 data: {
                   name: data.name,
                   phone: `${data.phone}`,
-                  note: data?.description ?? '',
+                  note: shippingSelectionComment(brandSelection),
                   ...buildOrderShippingData(
                     shippingMethodsByBrand[brand.brandId] ?? [],
-                    shippingSelections[brand.brandId] ?? emptyShippingSelection(),
+                    brandSelection,
+                    brandSummaries[brand.brandId]?.cost ?? null,
                   )
                 }
               }
@@ -545,14 +529,15 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8 lg:pb-0">
           <section className="flex flex-col gap-5">
             {itemsByBrand.map((brand) => {
-              const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+              const summary = brandSummaries[brand.brandId];
+              const methods = summary?.methods ?? [];
               const selection = shippingSelections[brand.brandId] ?? emptyShippingSelection();
               const isExpanded = expandedBrandItems[brand.brandId] ?? false;
               const visibleItems = isExpanded ? brand.items : brand.items.slice(0, VISIBLE_ITEMS_PER_BRAND);
               const hiddenItemsCount = brand.items.length - visibleItems.length;
-              const brandTotal = brand.items.reduce((sum, item) => sum + Number(item.finalPrice) * item.quantity, 0);
-              const brandOriginal = brand.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-              const brandUnits = brand.items.reduce((sum, item) => sum + item.quantity, 0);
+              const brandTotal = summary?.total ?? 0;
+              const brandOriginal = summary?.original ?? 0;
+              const brandUnits = summary?.units ?? 0;
               const brandHasDiscount = brandOriginal > brandTotal;
               const deliveryStatus = !shippingReady
                 ? {label: 'Загружаем доставку', className: 'bg-gray-100 text-gray-600'}
@@ -630,24 +615,19 @@ export default function CheckoutPage() {
                                 </svg>
                               </button>
                             </div>
-                            {item.variantTitle && (
+                            {variantChipsFor(item).length > 0 && (
                               <div className="mt-1 flex flex-wrap gap-1.5">
-                                {item.variantTitle.split(', ').map((option, idx) => {
-                                  const [label, ...valueParts] = option.split(': ');
-                                  const value = valueParts.join(': ') || label;
-
-                                  return (
-                                    <span
-                                      key={idx}
-                                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-medium text-gray-700 ring-1 ring-gray-200"
-                                    >
-                                      {valueParts.length > 0 && (
-                                        <span className="uppercase tracking-wide text-[0.55rem] text-gray-400">{label}</span>
-                                      )}
-                                      <span className="text-gray-900">{value}</span>
-                                    </span>
-                                  );
-                                })}
+                                {variantChipsFor(item).map((chip, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-medium text-gray-700 ring-1 ring-gray-200"
+                                  >
+                                    {chip.hasLabel && (
+                                      <span className="uppercase tracking-wide text-[0.55rem] text-gray-400">{chip.label}</span>
+                                    )}
+                                    <span className="text-gray-900">{chip.value}</span>
+                                  </span>
+                                ))}
                               </div>
                             )}
                             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -717,6 +697,7 @@ export default function CheckoutPage() {
                         errors={shippingErrors[brand.brandId] ?? null}
                         disabled={submitting}
                         variant="select"
+                        brandTotal={brandTotal}
                         onChange={(selection) => updateShippingSelection(brand.brandId, selection)}
                       />
                     ) : (
@@ -798,10 +779,11 @@ export default function CheckoutPage() {
 
               <div className="mb-5 flex flex-col gap-2">
                 {itemsByBrand.map((brand) => {
-                  const brandTotal = brandItemsTotal(brand.items);
-                  const methods = shippingMethodsByBrand[brand.brandId] ?? [];
-                  const method = selectedShippingMethod(methods, shippingSelections[brand.brandId]?.methodId);
-                  const methodCost = shippingMethodCost(method, brandTotal);
+                  const summary = brandSummaries[brand.brandId];
+                  const brandTotal = summary?.total ?? 0;
+                  const methods = summary?.methods ?? [];
+                  const method = summary?.method ?? null;
+                  const methodCost = summary?.cost ?? null;
 
                   return (
                     <div key={brand.brandId} className="flex items-start justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2 text-sm">
@@ -843,13 +825,23 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-between gap-3 text-sm text-gray-600">
                   <span>Доставка</span>
                   <span className="text-right">
-                    {shippingSummary.amount !== null ? (
-                      <Money value={shippingSummary.amount}/>
+                    {!shippingSummary.ready ? (
+                      'Загружаем доставку'
                     ) : (
-                      shippingSummary.label
+                      <Money value={shippingSummary.knownAmount}/>
                     )}
                   </span>
                 </div>
+                {shippingSummary.ready && shippingSummary.unselectedCount > 0 && (
+                  <div className="rounded-lg bg-purple-50 px-3 py-2 text-xs leading-relaxed text-purple-700">
+                    Доставка выбрана у {shippingSummary.required - shippingSummary.unselectedCount} из {shippingSummary.required} продавцов — итог обновится после выбора.
+                  </div>
+                )}
+                {shippingSummary.ready && shippingSummary.unknownCount > 0 && (
+                  <div className="rounded-lg bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-600">
+                    Стоимость доставки у {shippingSummary.unknownCount === 1 ? 'одного из продавцов' : `${shippingSummary.unknownCount} продавцов`} согласуется после заказа и не входит в итог.
+                  </div>
+                )}
                 {shippingSummary.withoutMethods > 0 && (
                   <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
                     Без настроенной доставки: {shippingSummary.withoutMethods}. Условия будут согласованы после заказа.

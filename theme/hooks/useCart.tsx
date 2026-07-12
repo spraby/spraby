@@ -12,6 +12,9 @@ export type CartItem = {
   brandName?: string
   title: string
   variantTitle?: string
+  // Структурированные опции варианта; variantTitle остаётся для order_items
+  // и как фолбэк для позиций, сохранённых в localStorage до этого поля
+  variantOptions?: { label: string, value: string }[]
   image?: string | null
   price: string
   finalPrice: string

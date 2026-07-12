@@ -12,7 +12,7 @@ import {AiOutlineClose} from "react-icons/ai";
 import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import {Input, Textarea} from "@nextui-org/input";
+import {Input} from "@nextui-org/input";
 import {Accordion, AccordionItem, Snippet} from "@nextui-org/react";
 import ChevronIcon from "@/theme/assets/ChevronIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
@@ -26,6 +26,8 @@ import ShippingMethodPicker, {
   buildOrderShippingData,
   emptyShippingSelection,
   normalizeShippingMethods,
+  shippingMethodCost,
+  shippingSelectionComment,
   validateShippingSelection,
   type ShippingErrors,
   type ShippingSelection,
@@ -120,7 +122,6 @@ const schema = yup
     name: yup.string().trim().required('Введите имя'),
     phone: yup.string().trim().required('Добавьте телефон'),
     email: yup.string().trim().email('Проверьте email').required('Укажите email'),
-    description: yup.string().trim()
   })
   .required()
 
@@ -834,6 +835,9 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                         setQuickOrderShippingErrors(shippingValidation);
                                         return;
                                       }
+                                      const quickOrderTotal = Number(currentFinalPrice) * quickOrderQuantity;
+                                      const quickOrderMethod = shippingMethods.find(method => method.id === quickOrderShipping.methodId) ?? null;
+                                      const quickOrderShippingCost = quickOrderMethod ? shippingMethodCost(quickOrderMethod, quickOrderTotal) : null;
                                       setSubmiting(true);
                                       createWithNotifications({
                                         data: {
@@ -874,8 +878,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                               data: {
                                                 name: data.name,
                                                 phone: `${data.phone}`,
-                                                note: data?.description ?? '',
-                                                ...buildOrderShippingData(shippingMethods, quickOrderShipping)
+                                                note: shippingSelectionComment(quickOrderShipping),
+                                                ...buildOrderShippingData(shippingMethods, quickOrderShipping, quickOrderShippingCost)
                                               }
                                             }
                                           }
@@ -943,6 +947,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             errors={quickOrderShippingErrors}
             disabled={submiting}
             variant="select"
+            brandTotal={Number(currentFinalPrice) * quickOrderQuantity}
             onChange={(selection) => {
               setQuickOrderShipping(selection);
               setQuickOrderShippingErrors(null);
@@ -1275,6 +1280,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                     brandName: brandDisplayName || 'Продавец',
                     title: product.title,
                     variantTitle: variantSummary,
+                    variantOptions: variantDetails,
                     image: productPreviewImage,
                     price: currentPrice,
                     finalPrice: currentFinalPrice,
