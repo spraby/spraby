@@ -6,7 +6,7 @@ import {useState, useMemo, useEffect} from "react";
 import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import {Input, Textarea} from "@nextui-org/input";
+import {Input} from "@nextui-org/input";
 import Money from "@/theme/snippents/Money";
 import ShippingMethodPicker, {
   buildOrderShippingData,
@@ -58,9 +58,63 @@ type OrderResult = {
   orderId?: string;
 }
 
+const VISIBLE_ITEMS_PER_BRAND = 3;
+const SHIPPING_PRICE_FIELD_KEY = 'shipping_price';
+const FREE_SHIPPING_THRESHOLD_FIELD_KEY = 'free_shipping_threshold';
+const PICKUP_CUSTOMER_FIELD_KEY = 'pickup_point';
+const PICKUP_MERCHANT_FIELD_KEY = 'pickup_points';
+
+const selectedShippingMethod = (
+  methods: StoreShippingMethod[],
+  methodId?: string | null,
+): StoreShippingMethod | null => {
+  if (!methodId) return null;
+  return methods.find(method => method.id === methodId) ?? null;
+};
+
+const shippingMethodFieldValue = (method: StoreShippingMethod | null, fieldKey: string): string | null => {
+  const value = method?.merchantFields.find(field => field.key === fieldKey)?.value;
+  if (Array.isArray(value)) return null;
+
+  const normalized = `${value ?? ''}`.trim();
+  return normalized.length ? normalized : null;
+};
+
+const parseShippingAmount = (value: string | null): number | null => {
+  if (!value) return null;
+
+  const normalized = value.replace(/\s/g, '').replace(',', '.');
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : null;
+};
+
+const isPickupShippingMethod = (method: StoreShippingMethod | null): boolean => {
+  if (!method) return false;
+
+  return method.customerFields.some(field => field.key === PICKUP_CUSTOMER_FIELD_KEY)
+    || method.merchantFields.some(field => field.key === PICKUP_MERCHANT_FIELD_KEY);
+};
+
+const brandItemsTotal = (items: ReturnType<typeof useCart>['items']): number => {
+  return items.reduce((sum, item) => sum + Number(item.finalPrice) * item.quantity, 0);
+};
+
+const shippingMethodCost = (method: StoreShippingMethod | null, brandTotal: number): number | null => {
+  const price = parseShippingAmount(shippingMethodFieldValue(method, SHIPPING_PRICE_FIELD_KEY));
+  if (price === null) return isPickupShippingMethod(method) ? 0 : null;
+
+  const freeThreshold = parseShippingAmount(shippingMethodFieldValue(method, FREE_SHIPPING_THRESHOLD_FIELD_KEY));
+  if (freeThreshold !== null && freeThreshold > 0 && brandTotal >= freeThreshold) {
+    return 0;
+  }
+
+  return price;
+};
+
 export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [completedOrders, setCompletedOrders] = useState<OrderResult[]>([]);
+  const [expandedBrandItems, setExpandedBrandItems] = useState<Record<string, boolean>>({});
   const { items: cartItems, removeItem, updateQuantity, clearCart } = useCart();
 
   const {
@@ -164,9 +218,69 @@ export default function CheckoutPage() {
     return totalPrice + totalDiscount;
   }, [totalPrice, totalDiscount]);
 
+  const totalUnits = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cartItems]);
+
+  const shippingSummary = useMemo(() => {
+    if (!shippingReady) {
+      return {
+        selected: 0,
+        required: 0,
+        withoutMethods: 0,
+        amount: null as number | null,
+        label: 'Загружаем доставку',
+      };
+    }
+
+    const required = itemsByBrand.filter(brand => (shippingMethodsByBrand[brand.brandId] ?? []).length > 0).length;
+    const selected = itemsByBrand.filter(brand => {
+      const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+      return methods.length > 0 && Boolean(shippingSelections[brand.brandId]?.methodId);
+    }).length;
+    const withoutMethods = itemsByBrand.length - required;
+    let amount: number | null = null;
+    let hasUnknownCost = false;
+
+    if (required > 0 && selected === required) {
+      amount = 0;
+
+      for (const brand of itemsByBrand) {
+        const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+        if (methods.length === 0) continue;
+
+        const method = selectedShippingMethod(methods, shippingSelections[brand.brandId]?.methodId);
+        const cost = shippingMethodCost(method, brandItemsTotal(brand.items));
+        if (cost === null) {
+          hasUnknownCost = true;
+          break;
+        }
+
+        amount += cost;
+      }
+    }
+
+    return {
+      selected,
+      required,
+      withoutMethods,
+      amount: hasUnknownCost ? null : amount,
+      label: required > 0
+        ? selected === required
+          ? hasUnknownCost ? 'Согласуется' : ''
+          : `${selected} из ${required} выбрано`
+        : 'Согласуется продавцами',
+    };
+  }, [itemsByBrand, shippingMethodsByBrand, shippingReady, shippingSelections]);
+
+  const checkoutTotal = useMemo(() => {
+    return totalPrice + (shippingSummary.amount ?? 0);
+  }, [shippingSummary.amount, totalPrice]);
+
   const compactInputClassNames = useMemo(() => ({
     input: "text-sm",
-    label: "text-xs font-medium text-gray-500"
+    label: "text-xs font-medium text-gray-500",
+    inputWrapper: "!rounded-xl",
   }), []);
 
   const onSubmit = async (data: any) => {
@@ -428,239 +542,198 @@ export default function CheckoutPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Оформление заказа</h1>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Левая колонка - Контактные данные */}
-          <div className="flex flex-col gap-6 lg:order-2">
-            <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Ваш заказ</h2>
-                {brandsCount > 1 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z"/>
-                    </svg>
-                    {brandsCount} заказа
-                  </span>
-                )}
-              </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8 lg:pb-0">
+          <section className="flex flex-col gap-5">
+            {itemsByBrand.map((brand) => {
+              const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+              const selection = shippingSelections[brand.brandId] ?? emptyShippingSelection();
+              const isExpanded = expandedBrandItems[brand.brandId] ?? false;
+              const visibleItems = isExpanded ? brand.items : brand.items.slice(0, VISIBLE_ITEMS_PER_BRAND);
+              const hiddenItemsCount = brand.items.length - visibleItems.length;
+              const brandTotal = brand.items.reduce((sum, item) => sum + Number(item.finalPrice) * item.quantity, 0);
+              const brandOriginal = brand.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+              const brandUnits = brand.items.reduce((sum, item) => sum + item.quantity, 0);
+              const brandHasDiscount = brandOriginal > brandTotal;
+              const deliveryStatus = !shippingReady
+                ? {label: 'Загружаем доставку', className: 'bg-gray-100 text-gray-600'}
+                : methods.length === 0
+                  ? {label: 'Доставка не заполнена', className: 'bg-amber-100 text-amber-700'}
+                  : selection.methodId
+                    ? {label: 'Доставка выбрана', className: 'bg-green-100 text-green-700'}
+                    : {label: 'Выберите доставку', className: 'bg-purple-100 text-purple-700'};
 
-              {brandsCount > 1 && (
-                <div className="mb-4 rounded-lg bg-blue-50 border border-blue-100 p-3">
-                  <p className="text-xs text-blue-900 leading-relaxed">
-                    Вы заказываете товары от {brandsCount} продавцов. Будет создано {brandsCount} отдельных заказа.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-6 mb-6">
-                {itemsByBrand.map((brand, brandIndex) => (
-                  <div key={brand.brandId} className="flex flex-col gap-3">
-                    {brandsCount > 1 && (
-                      <div className="flex items-center gap-2 pb-2">
-                        <div className="h-px flex-1 bg-gray-200"></div>
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          {brand.brandName}
-                        </span>
-                        <div className="h-px flex-1 bg-gray-200"></div>
+              return (
+                <div key={brand.brandId} className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h2 className="truncate text-base font-semibold text-gray-900 sm:text-lg">{brand.brandName}</h2>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {brand.items.length} поз. · {brandUnits} шт.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${deliveryStatus.className}`}>
+                        {deliveryStatus.label}
+                      </span>
+                      <div className="text-right">
+                        <Money value={brandTotal} className="text-base font-bold text-purple-600"/>
+                        {brandHasDiscount && (
+                          <Money value={brandOriginal} showIcon={false} className="ml-2 text-xs text-gray-400 line-through"/>
+                        )}
                       </div>
-                    )}
+                    </div>
+                  </div>
 
-                    {brand.items.map((item) => {
+                  <div className="mt-4 flex flex-col gap-2">
+                    {visibleItems.map((item) => {
                       const discountPercent = calculateDiscountPercent(Number(item.price), Number(item.finalPrice));
                       const hasDiscount = discountPercent > 0;
-
-                      // Формируем ссылку на товар с параметром variantId
                       const productUrl = item.variantId
                         ? `/products/${item.productId}?variantId=${item.variantId}`
                         : `/products/${item.productId}`;
 
                       return (
-                        <div key={item.id} className="flex gap-4 p-4 rounded-xl bg-gray-50 group relative">
-                          {/* Кликабельная область */}
+                        <div key={item.id} className="flex gap-3 rounded-xl bg-gray-50 p-3">
                           <Link
                             href={productUrl}
-                            className="absolute inset-0 z-0 rounded-xl transition-colors group-hover:bg-gray-100"
+                            className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100"
                             aria-label={`Перейти к товару ${item.title}`}
-                          />
-
-                          {/* Изображение */}
-                          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 z-10 pointer-events-none">
+                          >
                             {item.image ? (
                               <Image
                                 src={item.image}
                                 alt={item.title}
                                 fill
-                                sizes="80px"
+                                sizes="56px"
                                 className="object-cover object-center"
                               />
                             ) : (
-                              <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-gray-400">
+                              <span className="flex h-full w-full items-center justify-center text-[0.62rem] font-semibold text-gray-400">
                                 Нет фото
                               </span>
                             )}
-                          </div>
+                          </Link>
 
-                          {/* Контент */}
-                          <div className="flex flex-1 flex-col gap-2 z-10 pointer-events-none">
-                            <Link
-                              href={productUrl}
-                              className="text-sm font-semibold text-gray-900 leading-tight group-hover:text-purple-600 transition-colors pointer-events-auto relative z-20"
-                            >
-                              {item.title}
-                            </Link>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <Link href={productUrl} className="line-clamp-2 text-sm font-semibold leading-tight text-gray-900 transition hover:text-purple-600">
+                                {item.title}
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.id)}
+                                className="flex-shrink-0 text-gray-400 transition hover:text-red-500"
+                                aria-label="Удалить товар"
+                              >
+                                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+                                </svg>
+                              </button>
+                            </div>
                             {item.variantTitle && (
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="mt-1 flex flex-wrap gap-1.5">
                                 {item.variantTitle.split(', ').map((option, idx) => {
-                                  const [label, value] = option.split(': ');
+                                  const [label, ...valueParts] = option.split(': ');
+                                  const value = valueParts.join(': ') || label;
+
                                   return (
                                     <span
                                       key={idx}
-                                      className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[0.68rem] font-medium text-gray-700 ring-1 ring-gray-200 sm:text-xs"
+                                      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-medium text-gray-700 ring-1 ring-gray-200"
                                     >
-                                      <span className="uppercase tracking-wide text-[0.55rem] text-gray-400">{label}</span>
+                                      {valueParts.length > 0 && (
+                                        <span className="uppercase tracking-wide text-[0.55rem] text-gray-400">{label}</span>
+                                      )}
                                       <span className="text-gray-900">{value}</span>
                                     </span>
                                   );
                                 })}
                               </div>
                             )}
-                            <div className="flex items-center justify-between mt-auto pointer-events-auto">
-                              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white relative z-20">
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center rounded-lg border border-gray-200 bg-white">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    updateQuantity(item.id, item.quantity - 1);
-                                  }}
-                                  className="px-3 py-1 text-gray-600 hover:text-purple-600 transition"
+                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  className="px-2.5 py-1 text-sm text-gray-600 transition hover:text-purple-600"
                                 >
                                   −
                                 </button>
-                                <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
+                                <span className="min-w-[1.5rem] text-center text-sm font-medium text-gray-900">
                                   {item.quantity}
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    updateQuantity(item.id, item.quantity + 1);
-                                  }}
-                                  className="px-3 py-1 text-gray-600 hover:text-purple-600 transition"
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  className="px-2.5 py-1 text-sm text-gray-600 transition hover:text-purple-600"
                                 >
                                   +
                                 </button>
                               </div>
-                              <div className="flex flex-wrap items-center justify-end gap-2.5 pointer-events-none">
-                                <Money value={item.finalPrice} className="text-purple-600 text-base font-bold"/>
+                              <div className="flex items-center gap-2">
+                                <Money value={item.finalPrice} className="text-sm font-bold text-purple-600"/>
                                 {hasDiscount && (
-                                  <Money
-                                    value={item.price}
-                                    showIcon={false}
-                                    className="text-gray-400 line-through text-xs"
-                                  />
-                                )}
-                                {hasDiscount && (
-                                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">
+                                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[0.65rem] font-semibold text-rose-600">
                                     -{discountPercent}%
                                   </span>
                                 )}
                               </div>
                             </div>
                           </div>
-
-                          {/* Кнопка удаления */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              removeItem(item.id);
-                            }}
-                            className="text-gray-400 hover:text-red-500 transition self-start relative z-20 pointer-events-auto"
-                            aria-label="Удалить товар"
-                          >
-                            <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
-                            </svg>
-                          </button>
                         </div>
                       );
                     })}
+
+                    {hiddenItemsCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedBrandItems(prev => ({...prev, [brand.brandId]: true}))}
+                        className="rounded-xl border border-dashed border-gray-200 py-2 text-sm font-semibold text-gray-600 transition hover:border-purple-200 hover:text-purple-600"
+                      >
+                        Показать еще {hiddenItemsCount}
+                      </button>
+                    )}
+                    {isExpanded && brand.items.length > VISIBLE_ITEMS_PER_BRAND && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedBrandItems(prev => ({...prev, [brand.brandId]: false}))}
+                        className="self-start text-xs font-semibold text-gray-500 transition hover:text-purple-600"
+                      >
+                        Свернуть товары
+                      </button>
+                    )}
                   </div>
-                ))}
-              </div>
 
-              <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>Товары ({cartItems.length})</span>
-                  <Money value={originalTotal}/>
-                </div>
-                {totalDiscount > 0 && (
-                  <div className="flex items-center justify-between text-sm text-green-600">
-                    <span>Скидка</span>
-                    <Money value={-totalDiscount}/>
+                  <div className="mt-4 border-t border-gray-100 pt-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Доставка</p>
+                    {!shippingReady ? (
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                        Загружаем способы доставки...
+                      </div>
+                    ) : methods.length > 0 ? (
+                      <ShippingMethodPicker
+                        methods={methods}
+                        selection={selection}
+                        errors={shippingErrors[brand.brandId] ?? null}
+                        disabled={submitting}
+                        variant="select"
+                        onChange={(selection) => updateShippingSelection(brand.brandId, selection)}
+                      />
+                    ) : (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p className="text-sm font-semibold text-amber-900">
+                          Продавец {brand.brandName} не заполнил способы доставки.
+                        </p>
+                        <p className="mt-1.5 text-sm leading-relaxed text-amber-800">
+                          {brand.brandName} свяжется с вами и согласует условия доставки после заказа.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="h-px bg-gray-200"></div>
-                <div className="flex items-center justify-between text-lg font-bold text-gray-900">
-                  <span>Итого</span>
-                  <Money value={totalPrice} className="text-purple-600 text-lg font-bold"/>
                 </div>
-              </div>
+              );
+            })}
 
-              {shippingLoadFailed && (
-                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-600">
-                  Не удалось загрузить способы доставки.{' '}
-                  <button
-                    type="button"
-                    onClick={() => setShippingRetryNonce(nonce => nonce + 1)}
-                    className="font-semibold underline underline-offset-2 hover:text-rose-700"
-                  >
-                    Повторить
-                  </button>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting || cartItems.length === 0 || !shippingReady}
-                className="w-full mt-6 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3.5 text-base font-semibold text-white shadow-sm transition hover:from-purple-700 hover:to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitting ? 'Оформляем заказ...' : 'Оформить заказ'}
-              </button>
-            </div>
-
-            <div className="rounded-2xl bg-purple-50 p-6 border border-purple-100">
-              <div className="flex flex-col gap-3 text-sm text-gray-700">
-                <p className="font-semibold text-purple-900">Гарантия безопасности</p>
-                <ul className="flex flex-col gap-2 text-xs">
-                  <li className="flex items-start gap-2">
-                    <svg className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                    </svg>
-                    <span>Защита персональных данных</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                    </svg>
-                    <span>Связь напрямую с продавцом</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                    </svg>
-                    <span>Отслеживание статуса заказа</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Правая колонка - Контактные данные */}
-          <div className="flex flex-col gap-6 lg:order-1">
             <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Контактные данные</h2>
               <div className="flex flex-col gap-5">
@@ -697,41 +770,167 @@ export default function CheckoutPage() {
                   isInvalid={!!errors.email?.message?.length}
                   classNames={compactInputClassNames}
                 />
-                <Textarea
-                  {...register('description')}
-                  disabled={submitting}
-                  label="Комментарий к заказу"
-                  placeholder="Укажите пожелания по доставке или другую важную информацию"
-                  variant="bordered"
-                  size="lg"
-                  minRows={3}
-                  classNames={compactInputClassNames}
-                />
               </div>
             </div>
+          </section>
 
-            {itemsByBrand.map((brand) => {
-              const methods = shippingMethodsByBrand[brand.brandId] ?? [];
-              if (!methods.length) return null;
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
+            <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Итого</h2>
+                {brandsCount > 1 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z"/>
+                    </svg>
+                    {brandsCount} заказа
+                  </span>
+                )}
+              </div>
 
-              return (
-                <div key={brand.brandId} className="rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Доставка</h2>
-                  {brandsCount > 1 && (
-                    <p className="text-xs text-gray-500 mb-4">Продавец: {brand.brandName}</p>
-                  )}
-                  <div className={brandsCount > 1 ? '' : 'mt-4'}>
-                    <ShippingMethodPicker
-                      methods={methods}
-                      selection={shippingSelections[brand.brandId] ?? emptyShippingSelection()}
-                      errors={shippingErrors[brand.brandId] ?? null}
-                      disabled={submitting}
-                      onChange={(selection) => updateShippingSelection(brand.brandId, selection)}
-                    />
-                  </div>
+              {brandsCount > 1 && (
+                <div className="mb-4 rounded-lg bg-blue-50 border border-blue-100 p-3">
+                  <p className="text-xs text-blue-900 leading-relaxed">
+                    Товары разделены по продавцам. Для каждого продавца будет создан отдельный заказ.
+                  </p>
                 </div>
-              );
-            })}
+              )}
+
+              <div className="mb-5 flex flex-col gap-2">
+                {itemsByBrand.map((brand) => {
+                  const brandTotal = brandItemsTotal(brand.items);
+                  const methods = shippingMethodsByBrand[brand.brandId] ?? [];
+                  const method = selectedShippingMethod(methods, shippingSelections[brand.brandId]?.methodId);
+                  const methodCost = shippingMethodCost(method, brandTotal);
+
+                  return (
+                    <div key={brand.brandId} className="flex items-start justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2 text-sm">
+                      <span className="min-w-0">
+                        <span className="block truncate text-gray-700">{brand.brandName}</span>
+                        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[0.68rem] leading-tight text-gray-500">
+                          {!shippingReady ? (
+                            <span>Доставка загружается</span>
+                          ) : method ? (
+                            <>
+                              <span className="max-w-full truncate">{method.name}</span>
+                              <span aria-hidden="true">·</span>
+                              {methodCost !== null ? (
+                                <Money value={methodCost} className="font-medium text-gray-700"/>
+                              ) : (
+                                <span>стоимость согласуется</span>
+                              )}
+                            </>
+                          ) : methods.length > 0 ? (
+                            <span>Доставка не выбрана</span>
+                          ) : (
+                            <span>Доставка согласуется</span>
+                          )}
+                        </span>
+                      </span>
+                      <span className="flex-shrink-0 font-semibold text-gray-900">
+                        <Money value={brandTotal}/>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Товары ({totalUnits})</span>
+                  <Money value={originalTotal}/>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm text-gray-600">
+                  <span>Доставка</span>
+                  <span className="text-right">
+                    {shippingSummary.amount !== null ? (
+                      <Money value={shippingSummary.amount}/>
+                    ) : (
+                      shippingSummary.label
+                    )}
+                  </span>
+                </div>
+                {shippingSummary.withoutMethods > 0 && (
+                  <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
+                    Без настроенной доставки: {shippingSummary.withoutMethods}. Условия будут согласованы после заказа.
+                  </div>
+                )}
+                {totalDiscount > 0 && (
+                  <div className="flex items-center justify-between text-sm text-green-600">
+                    <span>Скидка</span>
+                    <Money value={-totalDiscount}/>
+                  </div>
+                )}
+                <div className="h-px bg-gray-200"></div>
+                <div className="flex items-center justify-between text-lg font-bold text-gray-900">
+                  <span>Итого</span>
+                  <Money value={checkoutTotal} className="text-purple-600 text-lg font-bold"/>
+                </div>
+              </div>
+
+              {shippingLoadFailed && (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-600">
+                  Не удалось загрузить способы доставки.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShippingRetryNonce(nonce => nonce + 1)}
+                    className="font-semibold underline underline-offset-2 hover:text-rose-700"
+                  >
+                    Повторить
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting || cartItems.length === 0 || !shippingReady}
+                className="mt-6 hidden w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3.5 text-base font-semibold text-white shadow-sm transition hover:from-purple-700 hover:to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60 lg:block"
+              >
+                {submitting ? 'Оформляем заказ...' : 'Оформить заказ'}
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-purple-50 p-6 border border-purple-100">
+              <div className="flex flex-col gap-3 text-sm text-gray-700">
+                <p className="font-semibold text-purple-900">Гарантия безопасности</p>
+                <ul className="flex flex-col gap-2 text-xs">
+                  <li className="flex items-start gap-2">
+                    <svg className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                    <span>Защита персональных данных</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                    <span>Связь напрямую с продавцом</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                    <span>Отслеживание статуса заказа</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </aside>
+
+          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
+            <div className="mx-auto flex max-w-6xl items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-500">{totalUnits} шт. · продавцов: {brandsCount}</p>
+                <Money value={checkoutTotal} className="text-lg font-bold text-purple-600"/>
+              </div>
+              <button
+                type="submit"
+                disabled={submitting || cartItems.length === 0 || !shippingReady}
+                className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-purple-700 hover:to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? 'Оформляем...' : 'Оформить'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

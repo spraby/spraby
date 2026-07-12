@@ -1,5 +1,6 @@
 'use client'
 
+import {useId} from 'react';
 import {Input, Textarea} from "@nextui-org/input";
 
 export type StoreShippingField = {
@@ -38,6 +39,18 @@ const OPTION_SOURCES: Record<string, string> = {
 };
 
 const OPTIONAL_CUSTOMER_FIELDS = ['comments'];
+const DEFAULT_HIDDEN_MERCHANT_INFO_KEYS: string[] = [];
+const SHIPPING_METHOD_SUMMARY_KEYS = ['shipping_price', 'free_shipping_threshold', 'delivery_time'];
+const SHIPPING_PRICE_FIELD_KEY = 'shipping_price';
+const PICKUP_CUSTOMER_FIELD_KEY = 'pickup_point';
+const PICKUP_MERCHANT_FIELD_KEY = 'pickup_points';
+const FIELD_CONTROL_RADIUS_CLASS = 'rounded-xl';
+const NEXTUI_FIELD_CONTROL_RADIUS_CLASS = '!rounded-xl';
+const SELECT_FIELD_PLACEHOLDERS: Record<string, string> = {
+  city: 'Выберите город',
+  country: 'Выберите страну',
+  pickup_point: 'Выберите пункт самовывоза',
+};
 
 /**
  * Строки shipping_methods (serializeObject) → модель для UI.
@@ -68,6 +81,37 @@ const merchantOptionsFor = (method: StoreShippingMethod, customerKey: string): s
 
 const hasMerchantValue = (field: StoreShippingField): boolean => {
   return Array.isArray(field.value) ? field.value.length > 0 : `${field.value ?? ''}`.trim().length > 0;
+};
+
+const fieldValueText = (field: StoreShippingField): string => {
+  return Array.isArray(field.value)
+    ? field.value.filter(Boolean).join(', ')
+    : `${field.value ?? ''}`.trim();
+};
+
+const isPickupShippingMethod = (method: StoreShippingMethod): boolean => {
+  return method.customerFields.some(field => field.key === PICKUP_CUSTOMER_FIELD_KEY)
+    || method.merchantFields.some(field => field.key === PICKUP_MERCHANT_FIELD_KEY);
+};
+
+const methodSummaryFields = (method: StoreShippingMethod): StoreShippingField[] => {
+  const fields = SHIPPING_METHOD_SUMMARY_KEYS
+    .map(key => method.merchantFields.find(field => field.key === key))
+    .filter((field): field is StoreShippingField => Boolean(field && hasMerchantValue(field)));
+
+  const hasShippingPrice = fields.some(field => field.key === SHIPPING_PRICE_FIELD_KEY);
+  if (!hasShippingPrice && isPickupShippingMethod(method)) {
+    return [
+      {key: SHIPPING_PRICE_FIELD_KEY, name: 'Стоимость доставки', type: 'string', value: '0'},
+      ...fields,
+    ];
+  }
+
+  return fields;
+};
+
+const selectFieldPlaceholder = (field: StoreShippingField): string => {
+  return SELECT_FIELD_PLACEHOLDERS[field.key] ?? `Выберите ${field.name.toLocaleLowerCase('ru-RU')}`;
 };
 
 /**
@@ -134,19 +178,24 @@ export default function ShippingMethodPicker({
   selection,
   errors,
   disabled,
+  variant = 'cards',
+  hiddenMerchantInfoKeys = DEFAULT_HIDDEN_MERCHANT_INFO_KEYS,
   onChange,
 }: {
   methods: StoreShippingMethod[];
   selection: ShippingSelection;
   errors: ShippingErrors | null;
   disabled?: boolean;
+  variant?: 'cards' | 'select';
+  hiddenMerchantInfoKeys?: string[];
   onChange: (selection: ShippingSelection) => void;
 }) {
+  const fieldIdPrefix = useId();
   if (!methods.length) return null;
 
   const selectMethod = (methodId: string) => {
     if (disabled || selection.methodId === methodId) return;
-    onChange({methodId, values: {}});
+    onChange(methodId ? {methodId, values: {}} : emptyShippingSelection());
   };
 
   const setValue = (key: string, value: string) => {
@@ -155,8 +204,186 @@ export default function ShippingMethodPicker({
 
   const inputClassNames = {
     input: "text-sm",
-    label: "text-xs font-medium text-gray-500"
+    label: "text-xs font-medium text-gray-500",
+    inputWrapper: NEXTUI_FIELD_CONTROL_RADIUS_CLASS,
   };
+
+  const selectedMethod = methods.find(method => method.id === selection.methodId);
+
+  const renderMethodDetails = (
+    method: StoreShippingMethod,
+    showTopBorder = true,
+    additionalHiddenMerchantInfoKeys: string[] = [],
+    compactSelectFields = false,
+  ) => {
+    const infoFields = method.merchantFields.filter(field => {
+      if (!hasMerchantValue(field)) return false;
+      if ([...hiddenMerchantInfoKeys, ...additionalHiddenMerchantInfoKeys].includes(field.key)) return false;
+      // Список, из которого покупатель выбирает в парном поле — не дублируем в инфо
+      const pairedCustomerKey = Object.keys(OPTION_SOURCES).find(key => OPTION_SOURCES[key] === field.key);
+      return !(pairedCustomerKey && method.customerFields.some(f => f.key === pairedCustomerKey));
+    });
+
+    if (infoFields.length === 0 && method.customerFields.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className={`flex flex-col gap-4 p-4 ${showTopBorder ? 'border-t border-purple-100' : ''}`}>
+        {infoFields.length > 0 && (
+          <div className="grid gap-1.5">
+            {infoFields.map(field => (
+              <div key={field.key} className="min-w-0 overflow-x-auto whitespace-nowrap text-xs no-scrollbar">
+                <span className="text-gray-500">{field.name}: </span>
+                <span className="font-medium text-gray-800">{fieldValueText(field)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {method.customerFields.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {method.customerFields.map(field => {
+              const options = merchantOptionsFor(method, field.key);
+              const value = selection.values[field.key] ?? '';
+              const error = errors?.fieldErrors[field.key];
+              const isWideField = field.key === 'pickup_point' || field.key === 'comments';
+
+              if (options.length > 0) {
+                const placeholder = compactSelectFields ? selectFieldPlaceholder(field) : 'Выберите...';
+
+                return (
+                  <div key={field.key} className={`flex flex-col ${compactSelectFields ? '' : 'gap-1'} ${isWideField ? 'sm:col-span-2' : ''}`}>
+                    {!compactSelectFields && (
+                      <label className="text-xs font-medium text-gray-500" htmlFor={`${fieldIdPrefix}-${method.id}-${field.key}`}>
+                        {field.name}
+                      </label>
+                    )}
+                    <div className="relative">
+                      <select
+                        id={`${fieldIdPrefix}-${method.id}-${field.key}`}
+                        value={value}
+                        disabled={disabled}
+                        aria-label={field.name}
+                        onChange={(e) => setValue(field.key, e.target.value)}
+                        className={`w-full appearance-none ${FIELD_CONTROL_RADIUS_CLASS} border-2 bg-white px-4 py-3 pr-11 text-sm font-semibold outline-none transition focus:border-purple-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${!value && compactSelectFields ? 'text-gray-500' : 'text-gray-900'} ${error ? 'border-rose-300' : 'border-gray-200'}`}
+                      >
+                        <option value="">{placeholder}</option>
+                        {options.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                      >
+                        <path fillRule="evenodd" d="M5.22 7.22a.75.75 0 011.06 0L10 10.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 8.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
+                    {error && <p className="text-xs text-rose-500">{error}</p>}
+                  </div>
+                );
+              }
+
+              if (field.key === 'comments') {
+                return (
+                  <div key={field.key} className="sm:col-span-2">
+                    <Textarea
+                      value={value}
+                      disabled={disabled}
+                      variant="bordered"
+                      label={field.name}
+                      size="sm"
+                      minRows={2}
+                      errorMessage={error}
+                      isInvalid={!!error}
+                      classNames={inputClassNames}
+                      onValueChange={(next) => setValue(field.key, next)}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <Input
+                  key={field.key}
+                  value={value}
+                  disabled={disabled}
+                  variant="bordered"
+                  label={field.name}
+                  size="sm"
+                  type={field.type === 'number' ? 'number' : 'text'}
+                  errorMessage={error}
+                  isInvalid={!!error}
+                  classNames={inputClassNames}
+                  onValueChange={(next) => setValue(field.key, next)}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const selectedMethodSummaryFields = selectedMethod ? methodSummaryFields(selectedMethod) : [];
+  const selectedMethodDetails = selectedMethod
+    ? renderMethodDetails(selectedMethod, false, SHIPPING_METHOD_SUMMARY_KEYS, true)
+    : null;
+
+  if (variant === 'select') {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-gray-500" htmlFor={`${fieldIdPrefix}-method`}>
+            Способ доставки
+          </label>
+          <div className="relative">
+            <select
+              id={`${fieldIdPrefix}-method`}
+              value={selection.methodId ?? ''}
+              disabled={disabled}
+              onChange={(event) => selectMethod(event.target.value)}
+              className={`w-full appearance-none ${FIELD_CONTROL_RADIUS_CLASS} border-2 bg-white px-3 py-2.5 pr-10 text-sm font-semibold text-gray-900 outline-none transition focus:border-purple-400 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${errors?.methodError ? 'border-rose-300' : 'border-gray-200'}`}
+            >
+              <option value="">Выберите способ доставки</option>
+              {methods.map(method => (
+                <option key={method.id} value={method.id}>{method.name}</option>
+              ))}
+            </select>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+            >
+              <path fillRule="evenodd" d="M5.22 7.22a.75.75 0 011.06 0L10 10.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 8.28a.75.75 0 010-1.06z" clipRule="evenodd"/>
+            </svg>
+          </div>
+          {errors?.methodError && (
+            <p className="text-xs font-medium text-rose-500">{errors.methodError}</p>
+          )}
+          {selectedMethodSummaryFields.length > 0 && (
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs leading-relaxed text-gray-500">
+              {selectedMethodSummaryFields.map(field => (
+                <span key={field.key} className="whitespace-nowrap">
+                  {field.name}: <span className="font-medium text-gray-800">{fieldValueText(field)}</span>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+
+        {selectedMethodDetails && (
+          <div className="rounded-xl border border-purple-100 bg-purple-50/30">
+            {selectedMethodDetails}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -166,12 +393,6 @@ export default function ShippingMethodPicker({
 
       {methods.map((method) => {
         const isSelected = selection.methodId === method.id;
-        const infoFields = method.merchantFields.filter(field => {
-          if (!hasMerchantValue(field)) return false;
-          // Список, из которого покупатель выбирает в парном поле — не дублируем в инфо
-          const pairedCustomerKey = Object.keys(OPTION_SOURCES).find(key => OPTION_SOURCES[key] === field.key);
-          return !(pairedCustomerKey && method.customerFields.some(f => f.key === pairedCustomerKey));
-        });
 
         return (
           <div
@@ -198,89 +419,7 @@ export default function ShippingMethodPicker({
               </span>
             </button>
 
-            {isSelected && (infoFields.length > 0 || method.customerFields.length > 0) && (
-              <div className="flex flex-col gap-4 border-t border-purple-100 p-4">
-                {infoFields.length > 0 && (
-                  <div className="flex flex-col gap-1.5">
-                    {infoFields.map(field => (
-                      <div key={field.key} className="flex flex-wrap gap-1.5 text-xs">
-                        <span className="text-gray-500">{field.name}:</span>
-                        <span className="font-medium text-gray-800">
-                          {Array.isArray(field.value) ? field.value.join(', ') : field.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {method.customerFields.length > 0 && (
-                  <div className="flex flex-col gap-3">
-                    {method.customerFields.map(field => {
-                      const options = merchantOptionsFor(method, field.key);
-                      const value = selection.values[field.key] ?? '';
-                      const error = errors?.fieldErrors[field.key];
-
-                      if (options.length > 0) {
-                        return (
-                          <div key={field.key} className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-500" htmlFor={`shipping-${method.id}-${field.key}`}>
-                              {field.name}
-                            </label>
-                            <select
-                              id={`shipping-${method.id}-${field.key}`}
-                              value={value}
-                              disabled={disabled}
-                              onChange={(e) => setValue(field.key, e.target.value)}
-                              className={`w-full rounded-xl border-2 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-purple-400 ${error ? 'border-rose-300' : 'border-gray-200'}`}
-                            >
-                              <option value="">Выберите...</option>
-                              {options.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                              ))}
-                            </select>
-                            {error && <p className="text-xs text-rose-500">{error}</p>}
-                          </div>
-                        );
-                      }
-
-                      if (field.key === 'comments') {
-                        return (
-                          <Textarea
-                            key={field.key}
-                            value={value}
-                            disabled={disabled}
-                            variant="bordered"
-                            label={field.name}
-                            size="sm"
-                            minRows={2}
-                            errorMessage={error}
-                            isInvalid={!!error}
-                            classNames={inputClassNames}
-                            onValueChange={(next) => setValue(field.key, next)}
-                          />
-                        );
-                      }
-
-                      return (
-                        <Input
-                          key={field.key}
-                          value={value}
-                          disabled={disabled}
-                          variant="bordered"
-                          label={field.name}
-                          size="sm"
-                          type={field.type === 'number' ? 'number' : 'text'}
-                          errorMessage={error}
-                          isInvalid={!!error}
-                          classNames={inputClassNames}
-                          onValueChange={(next) => setValue(field.key, next)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+            {isSelected && renderMethodDetails(method)}
           </div>
         );
       })}

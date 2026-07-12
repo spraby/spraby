@@ -821,7 +821,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 
   const compactInputClassNames = useMemo(() => ({
     input: "text-sm",
-    label: "text-xs font-medium text-gray-500"
+    label: "text-xs font-medium text-gray-500",
+    inputWrapper: "!rounded-xl",
   }), []);
 
   const orderFormMarkup = <form className={'relative flex h-full max-h-[100vh] min-h-0 flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-6'}
@@ -932,15 +933,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           isInvalid={!!errors.email?.message?.length}
           classNames={compactInputClassNames}
         />
-        <Textarea
-          {...register('description')}
-          disabled={submiting}
-          label="Комментарий к заказу"
-          variant="bordered"
-          size="sm"
-          minRows={2}
-          classNames={compactInputClassNames}
-        />
       </div>
       {shippingMethods.length > 0 && (
         <div className="flex flex-col gap-4">
@@ -950,6 +942,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             selection={quickOrderShipping}
             errors={quickOrderShippingErrors}
             disabled={submiting}
+            variant="select"
             onChange={(selection) => {
               setQuickOrderShipping(selection);
               setQuickOrderShippingErrors(null);
