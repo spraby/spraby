@@ -8,6 +8,7 @@ import {
   sendOrderEmails,
 } from "@/lib/email/send";
 import {calculateDiscountPercent} from "@/services/utilits";
+import {computeShippingCost, normalizeMerchantFields} from "@/services/shipping";
 import {SITE_URL} from "@/lib/config";
 
 type NotificationOptions = {
@@ -100,6 +101,16 @@ const buildOrderEmailData = (order: OrderWithEmailRelations) => {
     : firstItem.title
   const variantTitle = firstItem.variant_title || undefined
 
+  // Финансовый снапшот заказа. Старый заказ (total NULL) — строк доставки
+  // в письме нет, итог из позиций; новый — доставка и итог из колонок orders
+  const hasTotals = order.total !== null && order.total !== undefined
+  const shippingPrice = !hasTotals
+    ? undefined
+    : order.shipping_price !== null && order.shipping_price !== undefined
+      ? Number(order.shipping_price).toFixed(2)
+      : null
+  const orderTotal = hasTotals ? Number(order.total).toFixed(2) : undefined
+
   return {
     orderItems,
     totalPrice,
@@ -107,7 +118,86 @@ const buildOrderEmailData = (order: OrderWithEmailRelations) => {
     productTitle,
     variantTitle,
     productImage: orderItems[0]?.image,
+    shippingPrice,
+    orderTotal,
   }
+}
+
+const toMoney = (value: number): string => value.toFixed(2)
+
+/**
+ * Сервер — источник правды по деньгам заказа. Клиентские price/final_price
+ * перезаписываются ценами вариантов из БД (корзина живёт в localStorage и
+ * может быть отредактирована), стоимость доставки считается из
+ * merchant_settings выбранного метода, и всё замораживается в колонках
+ * orders: subtotal / discount_total / shipping_price / total.
+ * shipping_price null — «стоимость согласуется», total тогда без доставки.
+ */
+async function withServerPricing(params: Prisma.ordersCreateArgs): Promise<Prisma.ordersCreateArgs> {
+  const data: any = {...params.data}
+
+  const rawItems = data.OrderItems?.createMany?.data
+  const items: any[] = Array.isArray(rawItems) ? rawItems.map(item => ({...item})) : rawItems ? [{...rawItems}] : []
+  if (!items.length) return params
+
+  const variantIds = Array.from(new Set(
+    items.filter(item => item.variant_id != null).map(item => BigInt(item.variant_id))
+  ))
+  const variants = variantIds.length
+    ? await db.variants.findMany({where: {id: {in: variantIds}}})
+    : []
+  const variantById = new Map(variants.map(variant => [variant.id.toString(), variant]))
+
+  const priced = items.map(item => {
+    const variant = item.variant_id != null
+      ? variantById.get(BigInt(item.variant_id).toString())
+      : undefined
+
+    if (!variant) {
+      // Позиции без варианта не создаются текущей витриной; сюда можно попасть
+      // только со старой localStorage-корзиной или если вариант удалили —
+      // не роняем заказ, но цену с клиента оставляем осознанно, с warning в лог
+      console.warn('[ORDER] Variant not found for order item, keeping client price', {
+        product_id: `${item.product_id ?? ''}`,
+        variant_id: `${item.variant_id ?? ''}`,
+      })
+      return item
+    }
+
+    return {
+      ...item,
+      price: toMoney(Number(variant.price)),
+      final_price: toMoney(Number(variant.final_price ?? variant.price)),
+    }
+  })
+
+  const subtotal = priced.reduce((sum, item) => sum + Number(item.final_price) * (item.quantity ?? 1), 0)
+  const discountTotal = priced.reduce((sum, item) => {
+    return sum + Math.max(0, Number(item.price) - Number(item.final_price)) * (item.quantity ?? 1)
+  }, 0)
+
+  const rawShippings = data.OrderShippings?.createMany?.data
+  const shippings: any[] = Array.isArray(rawShippings) ? rawShippings : rawShippings ? [rawShippings] : []
+  const shippingMethodId = shippings[0]?.shipping_method_id
+
+  let shippingPrice: number | null = null
+  if (shippingMethodId != null) {
+    const method = await db.shipping_methods.findUnique({where: {id: BigInt(shippingMethodId)}})
+    shippingPrice = method
+      ? computeShippingCost(normalizeMerchantFields(method.merchant_settings), subtotal)
+      : null
+  }
+
+  data.OrderItems = {
+    ...data.OrderItems,
+    createMany: {...data.OrderItems.createMany, data: Array.isArray(rawItems) ? priced : priced[0]},
+  }
+  data.subtotal = toMoney(subtotal)
+  data.discount_total = toMoney(discountTotal)
+  data.shipping_price = shippingPrice === null ? null : toMoney(shippingPrice)
+  data.total = toMoney(subtotal + (shippingPrice ?? 0))
+
+  return {...params, data}
 }
 
 /**
@@ -115,7 +205,7 @@ const buildOrderEmailData = (order: OrderWithEmailRelations) => {
  * @param params
  */
 export async function create(params: Prisma.ordersCreateArgs) {
-  return db.orders.create(params)
+  return db.orders.create(await withServerPricing(params))
 }
 
 /**
@@ -127,7 +217,7 @@ export async function createWithNotifications(
   options?: NotificationOptions
 ) {
   // Создаем заказ
-  const order = await db.orders.create(params)
+  const order = await db.orders.create(await withServerPricing(params))
 
   if (options?.awaitNotifications) {
     try {
@@ -200,6 +290,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
       productTitle,
       variantTitle,
       productImage,
+      shippingPrice,
+      orderTotal,
     } = buildOrderEmailData(order)
 
     const calculatedDiscount = calculateDiscountPercent(totalPrice, totalFinalPrice)
@@ -233,6 +325,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
           customerPhone: shipping.phone,
           note: shipping.note || undefined,
           productImage,
+          shippingPrice,
+          total: orderTotal,
         },
         // Письмо продавцу
         {
@@ -252,6 +346,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
           note: shipping.note || undefined,
           orderUrl,
           productImage,
+          shippingPrice,
+          total: orderTotal,
         }
       )
       customerResult = result.customer
@@ -275,6 +371,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
           note: shipping.note || undefined,
           orderUrl,
           productImage,
+          shippingPrice,
+          total: orderTotal,
         })
       }
 
@@ -295,6 +393,8 @@ async function sendOrderEmailNotifications(orderId: bigint, options: Notificatio
           customerPhone: shipping.phone,
           note: shipping.note || undefined,
           productImage,
+          shippingPrice,
+          total: orderTotal,
         })
       }
     }
@@ -348,7 +448,7 @@ export async function sendCustomerOrderSummaryEmail(orderIds: Array<string | big
       .filter((order): order is OrderWithEmailRelations => Boolean(order))
 
     const summaryOrders = orderedList.map(order => {
-      const { orderItems, totalPrice, totalFinalPrice } = buildOrderEmailData(order)
+      const { orderItems, totalPrice, totalFinalPrice, shippingPrice, orderTotal } = buildOrderEmailData(order)
       const totalDiscount = totalPrice > totalFinalPrice ? (totalPrice - totalFinalPrice) : 0
 
       return {
@@ -360,6 +460,8 @@ export async function sendCustomerOrderSummaryEmail(orderIds: Array<string | big
         totalFinalPrice: totalFinalPrice.toFixed(2),
         totalDiscount: totalDiscount.toFixed(2),
         itemsCount: orderItems.length,
+        shippingPrice,
+        total: orderTotal,
       }
     })
 

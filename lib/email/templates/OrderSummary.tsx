@@ -192,12 +192,20 @@ export default function OrderSummary({
                         <td style={totalsDiscountValue}>-{toMoney(order.totalDiscount)} BYN</td>
                       </tr>
                     )}
+                    {order.shippingPrice !== undefined && (
+                      <tr>
+                        <td style={totalsLabel}>Доставка</td>
+                        <td style={totalsValue}>
+                          {order.shippingPrice !== null ? `${toMoney(Number(order.shippingPrice))} BYN` : 'согласуется с продавцом'}
+                        </td>
+                      </tr>
+                    )}
                   </table>
                   <div style={totalsDivider} />
                   <table cellPadding="0" cellSpacing="0" border={0} width="100%">
                     <tr>
                       <td style={totalsTotalLabel}>Итого</td>
-                      <td style={totalsTotalValue}>{toMoney(order.totalFinalPrice)} BYN</td>
+                      <td style={totalsTotalValue}>{toMoney(order.total ?? order.totalFinalPrice)} BYN</td>
                     </tr>
                   </table>
                 </div>

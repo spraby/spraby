@@ -332,7 +332,6 @@ export default function CheckoutPage() {
                   ...buildOrderShippingData(
                     shippingMethodsByBrand[brand.brandId] ?? [],
                     brandSelection,
-                    brandSummaries[brand.brandId]?.cost ?? null,
                   )
                 }
               }

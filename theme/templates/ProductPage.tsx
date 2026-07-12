@@ -26,7 +26,6 @@ import ShippingMethodPicker, {
   buildOrderShippingData,
   emptyShippingSelection,
   normalizeShippingMethods,
-  shippingMethodCost,
   shippingSelectionComment,
   validateShippingSelection,
   type ShippingErrors,
@@ -835,9 +834,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                         setQuickOrderShippingErrors(shippingValidation);
                                         return;
                                       }
-                                      const quickOrderTotal = Number(currentFinalPrice) * quickOrderQuantity;
-                                      const quickOrderMethod = shippingMethods.find(method => method.id === quickOrderShipping.methodId) ?? null;
-                                      const quickOrderShippingCost = quickOrderMethod ? shippingMethodCost(quickOrderMethod, quickOrderTotal) : null;
                                       setSubmiting(true);
                                       createWithNotifications({
                                         data: {
@@ -879,7 +875,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                                                 name: data.name,
                                                 phone: `${data.phone}`,
                                                 note: shippingSelectionComment(quickOrderShipping),
-                                                ...buildOrderShippingData(shippingMethods, quickOrderShipping, quickOrderShippingCost)
+                                                ...buildOrderShippingData(shippingMethods, quickOrderShipping)
                                               }
                                             }
                                           }

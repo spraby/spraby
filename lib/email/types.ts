@@ -16,4 +16,9 @@ export interface EmailOrderSummary {
   totalFinalPrice: string
   totalDiscount: string
   itemsCount: number
+  // Стоимость доставки из заказа: строка — фиксированная сумма,
+  // null — согласуется с продавцом, undefined — старый заказ (строка не показывается)
+  shippingPrice?: string | null
+  // Итог заказа с доставкой (orders.total); без него — сумма товаров
+  total?: string
 }

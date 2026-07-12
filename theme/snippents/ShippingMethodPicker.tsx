@@ -2,12 +2,21 @@
 
 import {useId} from 'react';
 import {Input, Textarea} from "@nextui-org/input";
+import {
+  FREE_SHIPPING_THRESHOLD_FIELD_KEY,
+  SHIPPING_COMMENTS_FIELD_KEY,
+  SHIPPING_PRICE_FIELD_KEY,
+  computeShippingCost,
+  hasMerchantValue,
+  type StoreShippingField,
+} from "@/services/shipping";
 
-export type StoreShippingField = {
-  key: string;
-  name: string;
-  type: string;
-  value: string | string[];
+export {
+  FREE_SHIPPING_THRESHOLD_FIELD_KEY,
+  SHIPPING_COMMENTS_FIELD_KEY,
+  SHIPPING_PRICE_FIELD_KEY,
+  hasMerchantValue,
+  type StoreShippingField,
 };
 
 export type StoreShippingMethod = {
@@ -37,11 +46,6 @@ const OPTION_SOURCES: Record<string, string> = {
   city: 'shipping_cities',
   country: 'shipping_countries',
 };
-
-export const SHIPPING_PRICE_FIELD_KEY = 'shipping_price';
-export const FREE_SHIPPING_THRESHOLD_FIELD_KEY = 'free_shipping_threshold';
-export const SHIPPING_COMMENTS_FIELD_KEY = 'comments';
-const PICKUP_MERCHANT_FIELD_KEY = 'pickup_points';
 
 const OPTIONAL_CUSTOMER_FIELDS = [SHIPPING_COMMENTS_FIELD_KEY];
 const DEFAULT_HIDDEN_MERCHANT_INFO_KEYS: string[] = [];
@@ -81,10 +85,6 @@ const merchantOptionsFor = (method: StoreShippingMethod, customerKey: string): s
   return Array.isArray(source?.value) ? source.value.filter(item => `${item}`.trim().length) : [];
 };
 
-export const hasMerchantValue = (field: StoreShippingField): boolean => {
-  return Array.isArray(field.value) ? field.value.length > 0 : `${field.value ?? ''}`.trim().length > 0;
-};
-
 const fieldValueText = (field: StoreShippingField): string => {
   return Array.isArray(field.value)
     ? field.value.filter(Boolean).join(', ')
@@ -92,64 +92,16 @@ const fieldValueText = (field: StoreShippingField): string => {
 };
 
 /**
- * Метод считается самовывозом только при заполненном списке пунктов:
- * само наличие ключа в конструкторе ещё не значит, что продавец его настроил.
- */
-export const isPickupShippingMethod = (method: StoreShippingMethod | null): boolean => {
-  if (!method) return false;
-  const pickupPoints = method.merchantFields.find(field => field.key === PICKUP_MERCHANT_FIELD_KEY);
-  return Boolean(pickupPoints && hasMerchantValue(pickupPoints));
-};
-
-export const shippingMethodFieldValue = (
-  method: StoreShippingMethod | null,
-  fieldKey: string,
-): string | null => {
-  const value = method?.merchantFields.find(field => field.key === fieldKey)?.value;
-  if (Array.isArray(value)) return null;
-
-  const normalized = `${value ?? ''}`.trim();
-  return normalized.length ? normalized : null;
-};
-
-/**
- * shipping_price / free_shipping_threshold — свободный текст продавца.
- * Берём ведущую числовую часть («10 руб.» → 10), «1 500» и «1.500» читаем
- * как тысячи, «5,50» — как десятичную. Всё нераспознанное → null
- * («стоимость согласуется»), а не тихое неверное число.
- */
-export const parseShippingAmount = (value: string | null): number | null => {
-  if (!value) return null;
-
-  const numericPart = value.trim().match(/^\d[\d\s.,]*/)?.[0]?.replace(/\s/g, '').replace(/[.,]+$/, '');
-  if (!numericPart) return null;
-
-  const normalized = /^\d{1,3}(?:[.,]\d{3})+$/.test(numericPart)
-    ? numericPart.replace(/[.,]/g, '')
-    : numericPart;
-  if ((normalized.match(/[.,]/g) ?? []).length > 1) return null;
-
-  const amount = Number(normalized.replace(',', '.'));
-  return Number.isFinite(amount) ? amount : null;
-};
-
-/**
- * Оценка стоимости доставки для суммы товаров бренда.
- * null — стоимость неизвестна (согласуется с продавцом).
+ * Клиентская оценка стоимости доставки для мгновенного предпросмотра «Итого».
+ * Авторитетный расчёт — на сервере при создании заказа (services/Orders.ts),
+ * той же computeShippingCost.
  */
 export const shippingMethodCost = (
   method: StoreShippingMethod | null,
   brandTotal: number,
 ): number | null => {
-  const price = parseShippingAmount(shippingMethodFieldValue(method, SHIPPING_PRICE_FIELD_KEY));
-  if (price === null) return isPickupShippingMethod(method) ? 0 : null;
-
-  const freeThreshold = parseShippingAmount(shippingMethodFieldValue(method, FREE_SHIPPING_THRESHOLD_FIELD_KEY));
-  if (freeThreshold !== null && freeThreshold > 0 && brandTotal >= freeThreshold) {
-    return 0;
-  }
-
-  return price;
+  if (!method) return null;
+  return computeShippingCost(method.merchantFields, brandTotal);
 };
 
 /** Комментарий покупателя из полей доставки — идёт в order_shippings.note. */
@@ -217,37 +169,24 @@ export const validateShippingSelection = (
 /**
  * Данные для order_shippings: снапшот способа + значения покупателя.
  * Пустой объект, если способ не выбран (у бренда нет способов доставки).
- * estimatedCost — стоимость доставки, которую видел покупатель в «Итого»;
- * сохраняем её в снапшот, чтобы продавец в админке видел ту же сумму.
+ * Стоимость доставки сюда не входит — её считает сервер при создании заказа.
  */
 export const buildOrderShippingData = (
   methods: StoreShippingMethod[],
   selection: ShippingSelection,
-  estimatedCost: number | null = null,
 ): Record<string, unknown> => {
   const method = methods.find(item => item.id === selection.methodId);
   if (!method) return {};
 
-  const customerSettings = method.customerFields.map(field => ({
-    key: field.key,
-    name: field.name,
-    type: field.type,
-    value: `${selection.values[field.key] ?? ''}`.trim(),
-  }));
-
-  if (estimatedCost !== null) {
-    customerSettings.push({
-      key: 'estimated_shipping_price',
-      name: 'Стоимость доставки (на момент заказа)',
-      type: 'string',
-      value: `${estimatedCost}`,
-    });
-  }
-
   return {
     shipping_method_id: BigInt(method.id),
     shipping_method_name: method.name,
-    customer_settings: customerSettings,
+    customer_settings: method.customerFields.map(field => ({
+      key: field.key,
+      name: field.name,
+      type: field.type,
+      value: `${selection.values[field.key] ?? ''}`.trim(),
+    })),
   };
 };
 

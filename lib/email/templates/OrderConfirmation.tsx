@@ -29,6 +29,11 @@ interface OrderConfirmationProps {
   customerPhone: string
   note?: string
   productImage?: string
+  // Стоимость доставки из заказа: строка — фиксированная сумма,
+  // null — согласуется с продавцом, undefined — старый заказ (строка не показывается)
+  shippingPrice?: string | null
+  // Итог заказа с доставкой (orders.total); без него — сумма товаров
+  total?: string
 }
 
 export default function OrderConfirmation({
@@ -45,6 +50,8 @@ export default function OrderConfirmation({
   customerPhone,
   note,
   productImage,
+  shippingPrice,
+  total,
 }: OrderConfirmationProps) {
   const items = orderItems && orderItems.length > 0
     ? orderItems
@@ -63,6 +70,8 @@ export default function OrderConfirmation({
   const totalOriginalText = toMoney(totalOriginal)
   const totalFinalText = toMoney(totalFinal)
   const totalDiscountText = toMoney(totalDiscount)
+  const showShippingRow = shippingPrice !== undefined
+  const orderTotalText = total !== undefined ? toMoney(Number(total)) : totalFinalText
 
   const getVariantOptions = (value?: string) => (
     value
@@ -205,12 +214,20 @@ export default function OrderConfirmation({
                     <td style={totalsDiscountValue}>-{totalDiscountText} BYN</td>
                   </tr>
                 )}
+                {showShippingRow && (
+                  <tr>
+                    <td style={totalsLabel}>Доставка</td>
+                    <td style={totalsValue}>
+                      {shippingPrice !== null ? `${toMoney(Number(shippingPrice))} BYN` : 'согласуется с продавцом'}
+                    </td>
+                  </tr>
+                )}
               </table>
               <div style={totalsDivider} />
               <table cellPadding="0" cellSpacing="0" border={0} width="100%">
                 <tr>
                   <td style={totalsTotalLabel}>Итого</td>
-                  <td style={totalsTotalValue}>{totalFinalText} BYN</td>
+                  <td style={totalsTotalValue}>{orderTotalText} BYN</td>
                 </tr>
               </table>
             </div>

@@ -25,6 +25,10 @@ export interface OrderConfirmationParams {
   customerPhone: string
   note?: string
   productImage?: string
+  // string — стоимость доставки, null — согласуется, undefined — старый заказ
+  shippingPrice?: string | null
+  // Итог заказа с доставкой (orders.total)
+  total?: string
 }
 
 export interface NewOrderNotificationParams {
@@ -44,6 +48,10 @@ export interface NewOrderNotificationParams {
   note?: string
   orderUrl: string
   productImage?: string
+  // string — стоимость доставки, null — согласуется, undefined — старый заказ
+  shippingPrice?: string | null
+  // Итог заказа с доставкой (orders.total)
+  total?: string
 }
 
 export interface CustomerOrderSummaryParams {

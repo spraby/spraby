@@ -225,6 +225,12 @@ model orders {
   status           order_status      @default(pending)
   delivery_status  delivery_status   @default(pending)
   financial_status financial_status  @default(unpaid)
+  // Финансовый снапшот на момент создания (считает сервер витрины);
+  // shipping_price NULL — «стоимость согласуется», total тогда без доставки
+  subtotal         Decimal?          @db.Decimal(10, 2)
+  discount_total   Decimal?          @db.Decimal(10, 2)
+  shipping_price   Decimal?          @db.Decimal(10, 2)
+  total            Decimal?          @db.Decimal(10, 2)
   created_at       DateTime?         @default(now()) @db.Timestamp(0)
   updated_at       DateTime?         @updatedAt @db.Timestamp(0)
   OrderItems       order_items[]
