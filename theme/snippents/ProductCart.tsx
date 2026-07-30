@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import {ProductCardModel, VariantModel} from "@/prisma/types";

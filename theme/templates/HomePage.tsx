@@ -1,16 +1,14 @@
-'use client'
-
 import ProductCart from "@/theme/snippents/ProductCart";
 import {ProductCardModel} from "@/prisma/types";
-import PopularCategories, {PopularCategory, CategoryPopularImage} from "@/theme/sections/PopularCategories";
+import PopularCategories from "@/theme/sections/PopularCategories";
 import Link from "next/link";
 import SprabyHero from "@/theme/sections/SprabyHero";
+import type {PopularCategoryCard} from "@/types/popular-categories";
 
 type HomePageProps = {
   topProducts: ProductCardModel[]
   latestProducts: ProductCardModel[]
-  popularCategories: PopularCategory[]
-  popularImages?: Record<string, CategoryPopularImage>
+  popularCategories: PopularCategoryCard[]
 }
 
 const normalizeProducts = (products: ProductCardModel[]) => {
@@ -45,7 +43,7 @@ const ViewAllCard = ({href, label}: { href: string, label: string }) => (
   </div>
 );
 
-export default function HomePage({topProducts, latestProducts, popularCategories, popularImages}: HomePageProps) {
+export default function HomePage({topProducts, latestProducts, popularCategories}: HomePageProps) {
   const productsWithImages = normalizeProducts(topProducts);
   const latestProductsWithImages = normalizeProducts(latestProducts);
 
@@ -78,10 +76,7 @@ export default function HomePage({topProducts, latestProducts, popularCategories
         </section>
       )}
 
-      <PopularCategories
-        items={popularCategories.length ? popularCategories : POPULAR_CATEGORY_ITEMS}
-        popularImages={popularImages}
-      />
+      <PopularCategories items={popularCategories.length ? popularCategories : POPULAR_CATEGORY_ITEMS}/>
 
       {latestProductsWithImages.length > 0 && (
         <section className="flex flex-col gap-6">
@@ -96,11 +91,11 @@ export default function HomePage({topProducts, latestProducts, popularCategories
   </main>
 }
 
-const POPULAR_CATEGORY_ITEMS: PopularCategory[] = [
-  {id: 'tees', title: 'Футболки', href: '/categories/tees'},
-  {id: 'sweatshirts', title: 'Свитшоты', href: '/categories/sweatshirts'},
-  {id: 'watch', title: 'Наручные часы', href: '/categories/watches'},
-  {id: 'cardholders', title: 'Картхолдеры', href: '/categories/cardholders'},
-  {id: 'chairs', title: 'Стулья', href: '/categories/chairs'},
-  {id: 'bedding', title: 'Постельное бельё', href: '/categories/bedding'},
+const POPULAR_CATEGORY_ITEMS: PopularCategoryCard[] = [
+  {id: 'tees', title: 'Футболки', href: '/categories/tees', images: [], productsCount: 0, cacheUntil: 0},
+  {id: 'sweatshirts', title: 'Свитшоты', href: '/categories/sweatshirts', images: [], productsCount: 0, cacheUntil: 0},
+  {id: 'watch', title: 'Наручные часы', href: '/categories/watches', images: [], productsCount: 0, cacheUntil: 0},
+  {id: 'cardholders', title: 'Картхолдеры', href: '/categories/cardholders', images: [], productsCount: 0, cacheUntil: 0},
+  {id: 'chairs', title: 'Стулья', href: '/categories/chairs', images: [], productsCount: 0, cacheUntil: 0},
+  {id: 'bedding', title: 'Постельное бельё', href: '/categories/bedding', images: [], productsCount: 0, cacheUntil: 0},
 ];

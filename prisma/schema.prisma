@@ -141,6 +141,8 @@ model products {
   Brand       brands              @relation(fields: [brand_id], references: [id], onDelete: Cascade, map: "products_brand_id_foreign")
   Category    categories?         @relation(fields: [category_id], references: [id], onUpdate: SetNull, map: "products_category_id_foreign")
   Variants    variants[]
+
+  @@index([enabled, category_id], map: "products_enabled_category_idx")
 }
 
 model variants {
@@ -196,6 +198,8 @@ model product_images {
   Image       images        @relation(fields: [image_id], references: [id], onDelete: Cascade, map: "product_images_image_id_foreign")
   Product     products      @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "product_images_product_id_foreign")
   Variant     variants[]
+
+  @@index([product_id, position], map: "product_images_product_position_idx")
 }
 
 model settings {
@@ -285,6 +289,7 @@ model ProductStatistics {
   Product    products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "product_statistics_product_id_foreign")
 
   @@unique([product_id, client_id, type], name: "statistics", map: "statistics")
+  @@index([created_at, product_id, type], map: "product_statistics_popular_lookup_idx")
   @@map("product_statistics")
 }
 

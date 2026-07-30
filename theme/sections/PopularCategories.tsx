@@ -1,38 +1,11 @@
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
-
-export type PopularCategory = {
-  id: string;
-  title: string;
-  href: string;
-};
-
-export type CategoryPopularImage = {
-  images: Array<{
-    productId: string;
-    imageUrl: string;
-  }>;
-  productsCount: number;
-  cacheUntil: number;
-};
+import {POPULAR_CATEGORIES_CONFIG} from '@/config/category-rotation';
+import type {PopularCategoryCard} from '@/types/popular-categories';
 
 type Props = {
-  items: PopularCategory[];
-  popularImages?: Record<string, CategoryPopularImage>;
+  items: PopularCategoryCard[];
 };
-
-const PLACEHOLDER = (
-  <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8">
-    {Array.from({ length: 6 }).map((_, i) => (
-      <div
-        key={i}
-        className="aspect-square rounded-[0.25rem] bg-[#eceaf9] pointer-events-none"
-      />
-    ))}
-  </div>
-);
 
 const getProductsWord = (count: number) => {
   const mod100 = count % 100;
@@ -43,7 +16,7 @@ const getProductsWord = (count: number) => {
   return 'товаров';
 };
 
-export default function PopularCategories({items, popularImages}: Props) {
+export default function PopularCategories({items}: Props) {
   if (!items.length) return null;
 
   return (
@@ -51,8 +24,10 @@ export default function PopularCategories({items, popularImages}: Props) {
       <h2 className="text-2xl font-semibold text-gray-900 md:text-[26px]">Популярные категории</h2>
       <div className="grid gap-5 md:grid-cols-3">
         {items.map((item) => {
-          const popularImage = popularImages?.[item.id];
-          const hasImages = popularImage?.images && popularImage.images.length > 0;
+          const imageSlots = Array.from(
+            {length: POPULAR_CATEGORIES_CONFIG.imagesPerCategory},
+            (_, index) => item.images[index] ?? null,
+          );
 
           return (
             <article
@@ -61,37 +36,45 @@ export default function PopularCategories({items, popularImages}: Props) {
             >
               <header className="flex flex-col gap-1.5">
                 <h3 className="text-lg font-semibold md:text-lg">{item.title}</h3>
-                {popularImage?.productsCount && (
+                {item.productsCount > 0 && (
                   <p className="text-xs font-medium text-gray-500">
-                    {new Intl.NumberFormat('ru-RU').format(popularImage.productsCount)} {getProductsWord(popularImage.productsCount)}
+                    {new Intl.NumberFormat('ru-RU').format(item.productsCount)} {getProductsWord(item.productsCount)}
                   </p>
                 )}
               </header>
 
-              {hasImages ? (
-                <div className="mt-5 grid grid-cols-3 gap-1.5 w-[165px] md:w-[195px] md:mt-8">
-                  {popularImage.images.slice(0, 6).map((img, idx) => (
+              <div
+                className="mt-5 grid w-[165px] grid-cols-3 gap-1.5 md:mt-8 md:w-[195px]"
+                aria-label={`Примеры товаров в категории ${item.title}`}
+              >
+                {imageSlots.map((image, index) => (
+                  image ? (
                     <div
-                      key={img.productId}
+                      key={image.productId}
                       className="pointer-events-none relative aspect-square overflow-hidden rounded-[0.25rem] bg-white"
                     >
                       <Image
-                        src={img.imageUrl}
-                        alt={`${item.title} ${idx + 1}`}
+                        src={image.imageUrl}
+                        alt={`Пример товара ${index + 1} из категории ${item.title}`}
                         fill
                         sizes="(max-width: 768px) 55px, 65px"
                         className="object-cover object-center"
                       />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                PLACEHOLDER
-              )}
+                  ) : (
+                    <div
+                      key={`placeholder-${index}`}
+                      aria-hidden="true"
+                      className="pointer-events-none aspect-square rounded-[0.25rem] bg-[#eceaf9]"
+                    />
+                  )
+                ))}
+              </div>
 
               <footer className="pt-4">
                 <Link
                   href={item.href}
+                  aria-label={`Смотреть все товары в категории ${item.title}`}
                   className="inline-flex items-center gap-1 text-sm font-semibold text-[#7c3aed] transition-colors duration-200 group-hover:text-[#6d31da]"
                 >
                   Смотреть
