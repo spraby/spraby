@@ -10,6 +10,7 @@ const staticRoutes = [
   {path: "/trending", priority: 0.8},
   {path: "/about", priority: 0.4},
   {path: "/contacts", priority: 0.4},
+  {path: "/for-sellers", priority: 0.7},
   {path: "/register", priority: 0.5},
   {path: "/privacy-policy", priority: 0.2},
   {path: "/terms-of-use", priority: 0.2},

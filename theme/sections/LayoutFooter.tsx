@@ -118,6 +118,16 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
                 </a>
               </li>
             </ul>
+
+            <div className='mt-6'>
+              <h3 className='text-xs font-semibold uppercase tracking-wide text-gray-500'>Продавцам</h3>
+              <Link
+                href='/for-sellers'
+                className='mt-3 inline-block text-sm text-gray-600 transition hover:text-purple-600'
+              >
+                Возможности
+              </Link>
+            </div>
           </nav>
         </div>
 
