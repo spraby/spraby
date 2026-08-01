@@ -51,7 +51,7 @@ export default function SellerJourney() {
               Покажите свой бренд тем, кто ищет особенные вещи
             </h2>
             <p className="mt-3 text-sm leading-6 text-purple-100 sm:text-base">
-              Создайте страницу бренда, добавьте первые товары и начните принимать заказы на spraby
+              Создайте страницу бренда, добавьте товары и начните принимать заказы на spraby
             </p>
           </div>
 

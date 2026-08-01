@@ -19,12 +19,12 @@ export default function SellerOverviewSlide({
   const cartToOrder = data.cart > 0 ? (data.orders / data.cart) * 100 : 0;
   const viewToPaid = data.views > 0 ? (data.paidOrders / data.views) * 100 : 0;
   const orderToPaid = data.orders > 0 ? (data.paidOrders / data.orders) * 100 : 0;
-  const averageOrder = data.orders > 0 ? data.revenue / data.orders : 0;
+  const averageOrder = data.orders > 0 ? (data.revenue + data.unpaidTotal) / data.orders : 0;
   const statusTotal = data.status.pending + data.status.processing + data.status.completed;
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-3">
         <MetricCard label="Просмотры" value={formatNumber(data.views)}>
           <CategoryRows items={data.categories}/>
         </MetricCard>
@@ -35,10 +35,11 @@ export default function SellerOverviewSlide({
 
         <MetricCard label="Заказы" value={formatNumber(data.orders)}>
           <div className="flex flex-wrap gap-1">
-            <StatChip label="Просмотр → корзина" value={formatPercent(viewToCart)}/>
-            <StatChip label="Корзина → заказ" value={formatPercent(cartToOrder)}/>
+            <StatChip label="Просмотр → В корзину" value={formatPercent(viewToCart)}/>
+            <StatChip label="В корзину → Заказ" value={formatPercent(cartToOrder)}/>
+            <StatChip label="Просмотр → Заказ" value={formatPercent(viewToOrder)}/>
           </div>
-          <div className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-[10px] text-slate-500 sm:text-xs">
+          <div className="mt-2 space-y-1 text-xs text-slate-500">
             <DetailRow label="Средний чек" value={formatMoney(averageOrder)}/>
             <DetailRow label="Продано единиц" value={formatNumber(data.units)}/>
           </div>
@@ -46,12 +47,13 @@ export default function SellerOverviewSlide({
 
         <MetricCard label="Выручка" value={formatMoney(data.revenue)}>
           <div className="flex flex-wrap gap-1">
-            <StatChip label="Просмотр → оплата" value={formatPercent(viewToPaid)}/>
-            <StatChip label="Заказ → оплата" value={formatPercent(orderToPaid)}/>
+            <StatChip label="Просмотр → Оплата" value={formatPercent(viewToPaid)}/>
+            <StatChip label="Заказ → Оплата" value={formatPercent(orderToPaid)}/>
           </div>
-          <div className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-[10px] text-slate-500 sm:text-xs">
-            <DetailRow label="Оплаченные" value={formatNumber(data.paidOrders)}/>
-            <DetailRow label="Неоплаченные" value={formatNumber(data.unpaidOrders)}/>
+          <div className="mt-2 space-y-1 text-xs text-slate-500">
+            <DetailRow label="Не оплачено" value={formatMoney(data.unpaidTotal)}/>
+            <DetailRow label="Оплаченные заказы" value={formatNumber(data.paidOrders)}/>
+            <DetailRow label="Неоплаченные заказы" value={formatNumber(data.unpaidOrders)}/>
           </div>
         </MetricCard>
       </div>
@@ -121,10 +123,10 @@ function MetricCard({label, value, children}: {
   children: React.ReactNode;
 }) {
   return (
-    <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
-      <p className="min-h-8 text-[10px] leading-4 text-slate-500 sm:min-h-0 sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-lg font-semibold tracking-tight text-slate-950 sm:text-2xl">{value}</p>
-      <div className="mt-3 border-t border-slate-100 pt-2.5">{children}</div>
+    <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 lg:min-h-[220px] lg:p-5">
+      <p className="text-xs leading-4 text-slate-500 lg:text-sm">{label}</p>
+      <p className="mt-1 truncate text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
+      <div className="mt-3 lg:mt-4">{children}</div>
     </article>
   );
 }
@@ -133,17 +135,18 @@ function CategoryRows({items}: {items: DashboardPeriod['categories']}) {
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div>
-      <p className="mb-1.5 text-[8px] font-semibold uppercase tracking-wider text-slate-400 sm:text-[10px]">Категории</p>
+    <div className="border-t border-slate-100 pt-2.5 lg:pt-3">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Категории</p>
       <div className="space-y-1">
-        {items.slice(0, 3).map(item => (
-          <div key={item.label} className="flex items-center justify-between gap-1 text-[9px] sm:text-[11px]">
+        {items.map(item => (
+          <div key={item.label} className="flex items-center justify-between gap-1 text-[11px] lg:text-xs">
             <span className="flex min-w-0 items-center gap-1.5 text-slate-500">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{backgroundColor: item.color}}/>
               <span className="truncate">{item.label}</span>
             </span>
-            <span className="shrink-0 font-medium text-slate-700">
-              {Math.round((item.value / total) * 100)}%
+            <span className="flex shrink-0 items-center gap-1 tabular-nums">
+              <strong className="font-semibold text-slate-800">{formatNumber(item.value)}</strong>
+              <span className="text-slate-500">{total > 0 ? Math.round((item.value / total) * 100) : 0}%</span>
             </span>
           </div>
         ))}
@@ -154,7 +157,7 @@ function CategoryRows({items}: {items: DashboardPeriod['categories']}) {
 
 function StatChip({label, value}: {label: string; value: string}) {
   return (
-    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 px-1.5 py-0.5 text-[8px] text-slate-500 sm:text-[10px]">
+    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500">
       <span className="truncate">{label}</span>
       <strong className="shrink-0 font-semibold text-slate-800">{value}</strong>
     </span>

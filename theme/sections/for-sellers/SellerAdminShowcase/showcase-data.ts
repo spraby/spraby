@@ -11,6 +11,7 @@ export type ChartPoint = {
   revenue: number;
   orders: number;
   views: number;
+  clicks: number;
   cart: number;
 };
 
@@ -29,7 +30,6 @@ export type DemoProduct = {
 };
 
 export type DashboardPeriod = {
-  dateLabel: string;
   views: number;
   cart: number;
   orders: number;
@@ -58,7 +58,6 @@ const colors = ['#2563eb', '#f59e0b', '#10b981', '#64748b'];
 
 export const DASHBOARD_PERIODS: Record<PeriodKey, DashboardPeriod> = {
   7: {
-    dateLabel: '25–31 июля',
     views: 148,
     cart: 23,
     orders: 8,
@@ -83,17 +82,16 @@ export const DASHBOARD_PERIODS: Record<PeriodKey, DashboardPeriod> = {
     status: {pending: 2, processing: 3, completed: 3},
     attention: {pending: 1, processing: 0, unpaid: 2},
     chart: [
-      {label: '25 июл.', revenue: 0, orders: 0, views: 17, cart: 2},
-      {label: '26 июл.', revenue: 82, orders: 1, views: 20, cart: 3},
-      {label: '27 июл.', revenue: 129, orders: 2, views: 24, cart: 4},
-      {label: '28 июл.', revenue: 54, orders: 1, views: 18, cart: 2},
-      {label: '29 июл.', revenue: 178.5, orders: 2, views: 29, cart: 5},
-      {label: '30 июл.', revenue: 91, orders: 1, views: 21, cart: 3},
-      {label: '31 июл.', revenue: 150, orders: 1, views: 19, cart: 4},
+      {label: '25 июл.', revenue: 0, orders: 0, views: 17, clicks: 5, cart: 2},
+      {label: '26 июл.', revenue: 82, orders: 1, views: 20, clicks: 7, cart: 3},
+      {label: '27 июл.', revenue: 129, orders: 2, views: 24, clicks: 9, cart: 4},
+      {label: '28 июл.', revenue: 54, orders: 1, views: 18, clicks: 6, cart: 2},
+      {label: '29 июл.', revenue: 178.5, orders: 2, views: 29, clicks: 12, cart: 5},
+      {label: '30 июл.', revenue: 91, orders: 1, views: 21, clicks: 8, cart: 3},
+      {label: '31 июл.', revenue: 150, orders: 1, views: 19, clicks: 7, cart: 4},
     ],
   },
   30: {
-    dateLabel: '2–31 июля',
     views: 612,
     cart: 94,
     orders: 31,
@@ -118,18 +116,17 @@ export const DASHBOARD_PERIODS: Record<PeriodKey, DashboardPeriod> = {
     status: {pending: 7, processing: 9, completed: 15},
     attention: {pending: 2, processing: 1, unpaid: 3},
     chart: [
-      {label: '2 июл.', revenue: 188, orders: 2, views: 53, cart: 8},
-      {label: '6 июл.', revenue: 305, orders: 4, views: 68, cart: 10},
-      {label: '10 июл.', revenue: 247, orders: 3, views: 61, cart: 9},
-      {label: '14 июл.', revenue: 436, orders: 5, views: 87, cart: 14},
-      {label: '18 июл.', revenue: 354, orders: 4, views: 74, cart: 12},
-      {label: '22 июл.', revenue: 527, orders: 5, views: 96, cart: 15},
-      {label: '26 июл.', revenue: 371.5, orders: 4, views: 81, cart: 12},
-      {label: '31 июл.', revenue: 418, orders: 4, views: 92, cart: 14},
+      {label: '2 июл.', revenue: 188, orders: 2, views: 53, clicks: 21, cart: 8},
+      {label: '6 июл.', revenue: 305, orders: 4, views: 68, clicks: 30, cart: 10},
+      {label: '10 июл.', revenue: 247, orders: 3, views: 61, clicks: 27, cart: 9},
+      {label: '14 июл.', revenue: 436, orders: 5, views: 87, clicks: 39, cart: 14},
+      {label: '18 июл.', revenue: 354, orders: 4, views: 74, clicks: 33, cart: 12},
+      {label: '22 июл.', revenue: 527, orders: 5, views: 96, clicks: 46, cart: 15},
+      {label: '26 июл.', revenue: 371.5, orders: 4, views: 81, clicks: 36, cart: 12},
+      {label: '31 июл.', revenue: 418, orders: 4, views: 92, clicks: 43, cart: 14},
     ],
   },
   90: {
-    dateLabel: '3 мая–31 июля',
     views: 1842,
     cart: 286,
     orders: 92,
@@ -154,14 +151,14 @@ export const DASHBOARD_PERIODS: Record<PeriodKey, DashboardPeriod> = {
     status: {pending: 18, processing: 25, completed: 49},
     attention: {pending: 4, processing: 2, unpaid: 5},
     chart: [
-      {label: '3 мая', revenue: 684, orders: 8, views: 167, cart: 25},
-      {label: '15 мая', revenue: 892, orders: 10, views: 194, cart: 31},
-      {label: '27 мая', revenue: 756, orders: 9, views: 178, cart: 27},
-      {label: '8 июн.', revenue: 1094, orders: 12, views: 231, cart: 36},
-      {label: '20 июн.', revenue: 1278, orders: 14, views: 276, cart: 44},
-      {label: '2 июл.', revenue: 1142, orders: 13, views: 248, cart: 38},
-      {label: '14 июл.', revenue: 1389, orders: 15, views: 292, cart: 47},
-      {label: '31 июл.', revenue: 1237, orders: 11, views: 256, cart: 38},
+      {label: '3 мая', revenue: 684, orders: 8, views: 167, clicks: 66, cart: 25},
+      {label: '15 мая', revenue: 892, orders: 10, views: 194, clicks: 82, cart: 31},
+      {label: '27 мая', revenue: 756, orders: 9, views: 178, clicks: 73, cart: 27},
+      {label: '8 июн.', revenue: 1094, orders: 12, views: 231, clicks: 101, cart: 36},
+      {label: '20 июн.', revenue: 1278, orders: 14, views: 276, clicks: 124, cart: 44},
+      {label: '2 июл.', revenue: 1142, orders: 13, views: 248, clicks: 109, cart: 38},
+      {label: '14 июл.', revenue: 1389, orders: 15, views: 292, clicks: 137, cart: 47},
+      {label: '31 июл.', revenue: 1237, orders: 11, views: 256, clicks: 121, cart: 38},
     ],
   },
 };
@@ -229,11 +226,14 @@ export const DEMO_PRODUCTS: DemoProduct[] = [
   },
 ];
 
-export const formatNumber = (value: number) => new Intl.NumberFormat('ru-BY').format(value);
-
-export const formatMoney = (value: number) => `${new Intl.NumberFormat('ru-BY', {
+const NUMBER_FORMATTER = new Intl.NumberFormat('ru-BY');
+const MONEY_FORMATTER = new Intl.NumberFormat('ru-BY', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
-}).format(value)} Br`;
+});
+
+export const formatNumber = (value: number) => NUMBER_FORMATTER.format(value);
+
+export const formatMoney = (value: number) => `${MONEY_FORMATTER.format(value)} Br`;
 
 export const formatPercent = (value: number) => `${value.toFixed(1)}%`;

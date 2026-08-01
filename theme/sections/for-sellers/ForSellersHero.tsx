@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {FiArrowRight, FiBarChart2, FiCheck, FiGift, FiUsers} from 'react-icons/fi';
+import {FiArrowRight, FiBarChart2, FiGift, FiUsers} from 'react-icons/fi';
 
 export default function ForSellersHero() {
   return (
@@ -15,12 +15,8 @@ export default function ForSellersHero() {
 
       <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-4xl text-center">
-          <span className="inline-flex items-center rounded-full border border-purple-200 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-purple-700 shadow-sm">
-            Для мастеров и локальных брендов
-          </span>
-
-          <h1 className="mx-auto mt-5 max-w-4xl text-[2.45rem] font-semibold leading-[1.04] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.7rem]">
-            Продавай на spraby.
+          <h1 className="mx-auto max-w-4xl text-[2.45rem] font-semibold leading-[1.04] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.7rem]">
+            Продавай на spraby
             <br/>
             <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
               Все в одном кабинете
@@ -47,14 +43,6 @@ export default function ForSellersHero() {
             </Link>
           </div>
 
-          <div className="mt-7 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500">
-            {['Бесплатное размещение', 'Без собственного сайта', 'Всё в одном кабинете'].map(item => (
-              <span key={item} className="inline-flex items-center gap-1.5">
-                <FiCheck aria-hidden="true" className="h-4 w-4 text-emerald-500"/>
-                {item}
-              </span>
-            ))}
-          </div>
         </div>
 
         <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-3">

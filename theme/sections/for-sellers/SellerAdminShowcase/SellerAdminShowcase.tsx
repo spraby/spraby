@@ -64,7 +64,7 @@ export default function SellerAdminShowcase() {
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
-                  Тестовые данные · Последние {period} дней · {dashboard.dateLabel}
+                  Тестовые данные · Последние {period} дней
                 </p>
               </div>
 
@@ -85,7 +85,7 @@ export default function SellerAdminShowcase() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-1.5" role="tablist" aria-label="Возможности панели продавца">
+            <div className="mt-4 grid grid-cols-3 gap-1.5" role="group" aria-label="Возможности панели продавца">
               {SLIDES.map((item, index) => {
                 const Icon = item.icon;
                 const active = slide === index;
@@ -94,10 +94,7 @@ export default function SellerAdminShowcase() {
                   <button
                     key={item.title}
                     type="button"
-                    role="tab"
-                    id={`seller-showcase-tab-${index}`}
-                    aria-controls={`seller-showcase-panel-${index}`}
-                    aria-selected={active}
+                    aria-pressed={active}
                     onClick={() => goToSlide(index)}
                     className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition sm:flex sm:items-center sm:gap-3 sm:px-3 ${
                       active
@@ -121,9 +118,6 @@ export default function SellerAdminShowcase() {
           </div>
 
           <div
-            id={`seller-showcase-panel-${slide}`}
-            role="tabpanel"
-            aria-labelledby={`seller-showcase-tab-${slide}`}
             className="p-2.5 sm:p-4 lg:p-5"
           >
             {slide === 0 ? (
