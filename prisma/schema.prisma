@@ -9,32 +9,34 @@ datasource db {
 }
 
 model users {
-  id                                               BigInt           @id @default(autoincrement())
-  first_name                                       String?          @db.VarChar(255)
-  last_name                                        String?          @db.VarChar(255)
-  email                                            String                  @unique(map: "users_email_unique") @db.VarChar(255)
-  password                                         String?                 @db.VarChar(255)
-  created_at                                       DateTime?               @default(now()) @db.Timestamp(0)
-  updated_at                                       DateTime?               @updatedAt @db.Timestamp(0)
-  phone                                            String?                 @db.VarChar(255)
-  audits                                           audits[]
-  brand_requests_brand_requests_reviewed_byTousers brand_requests[]        @relation("brand_requests_reviewed_byTousers")
-  brand_requests_brand_requests_user_idTousers     brand_requests[]        @relation("brand_requests_user_idTousers")
-  Brands                                           brands[]
-  password_setup_tokens                            password_setup_tokens[]
+  id                                                     BigInt                  @id @default(autoincrement())
+  first_name                                             String?                 @db.VarChar(255)
+  last_name                                              String?                 @db.VarChar(255)
+  email                                                  String                  @unique(map: "users_email_unique") @db.VarChar(255)
+  password                                               String?                 @db.VarChar(255)
+  created_at                                             DateTime?               @default(now()) @db.Timestamp(0)
+  updated_at                                             DateTime?               @updatedAt @db.Timestamp(0)
+  phone                                                  String?                 @db.VarChar(255)
+  audits                                                 audits[]
+  brand_requests_brand_requests_reviewed_byTousers       brand_requests[]        @relation("brand_requests_reviewed_byTousers")
+  brand_requests_brand_requests_user_idTousers           brand_requests[]        @relation("brand_requests_user_idTousers")
+  Brands                                                 brands[]
+  category_requests_category_requests_reviewed_byTousers category_requests[]     @relation("category_requests_reviewed_byTousers")
+  category_requests_category_requests_user_idTousers     category_requests[]     @relation("category_requests_user_idTousers")
+  password_setup_tokens                                  password_setup_tokens[]
 }
 
 model password_setup_tokens {
   id         BigInt    @id @default(autoincrement())
   user_id    BigInt
-  token      String    @unique @db.VarChar(64)
+  token      String    @unique(map: "password_setup_tokens_token_unique") @db.VarChar(64)
   expires_at DateTime  @db.Timestamp(0)
   used_at    DateTime? @db.Timestamp(0)
   created_at DateTime? @default(now()) @db.Timestamp(0)
   updated_at DateTime? @updatedAt @db.Timestamp(0)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "password_setup_tokens_user_id_foreign")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "password_setup_tokens_user_id_foreign")
 
-  @@index([user_id])
+  @@index([user_id], map: "password_setup_tokens_user_id_index")
 }
 
 model brands {
@@ -51,6 +53,7 @@ model brands {
   brand_requests        brand_requests[]
   brand_shipping_method brand_shipping_method[]
   User                  users?                  @relation(fields: [user_id], references: [id], onUpdate: SetNull, map: "brands_user_id_foreign")
+  category_requests     category_requests[]
   orders                orders[]
   Products              products[]
 }
@@ -97,18 +100,19 @@ model category_option {
 }
 
 model categories {
-  id                 BigInt                @id @default(autoincrement())
-  handle             String                @unique(map: "categories_handle_unique") @db.VarChar(255)
-  name               String                @db.VarChar(255)
-  title              String                @db.VarChar(255)
-  description        String?
-  created_at         DateTime?             @default(now()) @db.Timestamp(0)
-  updated_at         DateTime?             @updatedAt @db.Timestamp(0)
-  header             String?               @db.VarChar(255)
-  brand_category     brand_category[]
-  CategoryCollection category_collection[]
-  CategoryOption     category_option[]
-  Products           products[]
+  id                     BigInt                   @id @default(autoincrement())
+  handle                 String                   @unique(map: "categories_handle_unique") @db.VarChar(255)
+  name                   String                   @db.VarChar(255)
+  title                  String                   @db.VarChar(255)
+  description            String?
+  created_at             DateTime?                @default(now()) @db.Timestamp(0)
+  updated_at             DateTime?                @updatedAt @db.Timestamp(0)
+  header                 String?                  @db.VarChar(255)
+  brand_category         brand_category[]
+  CategoryCollection     category_collection[]
+  CategoryOption         category_option[]
+  category_request_items category_request_items[]
+  Products               products[]
 }
 
 model collections {
@@ -229,14 +233,12 @@ model orders {
   status           order_status      @default(pending)
   delivery_status  delivery_status   @default(pending)
   financial_status financial_status  @default(unpaid)
-  // Финансовый снапшот на момент создания (считает сервер витрины);
-  // shipping_price NULL — «стоимость согласуется», total тогда без доставки
+  created_at       DateTime?         @default(now()) @db.Timestamp(0)
+  updated_at       DateTime?         @updatedAt @db.Timestamp(0)
   subtotal         Decimal?          @db.Decimal(10, 2)
   discount_total   Decimal?          @db.Decimal(10, 2)
   shipping_price   Decimal?          @db.Decimal(10, 2)
   total            Decimal?          @db.Decimal(10, 2)
-  created_at       DateTime?         @default(now()) @db.Timestamp(0)
-  updated_at       DateTime?         @updatedAt @db.Timestamp(0)
   OrderItems       order_items[]
   OrderShippings   order_shippings[]
   Brand            brands            @relation(fields: [brand_id], references: [id], onDelete: Cascade, map: "orders_brand_id_foreign")
@@ -269,13 +271,13 @@ model order_shippings {
   name                 String            @db.VarChar(255)
   phone                String            @db.VarChar(255)
   note                 String
+  created_at           DateTime?         @default(now()) @db.Timestamp(0)
+  updated_at           DateTime?         @updatedAt @db.Timestamp(0)
   shipping_method_id   BigInt?
   shipping_method_name String?           @db.VarChar(255)
   customer_settings    Json              @default("[]")
-  created_at           DateTime?         @default(now()) @db.Timestamp(0)
-  updated_at           DateTime?         @updatedAt @db.Timestamp(0)
   Order                orders            @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "order_shippings_order_id_foreign")
-  ShippingMethod       shipping_methods? @relation(fields: [shipping_method_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "order_shippings_shipping_method_id_foreign")
+  ShippingMethod       shipping_methods? @relation(fields: [shipping_method_id], references: [id], onUpdate: NoAction, map: "order_shippings_shipping_method_id_foreign")
 }
 
 model ProductStatistics {
@@ -341,9 +343,9 @@ model brand_requests {
   reviewed_by                             BigInt?
   approved_at                             DateTime? @db.Timestamp(0)
   rejected_at                             DateTime? @db.Timestamp(0)
-  notified_at                             DateTime? @db.Timestamp(0)
   created_at                              DateTime? @default(now()) @db.Timestamp(0)
-  updated_at                              DateTime? @updatedAt @db.Timestamp(0)
+  updated_at                              DateTime? @default(now()) @updatedAt @db.Timestamp(0)
+  notified_at                             DateTime? @db.Timestamp(0)
   brands                                  brands?   @relation(fields: [brand_id], references: [id], onUpdate: NoAction, map: "brand_requests_brand_id_foreign")
   users_brand_requests_reviewed_byTousers users?    @relation("brand_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "brand_requests_reviewed_by_foreign")
   users_brand_requests_user_idTousers     users?    @relation("brand_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "brand_requests_user_id_foreign")
@@ -508,7 +510,6 @@ model contacts {
 
 model shipping_method_constructors {
   id                BigInt             @id @default(autoincrement())
-  key               String?            @unique(map: "shipping_method_constructors_key_unique") @db.VarChar(255)
   name              String             @db.VarChar(255)
   description       String?            @db.VarChar(255)
   active            Boolean            @default(false)
@@ -517,19 +518,82 @@ model shipping_method_constructors {
   customer_settings Json               @default("{\"fields\": []}")
   created_at        DateTime?          @default(now()) @db.Timestamp(0)
   updated_at        DateTime?          @updatedAt @db.Timestamp(0)
+  key               String?            @unique(map: "shipping_method_constructors_key_unique") @db.VarChar(255)
   shipping_methods  shipping_methods[]
 }
 
 model shipping_methods {
   id                             BigInt                       @id @default(autoincrement())
+  created_at                     DateTime?                    @default(now()) @db.Timestamp(0)
+  updated_at                     DateTime?                    @updatedAt @db.Timestamp(0)
   shipping_method_constructor_id BigInt
   merchant_settings              Json                         @default("[]")
   customer_settings              Json                         @default("[]")
-  created_at                     DateTime?                    @default(now()) @db.Timestamp(0)
-  updated_at                     DateTime?                    @updatedAt @db.Timestamp(0)
-  shipping_method_constructors   shipping_method_constructors @relation(fields: [shipping_method_constructor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shipping_methods_shipping_method_constructor_id_foreign")
   brand_shipping_method          brand_shipping_method[]
   order_shippings                order_shippings[]
+  shipping_method_constructors   shipping_method_constructors @relation(fields: [shipping_method_constructor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "shipping_methods_shipping_method_constructor_id_foreign")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model category_request_items {
+  id                  BigInt            @id @default(autoincrement())
+  category_request_id BigInt
+  category_id         BigInt
+  status              String            @default("pending") @db.VarChar(255)
+  rejection_reason    String?
+  created_at          DateTime?         @default(now()) @db.Timestamp(0)
+  updated_at          DateTime?         @db.Timestamp(0)
+  categories          categories        @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_request_items_category_id_foreign")
+  category_requests   category_requests @relation(fields: [category_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_request_items_category_request_id_foreign")
+
+  @@unique([category_request_id, category_id], map: "category_request_items_category_request_id_category_id_unique")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model category_requests {
+  id                                         BigInt                   @id @default(autoincrement())
+  brand_id                                   BigInt
+  user_id                                    BigInt?
+  status                                     String                   @default("pending") @db.VarChar(255)
+  reviewed_by                                BigInt?
+  reviewed_at                                DateTime?                @db.Timestamp(0)
+  created_at                                 DateTime?                @default(now()) @db.Timestamp(0)
+  updated_at                                 DateTime?                @db.Timestamp(0)
+  category_request_items                     category_request_items[]
+  brands                                     brands                   @relation(fields: [brand_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_requests_brand_id_foreign")
+  users_category_requests_reviewed_byTousers users?                   @relation("category_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "category_requests_reviewed_by_foreign")
+  users_category_requests_user_idTousers     users?                   @relation("category_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "category_requests_user_id_foreign")
+
+  @@index([brand_id, status], map: "category_requests_brand_id_status_index")
+}
+
+model email_messages {
+  id           BigInt    @id @default(autoincrement())
+  to_email     String    @db.VarChar(255)
+  to_name      String?   @db.VarChar(255)
+  from_email   String?   @db.VarChar(255)
+  from_name    String?   @db.VarChar(255)
+  reply_to     String?   @db.VarChar(255)
+  template_key String    @db.VarChar(255)
+  subject      String    @db.VarChar(255)
+  payload      Json      @default("{}")
+  locale       String    @default("ru") @db.VarChar(5)
+  status       String    @default("pending") @db.VarChar(255)
+  attempts     Int       @default(0) @db.SmallInt
+  max_attempts Int       @default(3) @db.SmallInt
+  last_error   String?
+  scheduled_at DateTime  @default(now()) @db.Timestamp(0)
+  sent_at      DateTime? @db.Timestamp(0)
+  source_type  String?   @db.VarChar(255)
+  source_id    BigInt?
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  resend_id    String?   @db.VarChar(255)
+
+  @@index([resend_id], map: "email_messages_resend_id_index")
+  @@index([source_type, source_id], map: "email_messages_source_type_source_id_index")
+  @@index([status, scheduled_at], map: "email_messages_status_scheduled_at_index")
+  @@index([template_key], map: "email_messages_template_key_index")
 }
 
 enum order_status {
