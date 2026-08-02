@@ -29,7 +29,7 @@ export default function SellerChartSlide({data}: SellerChartSlideProps) {
     mode === 'interest' ? data.map(point => point.cart) : null,
     mode === 'sales',
   ), [data, mode]);
-  const selected = data[activePoint ?? data.length - 1];
+  const selected = data[Math.min(activePoint ?? data.length - 1, data.length - 1)];
   const primaryColor = mode === 'sales' ? COLORS.revenue : COLORS.views;
 
   useEffect(() => {
