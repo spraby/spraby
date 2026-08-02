@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {useMemo} from "react";
 import {MenuItem} from "@/types";
+import {SOCIAL_LINKS} from '@/lib/social-links';
 
 const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
   const primaryLinks = useMemo(() => {
@@ -94,7 +95,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
               <li>
                 <a
                   className='inline-flex items-center gap-2 transition hover:text-purple-600'
-                  href='https://instagram.com/spraby'
+                  href={SOCIAL_LINKS.instagram.href}
                   target='_blank'
                   rel='noopener noreferrer'
                 >
@@ -107,7 +108,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
               <li>
                 <a
                   className='inline-flex items-center gap-2 transition hover:text-purple-600'
-                  href='https://t.me/spraby'
+                  href={SOCIAL_LINKS.telegram.href}
                   target='_blank'
                   rel='noopener noreferrer'
                 >
@@ -118,6 +119,16 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
                 </a>
               </li>
             </ul>
+
+            <div className='mt-6'>
+              <h3 className='text-xs font-semibold uppercase tracking-wide text-gray-500'>Продавцам</h3>
+              <Link
+                href='/for-sellers'
+                className='mt-3 inline-block text-sm text-gray-600 transition hover:text-purple-600'
+              >
+                Возможности
+              </Link>
+            </div>
           </nav>
         </div>
 
