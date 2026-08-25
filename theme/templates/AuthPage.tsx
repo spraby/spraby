@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import {type FormEvent, useState} from "react";
+import {type FormEvent, type KeyboardEvent, useLayoutEffect, useRef, useState} from "react";
 import {Input} from "@nextui-org/input";
 import {createRequest} from "@/services/BrandRequests";
 
@@ -21,43 +21,105 @@ const initialFormState: FormState = {
   brandName: "",
 };
 
-const normalizeDigits = (value: string) => value.replace(/\D/g, "");
+/** Цифры абонентского номера после кода страны: (XX) XXX-XX-XX. */
+const PHONE_DIGITS = 9;
 
-const formatBelarusPhone = (value: string) => {
-  let digits = normalizeDigits(value);
-  if (digits.startsWith("80")) {
-    digits = `375${digits.slice(1)}`;
-  } else if (!digits.startsWith("375")) {
-    digits = `375${digits.replace(/^375/, "")}`;
+/** Длина неизменяемого префикса «+375» в отформатированном значении. */
+const PHONE_PREFIX_LENGTH = 4;
+
+const isDigit = (char: string | undefined) => !!char && char >= "0" && char <= "9";
+
+/**
+ * Достаёт цифры абонентского номера и сообщает, сколько ведущих цифр ушло
+ * на код страны — без этого не пересчитать позицию каретки.
+ */
+const parsePhone = (value: string) => {
+  const all = value.replace(/\D/g, "");
+
+  if (all.startsWith("375")) {
+    return {digits: all.slice(3, 3 + PHONE_DIGITS), countryDigits: 3};
   }
 
-  const rest = digits.replace(/^375/, "").slice(0, 9);
-  const parts = [
-    rest.slice(0, 2),
-    rest.slice(2, 5),
-    rest.slice(5, 7),
-    rest.slice(7, 9),
-  ];
+  // Междугородний набор по Беларуси — 8 0XX XXX-XX-XX: «80» отбрасываем целиком.
+  if (all.startsWith("80")) {
+    return {digits: all.slice(2, 2 + PHONE_DIGITS), countryDigits: 2};
+  }
 
-  const formatted = [
-    "+375",
-    parts[0] ? ` (${parts[0]}` : " (",
-    parts[0] && parts[0].length === 2 ? ")" : "",
-    parts[1] ? ` ${parts[1]}` : "",
-    parts[2] ? `-${parts[2]}` : "",
-    parts[3] ? `-${parts[3]}` : "",
-  ].join("");
-
-  return formatted.trimEnd();
+  return {digits: all.slice(0, PHONE_DIGITS), countryDigits: 0};
 };
 
-const getPhoneDigitsCount = (value: string) => normalizeDigits(value.replace(/^375/, "")).length;
+const formatBelarusPhone = (digits: string) => {
+  // Пустое остаётся пустым, иначе поле не очистить до конца, а телефон
+  // в этой форме необязательный.
+  if (!digits) {
+    return "";
+  }
+
+  let formatted = `+375 (${digits.slice(0, 2)}`;
+
+  if (digits.length >= 2) formatted += ")";
+  if (digits.length > 2) formatted += ` ${digits.slice(2, 5)}`;
+  if (digits.length > 5) formatted += `-${digits.slice(5, 7)}`;
+  if (digits.length > 7) formatted += `-${digits.slice(7, 9)}`;
+
+  return formatted;
+};
+
+/** Сколько цифр абонентского номера стоит левее каретки. */
+const digitsBeforeCaret = (value: string, caret: number, countryDigits: number) =>
+  Math.max(0, value.slice(0, caret).replace(/\D/g, "").length - countryDigits);
+
+/** Позиция каретки в отформатированной строке сразу за нужной по счёту цифрой. */
+const caretAfterDigits = (formatted: string, count: number) => {
+  if (!formatted) {
+    return 0;
+  }
+
+  if (count <= 0) {
+    // Перед первой цифрой, то есть сразу за «+375 (».
+    return Math.min(formatted.length, PHONE_PREFIX_LENGTH + 2);
+  }
+
+  let seen = 0;
+
+  for (let i = PHONE_PREFIX_LENGTH; i < formatted.length; i++) {
+    if (!isDigit(formatted[i])) continue;
+
+    seen++;
+    if (seen < count) continue;
+
+    // Перепрыгиваем разделители, чтобы каретка не застревала перед «)».
+    let caret = i + 1;
+    while (caret < formatted.length && !isDigit(formatted[caret])) caret++;
+
+    return caret;
+  }
+
+  return formatted.length;
+};
 
 export default function AuthPage() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const phoneCaretRef = useRef<number | null>(null);
+
+  // Значение поля пересобирается маской целиком, поэтому браузер ставит каретку
+  // в конец. Возвращаем её на место сразу после коммита нового значения.
+  useLayoutEffect(() => {
+    const input = phoneInputRef.current;
+    const caret = phoneCaretRef.current;
+
+    if (!input || caret === null) {
+      return;
+    }
+
+    phoneCaretRef.current = null;
+    input.setSelectionRange(caret, caret);
+  });
 
   const handleChange = (field: keyof FormState, value: string) => {
     setForm((prev) => ({...prev, [field]: value}));
@@ -68,6 +130,50 @@ export default function AuthPage() {
         return next;
       });
     }
+  };
+
+  const applyPhone = (digits: string, caretDigits: number) => {
+    const formatted = formatBelarusPhone(digits);
+
+    phoneCaretRef.current = caretAfterDigits(formatted, caretDigits);
+    handleChange("phone", formatted);
+  };
+
+  const handlePhoneValueChange = (value: string) => {
+    const {digits, countryDigits} = parsePhone(value);
+    // onValueChange вызывается синхронно внутри обработчика события, поэтому
+    // в DOM ещё лежит «сырое» значение и актуальная каретка.
+    const caret = phoneInputRef.current?.selectionStart ?? value.length;
+
+    applyPhone(digits, Math.min(digitsBeforeCaret(value, caret, countryDigits), digits.length));
+  };
+
+  const handlePhoneKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Backspace" && event.key !== "Delete") {
+      return;
+    }
+
+    const input = phoneInputRef.current;
+
+    if (!input || input.selectionStart === null || input.selectionStart !== input.selectionEnd) {
+      // Выделение пользователь удаляет сам — дальше отработает handlePhoneValueChange.
+      return;
+    }
+
+    const {digits, countryDigits} = parsePhone(input.value);
+    const before = digitsBeforeCaret(input.value, input.selectionStart, countryDigits);
+    const index = event.key === "Backspace" ? before - 1 : before;
+
+    // Удаляем всегда цифру, а не символ под кареткой. Иначе Backspace съедал бы
+    // «)» или «-», маска тут же дорисовывала бы их обратно, и цифры в скобках
+    // не удалялись бы вовсе — приходилось выделять их вручную.
+    event.preventDefault();
+
+    if (index < 0 || index >= digits.length) {
+      return;
+    }
+
+    applyPhone(`${digits.slice(0, index)}${digits.slice(index + 1)}`, index);
   };
 
   const validate = (): FormErrors => {
@@ -83,8 +189,8 @@ export default function AuthPage() {
     if (!form.name.trim()) {
       nextErrors.name = "Укажите имя";
     }
-    const phoneDigits = getPhoneDigitsCount(form.phone);
-    if (form.phone.trim() && phoneDigits < 9) {
+    const phoneDigits = parsePhone(form.phone).digits.length;
+    if (form.phone.trim() && phoneDigits < PHONE_DIGITS) {
       nextErrors.phone = "Добавьте корректный номер Беларуси";
     }
     if (!form.brandName.trim()) {
@@ -196,8 +302,10 @@ export default function AuthPage() {
               label="Телефон"
               variant="bordered"
               radius="sm"
+              ref={phoneInputRef}
               value={form.phone}
-              onValueChange={(value) => handleChange("phone", formatBelarusPhone(value))}
+              onValueChange={handlePhoneValueChange}
+              onKeyDown={handlePhoneKeyDown}
               isInvalid={!!errors.phone}
               errorMessage={errors.phone}
               isDisabled={isLoading}

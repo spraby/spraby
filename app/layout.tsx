@@ -11,11 +11,14 @@ export const metadata: Metadata = {
   }),
   icons: {
     icon: [
-      {url: "/img/favicon.svg", type: "image/svg+xml"},
+      {url: "/favicon-16x16.png", sizes: "16x16", type: "image/png"},
+      {url: "/favicon-32x32.png", sizes: "32x32", type: "image/png"},
+      {url: "/favicon-48x48.png", sizes: "48x48", type: "image/png"},
     ],
-    shortcut: "/img/favicon.svg",
-    apple: "/img/favicon.svg",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {
