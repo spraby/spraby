@@ -9,6 +9,10 @@ type SeoMetadataInput = {
   description?: string | null;
   path?: string | null;
   image?: string | null;
+  imageAlt?: string | null;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageType?: string;
   noIndex?: boolean;
   follow?: boolean;
 };
@@ -85,6 +89,10 @@ export function createMetadata({
   description,
   path = "/",
   image,
+  imageAlt,
+  imageWidth,
+  imageHeight,
+  imageType,
   noIndex = false,
   follow,
 }: SeoMetadataInput = {}): Metadata {
@@ -92,6 +100,13 @@ export function createMetadata({
   const seoDescription = buildSeoDescription(description);
   const canonicalUrl = path ? toAbsoluteUrl(path) : undefined;
   const imageUrl = toAbsoluteUrl(image);
+  const socialImage = imageUrl ? {
+    url: imageUrl,
+    alt: cleanText(imageAlt) || seoTitle,
+    width: imageWidth,
+    height: imageHeight,
+    type: imageType,
+  } : undefined;
   const shouldNoIndex = noIndex || !isIndexingAllowed();
   const shouldFollow = follow ?? !shouldNoIndex;
 
@@ -111,13 +126,13 @@ export function createMetadata({
       siteName: SITE_NAME,
       locale: "ru_RU",
       type: "website",
-      images: imageUrl ? [{url: imageUrl}] : undefined,
+      images: socialImage ? [socialImage] : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title: seoTitle,
       description: seoDescription,
-      images: imageUrl ? [imageUrl] : undefined,
+      images: socialImage ? [socialImage] : undefined,
     },
     robots: shouldNoIndex ? {
       index: false,

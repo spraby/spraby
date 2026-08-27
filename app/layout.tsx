@@ -7,7 +7,11 @@ import {createMetadata} from "@/lib/seo";
 export const metadata: Metadata = {
   ...createMetadata({
     path: "/",
-    image: "/img/hero/hero-product-1.webp",
+    image: "/spraby-preview.png",
+    imageAlt: "Логотип spraby",
+    imageWidth: 512,
+    imageHeight: 512,
+    imageType: "image/png",
   }),
   icons: {
     icon: [

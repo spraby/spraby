@@ -10,7 +10,11 @@ export const metadata = createMetadata({
   title: "Маркетплейс авторских товаров",
   description: "Покупайте авторские товары, изделия ручной работы и вещи независимых брендов на spraby. Уникальные находки от мастеров с удобным заказом онлайн.",
   path: "/",
-  image: "/img/hero/hero-product-1.webp",
+  image: "/spraby-preview.png",
+  imageAlt: "Логотип spraby",
+  imageWidth: 512,
+  imageHeight: 512,
+  imageType: "image/png",
 });
 
 export default async function Page() {
