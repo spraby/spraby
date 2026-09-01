@@ -17,6 +17,9 @@ model users {
   created_at                                             DateTime?               @default(now()) @db.Timestamp(0)
   updated_at                                             DateTime?               @updatedAt @db.Timestamp(0)
   phone                                                  String?                 @db.VarChar(255)
+  onboarding_skipped_steps                               Json?                   @db.Json
+  onboarding_dismissed_at                                DateTime?               @db.Timestamp(0)
+  onboarding_hidden_hints                                Json?                   @db.Json
   audits                                                 audits[]
   brand_requests_brand_requests_reviewed_byTousers       brand_requests[]        @relation("brand_requests_reviewed_byTousers")
   brand_requests_brand_requests_user_idTousers           brand_requests[]        @relation("brand_requests_user_idTousers")
@@ -48,10 +51,12 @@ model brands {
   updated_at            DateTime?               @updatedAt @db.Timestamp(0)
   about                 String?
   refund_policy         String?
+  image_id              BigInt?
   brand_category        brand_category[]
   brand_image           brand_image[]
   brand_requests        brand_requests[]
   brand_shipping_method brand_shipping_method[]
+  Image                 images?                 @relation(fields: [image_id], references: [id], onUpdate: NoAction, map: "brands_image_id_foreign")
   User                  users?                  @relation(fields: [user_id], references: [id], onUpdate: SetNull, map: "brands_user_id_foreign")
   category_requests     category_requests[]
   orders                orders[]
@@ -188,6 +193,7 @@ model images {
   created_at    DateTime?        @default(now()) @db.Timestamp(0)
   updated_at    DateTime?        @updatedAt @db.Timestamp(0)
   brand_image   brand_image[]
+  BrandLogos    brands[]
   ProductImages product_images[]
 }
 

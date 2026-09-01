@@ -570,6 +570,11 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return sellerName.length ? sellerName.slice(0, 2).toUpperCase() : 'S';
   }, [sellerName]);
 
+  const brandLogoSrc = useMemo(() => {
+    const src = product.Brand?.Image?.src;
+    return typeof src === 'string' && src.trim().length ? src : '';
+  }, [product.Brand?.Image?.src]);
+
   const primaryImageSrc = useMemo(() => {
     const imageFromGallery = galleryImages[0]?.src;
     if (imageFromGallery) return imageFromGallery;
@@ -1354,8 +1359,16 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <div className='h-px bg-gray-200'></div>
           {(product.Brand?.name || brandLocation || brandSinceText) && (
             <div className='flex items-start gap-4 rounded-2xl bg-white py-4'>
-              <div className='flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-gray-500 uppercase'>
-                {sellerInitials}
+              <div className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-sm font-semibold text-gray-500 uppercase'>
+                {brandLogoSrc ? (
+                  <Image
+                    src={brandLogoSrc}
+                    alt={product.Brand?.name ?? sellerName}
+                    fill
+                    sizes="48px"
+                    className='object-cover object-center'
+                  />
+                ) : sellerInitials}
               </div>
               <div className='flex flex-col gap-2 text-sm text-gray-600'>
                 {product.Brand?.name && (

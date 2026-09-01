@@ -55,6 +55,7 @@ export type BrandShippingMethodModel = brand_shipping_method & {
 export type ContactModel = contacts
 
 export type BrandModel = brands & {
+  Image?: ImageModel | null
   User?: UserModel
   Products?: ProductModel[]
   brand_category?: BrandCategoryModel[]
@@ -128,6 +129,7 @@ export type ProductStatisticsModel = ProductStatistics & {
 }
 
 export type ImageModel = images & {
+  BrandLogos?: BrandModel[]
   BrandImage?: BrandImageModel[]
   ImageConversions?: ImageConversionModel[]
   ProductImages?: ProductImageModel[]

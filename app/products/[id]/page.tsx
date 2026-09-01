@@ -42,6 +42,7 @@ const getProductDetail = cache(async (productId: bigint) => {
       Brand: {
         include: {
           User: true,
+          Image: true,
           brand_shipping_method: {
             // Способы деактивированных конструкторов не показываем и не продаём
             where: {
@@ -124,6 +125,13 @@ export default async function ProductDetailPage(props: any) {
 
   const productData = {
     ...product,
+    Brand: product.Brand ? {
+      ...product.Brand,
+      Image: product.Brand.Image ? {
+        ...product.Brand.Image,
+        src: `${process.env.AWS_IMAGE_DOMAIN}/${product.Brand.Image.src}`
+      } : null
+    } : product.Brand,
     price: `${product?.Variants?.[0]?.price ?? 0}`,
     final_price: `${product?.Variants?.[0]?.final_price ?? 0}`,
     Variants: product?.Variants?.map(variant => ({
