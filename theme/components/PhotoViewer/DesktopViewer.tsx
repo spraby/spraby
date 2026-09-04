@@ -19,11 +19,18 @@ type Props = {
 const ZOOM_SCALE = 2.5;
 const THUMB_WIDTH = 96;
 const FULL_WIDTH = 2000;
+/** Сторона квадратного превью и зазор между ними, px. */
+const THUMB_SIZE = 66;
+const THUMB_GAP = 12;
+/** Сколько превью помещается в колонку; дальше появляются стрелки. */
+const VISIBLE_THUMBS = 5;
+const THUMBS_VIEWPORT_HEIGHT = VISIBLE_THUMBS * THUMB_SIZE + (VISIBLE_THUMBS - 1) * THUMB_GAP;
 
 export default function DesktopViewer({images, activeIndex, onIndexChange, onClose, loadImage, onSwiper}: Props) {
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperClass | null>(null);
   const [zoomedSrc, setZoomedSrc] = useState<string | null>(null);
   const [origin, setOrigin] = useState({x: 50, y: 50});
+  const [thumbsEdges, setThumbsEdges] = useState({start: true, end: false});
   const mainSwiperRef = useRef<SwiperClass | null>(null);
   /**
    * initialSlide читается Swiper'ом только при инициализации. Если передавать
@@ -77,7 +84,18 @@ export default function DesktopViewer({images, activeIndex, onIndexChange, onClo
     setOrigin(readOrigin(event));
   }, [readOrigin, zoomedSrc]);
 
+  // Стрелки колонки гасим на краях. Возвращаем прежний объект, если ничего
+  // не изменилось, — onProgress во freeMode срабатывает на каждый кадр скролла.
+  const syncThumbsEdges = useCallback((swiper: SwiperClass) => {
+    setThumbsEdges(prev => (
+      prev.start === swiper.isBeginning && prev.end === swiper.isEnd
+        ? prev
+        : {start: swiper.isBeginning, end: swiper.isEnd}
+    ));
+  }, []);
+
   const hasThumbs = images.length > 1;
+  const hasThumbsNav = images.length > VISIBLE_THUMBS;
 
   return (
     <div className='flex h-full w-full items-center'>
@@ -91,25 +109,38 @@ export default function DesktopViewer({images, activeIndex, onIndexChange, onClo
       </button>
 
       {hasThumbs && (
-        <div className='flex h-full max-h-[620px] w-[110px] shrink-0 flex-col items-center px-2 py-12'>
+        <div className='flex h-full w-[110px] shrink-0 flex-col items-center justify-center gap-3 px-2 py-6'>
+          {hasThumbsNav && (
+            <ThumbNavButton
+              direction='up'
+              disabled={thumbsEdges.start}
+              onClick={() => thumbsSwiper?.slidePrev()}
+            />
+          )}
           <Swiper
-            onSwiper={setThumbsSwiper}
+            onSwiper={swiper => {
+              setThumbsSwiper(swiper);
+              syncThumbsEdges(swiper);
+            }}
+            onProgress={syncThumbsEdges}
+            onSlideChange={syncThumbsEdges}
             modules={[FreeMode]}
             direction='vertical'
-            slidesPerView={Math.min(images.length, 5)}
-            spaceBetween={12}
+            slidesPerView='auto'
+            spaceBetween={THUMB_GAP}
             freeMode
-            className='h-full w-full'
+            className='w-full min-h-0 flex-1'
+            style={{maxHeight: THUMBS_VIEWPORT_HEIGHT}}
           >
             {images.map((image, index) => (
-              <SwiperSlide key={`${image.src}-${index}`} className='!h-auto flex justify-center'>
+              <SwiperSlide key={`${image.src}-${index}`} className='!h-[66px] flex justify-center'>
                 <img
                   src={loadImage(image.src, THUMB_WIDTH)}
                   alt={`Фото ${index + 1}`}
                   loading='lazy'
                   draggable={false}
                   onClick={() => handleThumbClick(index)}
-                  className={`block h-[66px] w-[66px] cursor-pointer rounded bg-neutral-100 object-cover transition ${
+                  className={`block h-[66px] w-[66px] shrink-0 cursor-pointer rounded bg-neutral-100 object-cover transition ${
                     index === activeIndex
                       ? 'opacity-100 ring-2 ring-inset ring-purple-600'
                       : 'opacity-50 hover:opacity-80 hover:ring-2 hover:ring-inset hover:ring-purple-200'
@@ -118,6 +149,13 @@ export default function DesktopViewer({images, activeIndex, onIndexChange, onClo
               </SwiperSlide>
             ))}
           </Swiper>
+          {hasThumbsNav && (
+            <ThumbNavButton
+              direction='down'
+              disabled={thumbsEdges.end}
+              onClick={() => thumbsSwiper?.slideNext()}
+            />
+          )}
         </div>
       )}
 
@@ -207,11 +245,28 @@ function NavButton({side, onClick}: {side: 'prev' | 'next', onClick: () => void}
   );
 }
 
-function ChevronIcon({flipped}: {flipped: boolean}) {
+function ThumbNavButton({direction, disabled, onClick}: {direction: 'up' | 'down', disabled: boolean, onClick: () => void}) {
+  const isUp = direction === 'up';
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={isUp ? 'Предыдущие превью' : 'Следующие превью'}
+      className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-600 transition hover:bg-purple-100 disabled:opacity-30 disabled:hover:bg-purple-50'
+    >
+      <span className={isUp ? 'rotate-90' : '-rotate-90'}>
+        <ChevronIcon small/>
+      </span>
+    </button>
+  );
+}
+
+function ChevronIcon({flipped, small}: {flipped?: boolean, small?: boolean}) {
   return (
     <svg
-      width='14'
-      height='26'
+      width={small ? 8 : 14}
+      height={small ? 15 : 26}
       viewBox='0 0 14 26'
       fill='none'
       aria-hidden='true'
