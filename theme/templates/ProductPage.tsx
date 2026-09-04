@@ -31,11 +31,14 @@ import ShippingMethodPicker, {
   type ShippingErrors,
   type ShippingSelection,
 } from "@/theme/snippents/ShippingMethodPicker";
-import {Splide, SplideSlide} from "react-splide-ts";
+import {Swiper, SwiperSlide} from "swiper/react";
+import type {Swiper as SwiperClass} from "swiper";
+import {FreeMode} from "swiper/modules";
 import {useFavorites} from "@/theme/hooks/useFavorites";
 import {useCart} from "@/theme/hooks/useCart";
 import {calculateDiscountPercent, normalizeImageSrc, toIdString} from "@/services/utilits";
-import '@splidejs/react-splide/css';
+import 'swiper/css';
+import 'swiper/css/free-mode';
 import {useSearchParams} from "next/navigation";
 
 const ArrowIcon = ({direction}: { direction: 'left' | 'right' }) => (
@@ -702,15 +705,19 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 
     const minVisible = Math.min(desktopPerPage, largePerPage, tabletPerPage, mobilePerPage);
 
+    const desktopVisible = Math.max(1, Math.min(desktopPerPage, 5));
+
+    // Splide описывал брейкпоинты сверху вниз (max-width), Swiper — снизу вверх
+    // (min-width), поэтому базовые значения здесь мобильные.
     return {
-      perPage: Math.max(1, Math.min(desktopPerPage, 5)),
+      slidesPerView: Math.max(1, Math.min(mobilePerPage, 2)),
+      spaceBetween: 12,
       breakpoints: {
-        1440: {perPage: Math.max(1, Math.min(desktopPerPage, 5))},
-        1100: {perPage: Math.max(1, Math.min(largePerPage, 3)), gap: '1.25rem'},
-        768: {perPage: Math.max(1, Math.min(tabletPerPage, 2)), gap: '1rem'},
-        520: {perPage: Math.max(1, Math.min(mobilePerPage, 2)), gap: '0.75rem'},
+        521: {slidesPerView: Math.max(1, Math.min(tabletPerPage, 2)), spaceBetween: 16},
+        769: {slidesPerView: Math.max(1, Math.min(largePerPage, 3)), spaceBetween: 20},
+        1101: {slidesPerView: desktopVisible, spaceBetween: 24},
       },
-      canScroll: safeTotal > Math.max(1, Math.min(desktopPerPage, 5)),
+      canScroll: safeTotal > desktopVisible,
       canDrag: autoWidth ? safeTotal > 1 : safeTotal > minVisible,
       autoWidth
     };
@@ -726,20 +733,20 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     [createCarouselLayout, recentProducts.length]
   );
 
-  const relatedCarouselRef = useRef<InstanceType<typeof Splide> | null>(null);
+  const relatedCarouselRef = useRef<SwiperClass | null>(null);
   const handleRelatedPrev = useCallback(() => {
-    relatedCarouselRef.current?.go('<');
+    relatedCarouselRef.current?.slidePrev();
   }, []);
   const handleRelatedNext = useCallback(() => {
-    relatedCarouselRef.current?.go('>');
+    relatedCarouselRef.current?.slideNext();
   }, []);
 
-  const recentCarouselRef = useRef<InstanceType<typeof Splide> | null>(null);
+  const recentCarouselRef = useRef<SwiperClass | null>(null);
   const handleRecentPrev = useCallback(() => {
-    recentCarouselRef.current?.go('<');
+    recentCarouselRef.current?.slidePrev();
   }, []);
   const handleRecentNext = useCallback(() => {
-    recentCarouselRef.current?.go('>');
+    recentCarouselRef.current?.slideNext();
   }, []);
 
   const renderProductCarousel = ({
@@ -756,7 +763,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   }: RenderCarouselConfig) => {
     if (!products.length) return null;
     const canDrag = layout.canDrag;
-    const slideClassName = layout.autoWidth ? 'w-auto !basis-auto flex justify-start' : '';
+    const slideClassName = layout.autoWidth ? '!w-auto flex justify-start' : '';
     const cardWrapperClass = layout.autoWidth
       ? 'w-[clamp(10.25rem,16vw,12.75rem)] max-w-[12.75rem] shrink-0'
       : 'w-full';
@@ -768,35 +775,30 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           {subtitle && <span className='text-sm text-gray-500'>{subtitle}</span>}
         </div>
         <div className='relative'>
-          <Splide
-            ref={carouselRef}
-            options={{
-              perPage: layout.perPage,
-              perMove: 1,
-              gap: '1.5rem',
-              rewind: layout.canScroll,
-              pagination: false,
-              drag: canDrag ? 'free' : false,
-              arrows: false,
-              speed: 600,
-              easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)',
-              breakpoints: layout.breakpoints,
-              autoWidth: layout.autoWidth,
-              focus: layout.autoWidth ? 0 : undefined,
-              trimSpace: false,
-              padding: layout.autoWidth ? '0 0.75rem' : undefined
+          <Swiper
+            modules={[FreeMode]}
+            onSwiper={swiper => {
+              carouselRef.current = swiper;
             }}
+            slidesPerView={layout.autoWidth ? 'auto' : layout.slidesPerView}
+            spaceBetween={layout.spaceBetween}
+            breakpoints={layout.autoWidth ? undefined : layout.breakpoints}
+            freeMode={canDrag}
+            allowTouchMove={canDrag}
+            rewind={layout.canScroll}
+            speed={600}
+            watchSlidesProgress
             aria-label={ariaLabel}
             className={`group/${groupSuffix} ${containerPaddingClass}`}
           >
             {products.map(item => (
-              <SplideSlide key={`${slideKeyPrefix}-${String(item.id)}`} className={slideClassName}>
+              <SwiperSlide key={`${slideKeyPrefix}-${String(item.id)}`} className={slideClassName}>
                 <div className={cardWrapperClass}>
                   <ProductCart product={item}/>
                 </div>
-              </SplideSlide>
+              </SwiperSlide>
             ))}
-          </Splide>
+          </Swiper>
           <button
             type='button'
             onClick={onPrev}
@@ -1452,7 +1454,7 @@ type RecentProductStorage = {
   brand?: string | null
 }
 
-type CarouselBreakpoints = Record<number, { perPage: number; gap?: string }>
+type CarouselBreakpoints = Record<number, { slidesPerView: number; spaceBetween: number }>
 
 type CarouselMinimums = {
   desktop?: number
@@ -1462,7 +1464,8 @@ type CarouselMinimums = {
 }
 
 type CarouselLayout = {
-  perPage: number
+  slidesPerView: number
+  spaceBetween: number
   breakpoints: CarouselBreakpoints
   canScroll: boolean
   canDrag: boolean
@@ -1473,7 +1476,7 @@ type RenderCarouselConfig = {
   title: string
   subtitle?: string
   products: ProductCardModel[]
-  carouselRef: MutableRefObject<InstanceType<typeof Splide> | null>
+  carouselRef: MutableRefObject<SwiperClass | null>
   onPrev: () => void
   onNext: () => void
   layout: CarouselLayout
