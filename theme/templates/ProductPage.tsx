@@ -276,6 +276,11 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const currentFinalPrice = `${variant?.final_price ?? product.final_price ?? currentPrice}`;
   const discountPercent = calculateDiscountPercent(Number(currentPrice), Number(currentFinalPrice));
   const hasDiscount = discountPercent > 0;
+  const isMadeToOrder = variant?.is_made_to_order ?? false;
+  const productionTimeDays = variant?.production_time_days;
+  const hasProductionTime = typeof productionTimeDays === 'number'
+    && Number.isInteger(productionTimeDays)
+    && productionTimeDays > 0;
   const quickOrderTotalFinalPrice = Number(currentFinalPrice) * quickOrderQuantity;
 
   const handleDrawerClose = () => {
@@ -1233,6 +1238,18 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             </button>
           </div>
           <Price finalPrice={+currentFinalPrice} price={+currentPrice} finalPriceClassName="text-gray-900"/>
+          {isMadeToOrder && (
+            <div className="flex flex-wrap items-center gap-2" role="status" aria-live="polite">
+              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                Под заказ
+              </span>
+              {hasProductionTime && (
+                <span className="text-sm text-gray-600">
+                  Изготовление — до {productionTimeDays} {pluralize(productionTimeDays, ['дня', 'дней', 'дней'])}
+                </span>
+              )}
+            </div>
+          )}
           {tags.length > 0 && (
             <div className='flex flex-col gap-2'>
               <div className='flex flex-wrap gap-2'>
