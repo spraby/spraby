@@ -406,6 +406,21 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     },
   ]), [deliveryContent, product.description, refund]);
 
+  // Общий для всех карточек текст, который задаёт админ в настройках витрины.
+  // Редактор отдаёт пустой абзац вместо пустой строки — иначе показали бы пустой аккордеон.
+  // Правило «пусто» должно совпадать с серверным (UpdateInformationRequest::plainText),
+  // иначе админ сохранит текст, который витрина молча не покажет.
+  const additionalInformation = useMemo(() => {
+    const html = String(informationSettings?.description ?? '').trim();
+    const text = html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\u00a0/g, ' ')
+      .trim();
+
+    return text ? html : '';
+  }, [informationSettings?.description]);
+
   const brandLocation = useMemo(() => {
     const addr = brandAddresses?.[0];
     if (!addr) return null;
@@ -1333,30 +1348,34 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             selectedVariantId={variant ? toIdString(variant.id) : null}
             onChange={handleVariantChange}
           />
-          <div className='h-px bg-gray-200'></div>
-          <Accordion className='pb-0'>
-            <AccordionItem
-              key="info"
-              aria-label="Дополнительная информация"
-              title="Дополнительная информация"
-              indicator={isOpen => {
-                return <span className={`block border border-gray-300 rounded-full p-1 ${!isOpen ? 'rotate-180' : ''}`}>
-                  <ChevronIcon width={20} height={20}/>
-                </span>;
-              }}
-              classNames={{
-                base: 'py-0',
-                trigger: 'py-1 px-0 data-[open=true]:pb-1 data-[open=true]:pt-1',
-                title: 'text-sm font-normal text-gray-700',
-                content: 'text-xs text-gray-600'
-              }}
-            >
-              <div
-                className="text-xs leading-relaxed"
-                dangerouslySetInnerHTML={{__html: (informationSettings?.description ?? '') as string}}
-              />
-            </AccordionItem>
-          </Accordion>
+          {additionalInformation && (
+            <>
+              <div className='h-px bg-gray-200'></div>
+              <Accordion className='pb-0'>
+                <AccordionItem
+                  key="info"
+                  aria-label="Дополнительная информация"
+                  title="Дополнительная информация"
+                  indicator={isOpen => {
+                    return <span className={`block border border-gray-300 rounded-full p-1 ${!isOpen ? 'rotate-180' : ''}`}>
+                      <ChevronIcon width={20} height={20}/>
+                    </span>;
+                  }}
+                  classNames={{
+                    base: 'py-0',
+                    trigger: 'py-1 px-0 data-[open=true]:pb-1 data-[open=true]:pt-1',
+                    title: 'text-sm font-normal text-gray-700',
+                    content: 'text-sm text-gray-600'
+                  }}
+                >
+                  <div
+                    className="text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{__html: additionalInformation}}
+                  />
+                </AccordionItem>
+              </Accordion>
+            </>
+          )}
 
           <div className='h-px bg-gray-200'></div>
           {(product.Brand?.name || brandLocation || brandSinceText) && (
