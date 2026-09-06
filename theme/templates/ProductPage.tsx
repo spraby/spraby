@@ -437,6 +437,15 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return forms[2];
   };
 
+  // Статус «под заказ» живёт на варианте, поэтому пересчитывается при его смене.
+  const isMadeToOrder = variant?.is_made_to_order ?? false;
+  const productionTimeDays = useMemo(() => {
+    if (!isMadeToOrder) return null;
+    const days = variant?.production_time_days;
+
+    return typeof days === 'number' && days > 0 ? days : null;
+  }, [isMadeToOrder, variant?.production_time_days]);
+
   const brandSinceText = useMemo(() => {
     const createdValue = (product.Brand as any)?.created_at ?? (product.Brand as any)?.createdAt;
     if (!createdValue) return null;
@@ -1250,6 +1259,18 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             </button>
           </div>
           <Price finalPrice={+currentFinalPrice} price={+currentPrice} finalPriceClassName="text-gray-900"/>
+          {isMadeToOrder && (
+            <div className='flex flex-wrap items-center gap-3'>
+              <span className='inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800'>
+                Под заказ
+              </span>
+              {productionTimeDays !== null && (
+                <span className='text-sm text-gray-500'>
+                  Изготовление — до {productionTimeDays} {pluralize(productionTimeDays, ['дня', 'дней', 'дней'])}
+                </span>
+              )}
+            </div>
+          )}
           {tags.length > 0 && (
             <div className='flex flex-col gap-2'>
               <div className='flex flex-wrap gap-2'>

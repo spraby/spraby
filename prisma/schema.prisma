@@ -155,19 +155,21 @@ model products {
 }
 
 model variants {
-  id           BigInt           @id @default(autoincrement())
-  product_id   BigInt
-  image_id     BigInt?
-  title        String?          @db.VarChar(255)
-  price        Decimal          @default(0) @db.Decimal(10, 2)
-  final_price  Decimal          @default(0) @db.Decimal(10, 2)
-  created_at   DateTime?        @default(now()) @db.Timestamp(0)
-  updated_at   DateTime?        @updatedAt @db.Timestamp(0)
-  enabled      Boolean          @default(true)
-  order_items  order_items[]
-  VariantValue variant_values[]
-  Image        product_images?  @relation(fields: [image_id], references: [id], onUpdate: SetNull, map: "variants_image_id_foreign")
-  Product      products         @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "variants_product_id_foreign")
+  id                   BigInt           @id @default(autoincrement())
+  product_id           BigInt
+  image_id             BigInt?
+  title                String?          @db.VarChar(255)
+  price                Decimal          @default(0) @db.Decimal(10, 2)
+  final_price          Decimal          @default(0) @db.Decimal(10, 2)
+  created_at           DateTime?        @default(now()) @db.Timestamp(0)
+  updated_at           DateTime?        @updatedAt @db.Timestamp(0)
+  enabled              Boolean          @default(true)
+  is_made_to_order     Boolean          @default(false)
+  production_time_days Int?             @db.SmallInt
+  order_items          order_items[]
+  VariantValue         variant_values[]
+  Image                product_images?  @relation(fields: [image_id], references: [id], onUpdate: SetNull, map: "variants_image_id_foreign")
+  Product              products         @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "variants_product_id_foreign")
 }
 
 model variant_values {
