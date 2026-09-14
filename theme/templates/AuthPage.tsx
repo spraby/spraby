@@ -3,6 +3,8 @@
 import Link from "next/link";
 import {type FormEvent, type KeyboardEvent, useLayoutEffect, useRef, useState} from "react";
 import {Input} from "@nextui-org/input";
+import {Select, SelectItem} from "@nextui-org/select";
+import {EMPLOYMENT_TYPES} from "@/lib/employment-types";
 import {createRequest} from "@/services/BrandRequests";
 
 type FormState = {
@@ -10,6 +12,7 @@ type FormState = {
   email: string;
   phone: string;
   brandName: string;
+  employmentType: string;
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -19,6 +22,7 @@ const initialFormState: FormState = {
   email: "",
   phone: "",
   brandName: "",
+  employmentType: "",
 };
 
 /** Цифры абонентского номера после кода страны: (XX) XXX-XX-XX. */
@@ -218,6 +222,7 @@ export default function AuthPage() {
       phone: form.phone.trim() || undefined,
       name: form.name.trim(),
       brand_name: form.brandName.trim(),
+      employment_type: form.employmentType || undefined,
     });
 
     if (result.success) {
@@ -331,6 +336,27 @@ export default function AuthPage() {
               }}
               placeholder="Название вашего магазина"
             />
+
+            <Select
+              label="Форма занятости"
+              variant="bordered"
+              radius="sm"
+              selectedKeys={form.employmentType ? [form.employmentType] : []}
+              onSelectionChange={(keys) => {
+                const [selected] = Array.from(keys as Set<string>);
+                handleChange("employmentType", selected ?? "");
+              }}
+              isDisabled={isLoading}
+              classNames={{
+                label: "text-sm font-semibold text-gray-700",
+                trigger: "bg-white",
+              }}
+              placeholder="Не обязательно"
+            >
+              {EMPLOYMENT_TYPES.map((type) => (
+                <SelectItem key={type.value}>{type.label}</SelectItem>
+              ))}
+            </Select>
 
             <button
               type="submit"

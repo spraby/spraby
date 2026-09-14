@@ -1,5 +1,6 @@
 'use server'
 import db from "@/prisma/db.client";
+import {isEmploymentType} from "@/lib/employment-types";
 import Prisma, {BrandRequestModel} from "@/prisma/types";
 
 export async function findFirst(params?: Prisma.brand_requestsFindFirstArgs): Promise<BrandRequestModel | null> {
@@ -15,6 +16,7 @@ export type CreateBrandRequestInput = {
   phone?: string;
   name?: string;
   brand_name?: string;
+  employment_type?: string;
 }
 
 export async function createRequest(input: CreateBrandRequestInput): Promise<{success: boolean; error?: string}> {
@@ -37,6 +39,9 @@ export async function createRequest(input: CreateBrandRequestInput): Promise<{su
         phone: input.phone || null,
         name: input.name || null,
         brand_name: input.brand_name || null,
+        employment_type: isEmploymentType(input.employment_type ?? '')
+          ? input.employment_type
+          : null,
         status: 'pending',
       }
     })
