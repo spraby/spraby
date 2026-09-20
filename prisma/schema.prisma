@@ -26,6 +26,7 @@ model users {
   Brands                                                 brands[]
   category_requests_category_requests_reviewed_byTousers category_requests[]     @relation("category_requests_reviewed_byTousers")
   category_requests_category_requests_user_idTousers     category_requests[]     @relation("category_requests_user_idTousers")
+  moderation_requests                                    moderation_requests[]
   password_setup_tokens                                  password_setup_tokens[]
 }
 
@@ -53,6 +54,10 @@ model brands {
   refund_policy         String?
   image_id              BigInt?
   employment_type       String?                 @db.VarChar(255)
+  type                  String                  @default("master") @db.VarChar(255)
+  domain                String?                 @unique(map: "brands_domain_unique") @db.VarChar(255)
+  page_status           String                  @default("none") @db.VarChar(255)
+  page_published_at     DateTime?               @db.Timestamp(0)
   brand_category        brand_category[]
   brand_image           brand_image[]
   brand_requests        brand_requests[]
@@ -62,6 +67,8 @@ model brands {
   category_requests     category_requests[]
   orders                orders[]
   Products              products[]
+
+  @@index([page_status, page_published_at], map: "brands_page_status_page_published_at_index")
 }
 
 model options {
@@ -604,6 +611,26 @@ model email_messages {
   @@index([source_type, source_id], map: "email_messages_source_type_source_id_index")
   @@index([status, scheduled_at], map: "email_messages_status_scheduled_at_index")
   @@index([template_key], map: "email_messages_template_key_index")
+}
+
+model moderation_requests {
+  id          BigInt    @id @default(autoincrement())
+  source_type String    @db.VarChar(255)
+  source_id   BigInt
+  type        String    @db.VarChar(255)
+  settings    Json?     @db.Json
+  status      String    @default("pending") @db.VarChar(255)
+  reason      String?   @db.VarChar(255)
+  reviewed_by BigInt?
+  reviewed_at DateTime? @db.Timestamp(0)
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  users       users?    @relation(fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "moderation_requests_reviewed_by_foreign")
+
+  @@index([reviewed_by], map: "moderation_requests_reviewed_by_index")
+  @@index([source_type, source_id], map: "moderation_requests_source_type_source_id_index")
+  @@index([status, created_at], map: "moderation_requests_status_created_at_index")
+  @@index([type, status], map: "moderation_requests_type_status_index")
 }
 
 enum order_status {

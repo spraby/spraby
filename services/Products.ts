@@ -398,6 +398,7 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
   try {
     const where: Prisma.productsWhereInput = {
       enabled: true,
+      ...(filter?.brandId ? {brand_id: BigInt(filter.brandId)} : {}),
       Category: {
         ...(filter?.categoryHandles?.length ? {
           handle: {
@@ -537,6 +538,7 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
 type Filter = {
   categoryHandles?: string[],
   collectionHandles?: string[],
+  brandId?: number | bigint,
   optionGroups?: FilterGroup[],
   sort?: ProductSort,
   limit?: number,

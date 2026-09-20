@@ -18,6 +18,15 @@ import ChevronIcon from "@/theme/assets/ChevronIcon";
 import HeardIcon from "@/theme/assets/HeardIcon";
 import Price from "@/theme/snippents/Price";
 import {createWithNotifications} from "@/services/Orders";
+import {
+  getSocialDisplayValue,
+  normalizeEmailHref,
+  normalizePhoneHref,
+  normalizeSocialUrl,
+  SOCIAL_CONTACT_TYPES,
+  SOCIAL_LABELS,
+  type ContactSocial,
+} from "@/lib/contacts";
 import {setStatistic} from "@/services/ProductStatistics";
 import {differenceInMonths, format} from "date-fns";
 import {BreadcrumbItem} from "@/types";
@@ -140,61 +149,6 @@ const flattenStrings = (value: unknown): string[] => {
     return [String(value)];
   }
   return [];
-};
-
-const SOCIAL_LABELS: Record<string, string> = {
-  instagram: 'Instagram',
-  telegram: 'Telegram',
-  whatsapp: 'WhatsApp',
-  facebook: 'Facebook'
-};
-
-const normalizeSocialUrl = (type: string, raw: string): string => {
-  const value = raw.trim();
-  if (!value) return '';
-  if (/^https?:\/\//i.test(value)) return value;
-  if (type === 'instagram') {
-    const username = value.replace(/^@/, '');
-    return `https://instagram.com/${username}`;
-  }
-  if (type === 'telegram') {
-    const username = value.replace(/^@/, '');
-    return `https://t.me/${username}`;
-  }
-  if (type === 'whatsapp') {
-    const digitsOnly = value.replace(/[^\d]/g, '');
-    return digitsOnly.length ? `https://wa.me/${digitsOnly}` : value;
-  }
-  if (value.includes('.')) {
-    const sanitized = value.replace(/^https?:\/\//i, '');
-    return `https://${sanitized}`;
-  }
-  return value;
-};
-
-const getSocialDisplayValue = (type: string, raw: string): string => {
-  const value = raw.trim();
-  if (!value) return '';
-  if (type === 'instagram' || type === 'telegram') {
-    const username = value.replace(/^@/, '');
-    return `@${username}`;
-  }
-  return value;
-};
-
-const normalizePhoneHref = (value: string): string => {
-  const clean = value.replace(/[^\d+]/g, '');
-  return clean.length ? `tel:${clean}` : `tel:${value}`;
-};
-
-const normalizeEmailHref = (value: string): string => `mailto:${value.trim()}`;
-
-type ContactSocial = {
-  type: string
-  label: string
-  value: string
-  url: string
-  display: string
 };
 
 export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = [], brandContacts: brandContactsRaw = [], brandAddresses = []}: Props) {
@@ -469,9 +423,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     const contacts = brandContactsRaw ?? [];
     const phones = contacts.filter(c => c.type === 'phone').map(c => c.value);
     const emails = contacts.filter(c => c.type === 'email').map(c => c.value);
-    const socialTypes = ['whatsapp', 'telegram', 'instagram', 'facebook'];
     const socials: ContactSocial[] = contacts
-      .filter(c => socialTypes.includes(c.type))
+      .filter(c => SOCIAL_CONTACT_TYPES.includes(c.type))
       .map(c => {
         const label = SOCIAL_LABELS[c.type] ?? c.type;
         const url = normalizeSocialUrl(c.type, c.value);
