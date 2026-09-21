@@ -151,6 +151,26 @@ const flattenStrings = (value: unknown): string[] => {
   return [];
 };
 
+/**
+ * Оборачивает содержимое в ссылку на страницу бренда, если она опубликована.
+ * Без страницы — тот же блок, но некликабельный.
+ */
+function BrandPageLink({url, className, children}: {
+  url: string | null,
+  className?: string,
+  children: React.ReactNode,
+}) {
+  if (!url) {
+    return <span className={className}>{children}</span>;
+  }
+
+  return (
+    <Link href={url} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export default function ProductPage({product, informationSettings, breadcrumbs = [], otherProducts = [], brandContacts: brandContactsRaw = [], brandAddresses = []}: Props) {
   const searchParams = useSearchParams();
   const variantIdFromQuery = (searchParams.get('variantId') ?? '').trim() || null;
@@ -549,6 +569,17 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const sellerInitials = useMemo(() => {
     return sellerName.length ? sellerName.slice(0, 2).toUpperCase() : 'S';
   }, [sellerName]);
+
+  // Ссылка на страницу бренда — только если она реально опубликована.
+  const brandPageUrl = useMemo(() => {
+    const brand = product.Brand as {domain?: string | null; page_status?: string | null; page_published_at?: unknown} | undefined;
+
+    if (!brand?.domain || brand.page_status !== 'published' || !brand.page_published_at) {
+      return null;
+    }
+
+    return `/brands/${brand.domain}`;
+  }, [product.Brand]);
 
   const brandLogoSrc = useMemo(() => {
     const src = product.Brand?.Image?.src;
@@ -1354,20 +1385,27 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           <div className='h-px bg-gray-200'></div>
           {(product.Brand?.name || brandLocation || brandSinceText) && (
             <div className='flex items-start gap-4 rounded-2xl bg-white py-4'>
-              <div className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-sm font-semibold text-gray-500 uppercase'>
-                {brandLogoSrc ? (
-                  <Image
-                    src={brandLogoSrc}
-                    alt={product.Brand?.name ?? sellerName}
-                    fill
-                    sizes="48px"
-                    className='object-cover object-center'
-                  />
-                ) : sellerInitials}
-              </div>
+              <BrandPageLink url={brandPageUrl} className='shrink-0'>
+                <div className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-sm font-semibold text-gray-500 uppercase'>
+                  {brandLogoSrc ? (
+                    <Image
+                      src={brandLogoSrc}
+                      alt={product.Brand?.name ?? sellerName}
+                      fill
+                      sizes="48px"
+                      className='object-cover object-center'
+                    />
+                  ) : sellerInitials}
+                </div>
+              </BrandPageLink>
               <div className='flex flex-col gap-2 text-sm text-gray-600'>
                 {product.Brand?.name && (
-                  <span className='text-base font-semibold text-gray-900'>{product.Brand.name}</span>
+                  <BrandPageLink
+                    url={brandPageUrl}
+                    className='text-base font-semibold text-gray-900 transition hover:text-purple-600'
+                  >
+                    {product.Brand.name}
+                  </BrandPageLink>
                 )}
                 {brandLocation && (
                   <div className='flex items-start gap-2'>
