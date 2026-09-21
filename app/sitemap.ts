@@ -14,6 +14,7 @@ const staticRoutes = [
   {path: "/register", priority: 0.5},
   {path: "/privacy-policy", priority: 0.2},
   {path: "/terms-of-use", priority: 0.2},
+  {path: "/brand-page-terms", priority: 0.2},
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
