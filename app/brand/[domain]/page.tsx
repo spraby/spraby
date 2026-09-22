@@ -68,21 +68,10 @@ export default async function Page({params, searchParams}: any) {
     ? `${process.env.AWS_IMAGE_DOMAIN}/${brand.Image.src}`
     : null;
 
-  // Категории бренда — ссылки на каталог; BigInt в пропсы клиента не отдаём.
-  const categories = ((brand as any).brand_category ?? [])
-    .map((link: any) => link.categories)
-    .filter(Boolean)
-    .map((category: any) => ({
-      id: String(category.id),
-      title: category.title ?? category.name,
-      handle: category.handle,
-    }));
-
   return (
     <BrandPage
       brand={brand}
       logoUrl={logoUrl}
-      categories={categories}
       contacts={contacts}
       products={products}
       total={total}

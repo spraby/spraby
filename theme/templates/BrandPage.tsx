@@ -60,17 +60,10 @@ export type BrandPageContact = {
   value: string,
 }
 
-export type BrandPageCategory = {
-  id: string,
-  title: string,
-  handle: string,
-}
-
 type Props = {
   brand: BrandModel,
   /** Абсолютный адрес логотипа: собирается на сервере, в браузере домена S3 нет. */
   logoUrl?: string | null,
-  categories?: BrandPageCategory[],
   contacts?: BrandPageContact[],
   products: ProductCardModel[],
   total?: number,
@@ -82,7 +75,6 @@ type Props = {
 export default function BrandPage({
                                     brand,
                                     logoUrl,
-                                    categories = [],
                                     contacts = [],
                                     products: defaultProducts,
                                     total: defaultTotal = defaultProducts.length,
@@ -220,20 +212,6 @@ export default function BrandPage({
                 </div>
               </div>
             </div>
-
-            {categories.length > 0 && (
-              <div className='flex flex-wrap justify-center gap-2 sm:justify-start'>
-                {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/categories/${category.handle}`}
-                    className='inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 transition hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700'
-                  >
-                    {category.title}
-                  </Link>
-                ))}
-              </div>
-            )}
 
             {contactLinks.length > 0 && (
               <div className='flex flex-wrap justify-center gap-2 sm:justify-start'>

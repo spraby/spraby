@@ -25,7 +25,7 @@ export async function findPublishedByDomain(domain: string): Promise<BrandModel 
       page_status: 'published',
       page_published_at: {not: null},
     },
-    include: {Image: true, brand_category: {include: {categories: true}}},
+    include: {Image: true},
   })
 }
 
@@ -39,7 +39,7 @@ export async function findByDomain(domain: string): Promise<BrandModel | null> {
 
   return db.brands.findFirst({
     where: {domain: normalized},
-    include: {Image: true, brand_category: {include: {categories: true}}},
+    include: {Image: true},
   })
 }
 
