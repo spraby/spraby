@@ -12,7 +12,14 @@ const nextConfig = {
     // Кандидаты для srcset совпадают с копиями в S3 (400, 800) и оригиналом (до 2000).
     deviceSizes: [400, 800, 2000],
     imageSizes: [],
-  }
+  },
+  // Старый адрес страницы бренда: ссылки из переписок и буфера обмена
+  // не должны упираться в 404 после переезда на /brand/<handle>.
+  async redirects() {
+    return [
+      {source: '/brands/:domain', destination: '/brand/:domain', permanent: true},
+    ];
+  },
 };
 
 export default nextConfig;

@@ -187,29 +187,24 @@ export default function BrandPage({
           </ol>
         </nav>
 
-        {/* Обложка: у бренда своей картинки нет, поэтому строим фон из акцента площадки */}
-        <section className='overflow-hidden rounded-3xl border border-gray-200/70 bg-white shadow-sm'>
-          <div className='relative h-28 bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-600 sm:h-40'>
-            <div className='absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:20px_20px]'/>
-            <div className='absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/15 to-transparent'/>
-          </div>
-
-          <div className='flex flex-col gap-4 px-5 pb-5 sm:px-8 sm:pb-7'>
-            <div className='flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:gap-6'>
-              <div className='relative -mt-12 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-2xl font-semibold uppercase text-gray-500 ring-4 ring-white sm:-mt-16 sm:h-32 sm:w-32 sm:rounded-3xl'>
+        {/* Шапка без обложки: логотип и название в одной строке карточки */}
+        <section className='rounded-2xl border border-gray-200/70 bg-white p-5 sm:p-6'>
+          <div className='flex flex-col gap-4'>
+            <div className='flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6'>
+              <div className='relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-2xl font-semibold uppercase text-gray-400 sm:h-28 sm:w-28'>
                 {logoUrl ? (
                   <Image
                     fill
                     priority
                     className='object-cover object-center'
-                    sizes='(max-width: 640px) 96px, 128px'
+                    sizes='(max-width: 640px) 96px, 112px'
                     src={logoUrl}
                     alt={brand.name}
                   />
                 ) : getInitials(brand.name)}
               </div>
 
-              <div className='flex min-w-0 flex-1 flex-col items-center gap-2 text-center sm:items-start sm:pb-1 sm:text-left'>
+              <div className='flex min-w-0 flex-1 flex-col items-center gap-2 text-center sm:items-start sm:text-left'>
                 <h1 className='text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl'>{brand.name}</h1>
                 <div className='flex flex-wrap items-center justify-center gap-2 sm:justify-start'>
                   <span className='inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-3 py-1 text-sm font-semibold text-purple-700'>

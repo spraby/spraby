@@ -578,7 +578,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       return null;
     }
 
-    return `/brands/${brand.domain}`;
+    return `/brand/${brand.domain}`;
   }, [product.Brand]);
 
   const brandLogoSrc = useMemo(() => {

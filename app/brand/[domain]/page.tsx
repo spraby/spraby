@@ -31,7 +31,7 @@ export async function generateMetadata({params, searchParams}: any) {
     return createMetadata({
       title: "Бренд не найден",
       description: "Страница бренда на spraby не найдена.",
-      path: `/brands/${params.domain}`,
+      path: `/brand/${params.domain}`,
       noIndex: true,
     });
   }
@@ -41,7 +41,7 @@ export async function generateMetadata({params, searchParams}: any) {
   return createMetadata({
     title: title || "Страница бренда",
     description: cleanText(brand.about) || `Товары бренда ${title} на spraby.`,
-    path: `/brands/${params.domain}`,
+    path: `/brand/${params.domain}`,
     // Черновик в поиске не нужен.
     noIndex: isPreview,
   });
