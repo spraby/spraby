@@ -20,7 +20,7 @@ const COLORS = {
 };
 
 export default function SellerChartSlide({data}: SellerChartSlideProps) {
-  const [mode, setMode] = useState<ChartMode>('sales');
+  const [mode, setMode] = useState<ChartMode>('interest');
   const [activePoint, setActivePoint] = useState<number | null>(null);
 
   const chart = useMemo(() => buildChart(

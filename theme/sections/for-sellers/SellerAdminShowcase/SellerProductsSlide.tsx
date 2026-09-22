@@ -14,8 +14,8 @@ type SellerProductsSlideProps = {
 const PAGE_SIZE = 3;
 
 export default function SellerProductsSlide({period}: SellerProductsSlideProps) {
-  const [mode, setMode] = useState<TableMode>('sales');
-  const [sortKey, setSortKey] = useState<SortKey>('revenue');
+  const [mode, setMode] = useState<TableMode>('conversion');
+  const [sortKey, setSortKey] = useState<SortKey>('viewToOrder');
   const [descending, setDescending] = useState(true);
   const [page, setPage] = useState(1);
 
