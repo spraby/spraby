@@ -31,7 +31,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
       <div className='mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8'>
         <div className='grid gap-10 lg:grid-cols-[1.2fr,1fr,1fr,1fr]'>
           <div className='flex flex-col gap-4'>
-            <Link href='/' className='flex items-center gap-2 text-purple-600'>
+            <Link prefetch={false} href='/' className='flex items-center gap-2 text-purple-600'>
               <Image
                 src="/img/spraby.svg"
                 alt="spraby — логотип"
@@ -58,7 +58,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
             <ul className='mt-4 space-y-3 text-sm text-gray-600'>
               {primaryLinks.map((item) => (
                 <li key={item.url}>
-                  <Link className='transition hover:text-purple-600' href={item.url}>
+                  <Link prefetch={false} className='transition hover:text-purple-600' href={item.url}>
                     {item.title}
                   </Link>
                 </li>
@@ -71,7 +71,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
             <ul className='mt-4 space-y-3 text-sm text-gray-600'>
               {catalogLinks.map((item) => (
                 <li key={item.url}>
-                  <Link className='transition hover:text-purple-600' href={item.url}>
+                  <Link prefetch={false} className='transition hover:text-purple-600' href={item.url}>
                     {item.title}
                   </Link>
                 </li>
@@ -83,12 +83,12 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
             <h3 className='text-sm font-semibold uppercase tracking-wide text-gray-500'>Контакты</h3>
             <ul className='mt-4 space-y-3 text-sm text-gray-600'>
               <li>
-                <Link className='transition hover:text-purple-600' href='/about'>
+                <Link prefetch={false} className='transition hover:text-purple-600' href='/about'>
                   О нас
                 </Link>
               </li>
               <li>
-                <Link className='transition hover:text-purple-600' href='/contacts'>
+                <Link prefetch={false} className='transition hover:text-purple-600' href='/contacts'>
                   Связаться с нами
                 </Link>
               </li>
@@ -122,7 +122,7 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
 
             <div className='mt-6'>
               <h3 className='text-xs font-semibold uppercase tracking-wide text-gray-500'>Продавцам</h3>
-              <Link
+              <Link prefetch={false}
                 href='/for-sellers'
                 className='mt-3 inline-block text-sm text-gray-600 transition hover:text-purple-600'
               >
@@ -135,8 +135,8 @@ const LayoutFooter = ({menu}: { menu: MenuItem[] }) => {
         <div className='mt-10 flex flex-col gap-3 border-t border-gray-200 pt-6 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between'>
           <span>© {new Date().getFullYear()} spraby. Все права защищены.</span>
           <div className='flex flex-wrap items-center gap-3'>
-            <Link href='/privacy-policy' className='transition hover:text-purple-600'>Политика конфиденциальности</Link>
-            <Link href='/terms-of-use' className='transition hover:text-purple-600'>Пользовательское соглашение</Link>
+            <Link prefetch={false} href='/privacy-policy' className='transition hover:text-purple-600'>Политика конфиденциальности</Link>
+            <Link prefetch={false} href='/terms-of-use' className='transition hover:text-purple-600'>Пользовательское соглашение</Link>
           </div>
         </div>
       </div>

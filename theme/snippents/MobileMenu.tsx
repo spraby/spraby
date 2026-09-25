@@ -176,7 +176,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
 
           <div className="flex-1 overflow-y-auto px-4 py-4">
             {!isRoot && activeCategory?.url && (
-              <Link
+              <Link prefetch={false}
                 href={activeCategory.url}
                 className="mb-4 inline-flex items-center gap-2 rounded-full bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-100"
                 onClick={handleClose}
@@ -195,7 +195,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
                     <li key={itemKey}>
                       <div className="group flex items-stretch rounded-lg border border-gray-100 bg-white transition hover:border-gray-200 hover:shadow">
                         {item.url ? (
-                          <Link
+                          <Link prefetch={false}
                             href={item.url}
                             onClick={handleClose}
                             className="flex min-h-[3.25rem] flex-1 items-center px-4 text-sm font-medium text-gray-900 group-hover:text-purple-700"
@@ -231,7 +231,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
               Быстрый доступ
             </p>
             <div className="mb-3 flex flex-wrap gap-2">
-              <Link
+              <Link prefetch={false}
                 href="/register"
                 onClick={handleClose}
                 className="inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700 active:scale-[0.98]"
@@ -258,7 +258,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
 
             <div className="flex flex-wrap gap-2">
               {quickLinks(menu).map((link) => (
-                <Link
+                <Link prefetch={false}
                   key={link.title}
                   href={link.url}
                   onClick={handleClose}

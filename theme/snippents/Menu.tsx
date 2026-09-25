@@ -40,8 +40,10 @@ function List({items = [], deep = 1}: { items: MenuItem[], deep: number }) {
 
           return (
             <li key={`${deep}_${index}`}>
+              {/* Без prefetch: меню отрисовано целиком, и Next заранее рендерил
+                  на сервере страницы всех ~90 категорий при каждой загрузке. */}
               {item.url?.length ? (
-                <Link href={item.url} className={linkClassName}>
+                <Link prefetch={false} href={item.url} className={linkClassName}>
                   {content}
                 </Link>
               ) : (

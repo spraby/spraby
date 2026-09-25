@@ -7,17 +7,10 @@ import db from "@/prisma/db.client";
 import {notFound} from "next/navigation";
 import {cache} from "react";
 import {buildProductJsonLd, createMissingProductMetadata, createProductMetadata, stringifyJsonLd} from "./seo";
+import {parseProductId} from "./product-id";
 
 // export const revalidate = 120
 
-const MAX_POSTGRES_BIGINT = BigInt("9223372036854775807");
-
-function parseProductId(value: unknown) {
-  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
-
-  const id = BigInt(value);
-  return id > BigInt(0) && id <= MAX_POSTGRES_BIGINT ? id : null;
-}
 
 const getProductDetail = cache(async (productId: bigint) => {
   return findFirst({

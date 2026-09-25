@@ -67,7 +67,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
             <div className='flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-0 py-3 lg:py-5'>
               <div className='flex items-center gap-3'>
-                <Link href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight flex items-center gap-2.5'>
+                <Link prefetch={false} href='/' className='text-purple-600 text-2xl font-bold lowercase tracking-tight flex items-center gap-2.5'>
                   <Image
                     src="/img/spraby.svg"
                     alt="spraby — логотип"
@@ -135,7 +135,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
               <div className='flex items-center gap-4 lg:gap-8'>
                 <div className='hidden items-center gap-2 text-sm font-semibold text-gray-700 lg:flex'>
-                  <Link href='/register' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
+                  <Link prefetch={false} href='/register' className='rounded-lg px-2 py-1 transition hover:text-purple-600'>
                     Регистрация
                   </Link>
                   <div className='h-4 w-px bg-gray-200'/>
@@ -145,7 +145,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
                 </div>
 
                 <div className='flex items-center gap-4 text-gray-500'>
-                  <Link
+                  <Link prefetch={false}
                     href='/favorites'
                     aria-label='Открыть избранное'
                     className='relative flex h-10 w-10 items-center justify-center rounded-full p-2 transition hover:bg-gray-100 hover:text-purple-600'
@@ -157,7 +157,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
                       </span>
                     )}
                   </Link>
-                  <Link
+                  <Link prefetch={false}
                     href='/checkout'
                     aria-label='Открыть корзину'
                     className='relative flex h-10 w-10 items-center justify-center rounded-full p-2 transition hover:bg-gray-100 hover:text-purple-600'
