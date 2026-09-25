@@ -581,6 +581,15 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     return `/brand/${brand.domain}`;
   }, [product.Brand]);
 
+  // Заказ и корзина доступны только бизнес-аккаунтам; мастеру пишут напрямую.
+  const canOrder = product.Brand?.type === 'business';
+
+  const openContacts = () => {
+    setDrawerMode('contacts');
+    setOrderNumber(undefined);
+    setOpen(true);
+  };
+
   const brandLogoSrc = useMemo(() => {
     const src = product.Brand?.Image?.src;
     return typeof src === 'string' && src.trim().length ? src : '';
@@ -1277,61 +1286,71 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
           )}
 
           <div className='flex flex-col gap-3'>
-            <div className='grid grid-cols-2 gap-3'>
+            {canOrder ? (
+              <div className='grid grid-cols-2 gap-3'>
+                <button
+                  disabled={!variant}
+                  onClick={() => {
+                    if (!variant) return;
+                    setDrawerMode('order');
+                    setOrderNumber(undefined);
+                    setQuickOrderQuantity(1);
+                    setOpen(true);
+                  }}
+                  className={`w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  Быстрый заказ
+                </button>
+                <button
+                  disabled={!variant}
+                  onClick={() => {
+                    if (!variant || !cartItemId) return;
+                    addItem({
+                      id: cartItemId,
+                      productId: String(product.id),
+                      variantId: String(variant.id),
+                      brandId: String(product.brand_id),
+                      brandName: brandDisplayName || 'Продавец',
+                      title: product.title,
+                      variantTitle: variantSummary,
+                      variantOptions: variantDetails,
+                      image: productPreviewImage,
+                      price: currentPrice,
+                      finalPrice: currentFinalPrice,
+                    });
+                    setStatistic(product.id, 'add_to_cart').then();
+  
+                    // Показываем успешное добавление
+                    setAddedToCart(true);
+                    setTimeout(() => setAddedToCart(false), 2000);
+                  }}
+                  className="w-full rounded-xl border border-purple-600 py-3 text-sm font-semibold text-purple-600 shadow-sm transition hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    {addedToCart ? (
+                      <>
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-green-500">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        </svg>
+                        Добавлен в корзину
+                      </>
+                    ) : (
+                      <>
+                        {itemInCartQuantity > 0 ? `В корзине (${itemInCartQuantity})` : 'В корзину'}
+                      </>
+                    )}
+                  </span>
+                </button>
+              </div>
+            ) : (
               <button
-                disabled={!variant}
-                onClick={() => {
-                  if (!variant) return;
-                  setDrawerMode('order');
-                  setOrderNumber(undefined);
-                  setQuickOrderQuantity(1);
-                  setOpen(true);
-                }}
-                className={`w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60`}
+                type="button"
+                onClick={openContacts}
+                className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-semibold text-white shadow-sm transition hover:!from-purple-700 hover:!to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200"
               >
-                Быстрый заказ
+                Написать продавцу
               </button>
-              <button
-                disabled={!variant}
-                onClick={() => {
-                  if (!variant || !cartItemId) return;
-                  addItem({
-                    id: cartItemId,
-                    productId: String(product.id),
-                    variantId: String(variant.id),
-                    brandId: String(product.brand_id),
-                    brandName: brandDisplayName || 'Продавец',
-                    title: product.title,
-                    variantTitle: variantSummary,
-                    variantOptions: variantDetails,
-                    image: productPreviewImage,
-                    price: currentPrice,
-                    finalPrice: currentFinalPrice,
-                  });
-                  setStatistic(product.id, 'add_to_cart').then();
-
-                  // Показываем успешное добавление
-                  setAddedToCart(true);
-                  setTimeout(() => setAddedToCart(false), 2000);
-                }}
-                className="w-full rounded-xl border border-purple-600 py-3 text-sm font-semibold text-purple-600 shadow-sm transition hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span className="flex items-center justify-center gap-2">
-                  {addedToCart ? (
-                    <>
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-green-500">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                      </svg>
-                      Добавлен в корзину
-                    </>
-                  ) : (
-                    <>
-                      {itemInCartQuantity > 0 ? `В корзине (${itemInCartQuantity})` : 'В корзину'}
-                    </>
-                  )}
-                </span>
-              </button>
-            </div>
+            )}
 
             {/* Способы доставки */}
             {shippingMethods.length > 0 && (
@@ -1423,11 +1442,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
             </div>
           )}
           <button
-            onClick={() => {
-              setDrawerMode('contacts');
-              setOrderNumber(undefined);
-              setOpen(true);
-            }}
+            onClick={openContacts}
             className='w-full rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-100'
           >
             Контакты продавца
