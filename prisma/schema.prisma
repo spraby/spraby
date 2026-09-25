@@ -58,6 +58,8 @@ model brands {
   domain                String?                 @unique(map: "brands_domain_unique") @db.VarChar(255)
   page_status           String                  @default("none") @db.VarChar(255)
   page_published_at     DateTime?               @db.Timestamp(0)
+  employment_name       String?                 @db.VarChar(255)
+  employment_number     String?                 @db.VarChar(9)
   brand_category        brand_category[]
   brand_image           brand_image[]
   brand_requests        brand_requests[]
@@ -363,6 +365,8 @@ model brand_requests {
   updated_at                              DateTime? @default(now()) @updatedAt @db.Timestamp(0)
   notified_at                             DateTime? @db.Timestamp(0)
   employment_type                         String?   @db.VarChar(255)
+  employment_name                         String?   @db.VarChar(255)
+  employment_number                       String?   @db.VarChar(9)
   brands                                  brands?   @relation(fields: [brand_id], references: [id], onUpdate: NoAction, map: "brand_requests_brand_id_foreign")
   users_brand_requests_reviewed_byTousers users?    @relation("brand_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "brand_requests_reviewed_by_foreign")
   users_brand_requests_user_idTousers     users?    @relation("brand_requests_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction, map: "brand_requests_user_id_foreign")
