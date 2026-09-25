@@ -16,10 +16,15 @@ export type CreateBrandRequestInput = {
   phone?: string;
   name?: string;
   brand_name?: string;
-  employment_type?: string;
+  employment_type: string;
 }
 
 export async function createRequest(input: CreateBrandRequestInput): Promise<{success: boolean; error?: string}> {
+  // Форма занятости обязательна: по ней при одобрении определяется тип аккаунта.
+  if (!isEmploymentType(input.employment_type ?? '')) {
+    return {success: false, error: 'Выберите форму занятости'}
+  }
+
   try {
     // Check if request with this email already exists and is pending
     const existing = await db.brand_requests.findFirst({
@@ -39,9 +44,7 @@ export async function createRequest(input: CreateBrandRequestInput): Promise<{su
         phone: input.phone || null,
         name: input.name || null,
         brand_name: input.brand_name || null,
-        employment_type: isEmploymentType(input.employment_type ?? '')
-          ? input.employment_type
-          : null,
+        employment_type: input.employment_type,
         status: 'pending',
       }
     })

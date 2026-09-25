@@ -200,6 +200,9 @@ export default function AuthPage() {
     if (!form.brandName.trim()) {
       nextErrors.brandName = "Укажите название бренда";
     }
+    if (!form.employmentType) {
+      nextErrors.employmentType = "Выберите форму занятости";
+    }
     return nextErrors;
   };
 
@@ -222,7 +225,7 @@ export default function AuthPage() {
       phone: form.phone.trim() || undefined,
       name: form.name.trim(),
       brand_name: form.brandName.trim(),
-      employment_type: form.employmentType || undefined,
+      employment_type: form.employmentType,
     });
 
     if (result.success) {
@@ -346,12 +349,14 @@ export default function AuthPage() {
                 const [selected] = Array.from(keys as Set<string>);
                 handleChange("employmentType", selected ?? "");
               }}
+              isInvalid={!!errors.employmentType}
+              errorMessage={errors.employmentType}
               isDisabled={isLoading}
               classNames={{
                 label: "text-sm font-semibold text-gray-700",
                 trigger: "bg-white",
               }}
-              placeholder="Не обязательно"
+              placeholder="Выберите форму занятости"
             >
               {EMPLOYMENT_TYPES.map((type) => (
                 <SelectItem key={type.value}>{type.label}</SelectItem>
