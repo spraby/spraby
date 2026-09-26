@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {FaFacebookF, FaInstagram, FaTelegramPlane, FaWhatsapp} from 'react-icons/fa';
+import {FaFacebookF, FaInstagram, FaTelegramPlane, FaViber, FaWhatsapp} from 'react-icons/fa';
 import {FiMail, FiPhone} from 'react-icons/fi';
 import {useCallback, useEffect, useMemo, useState} from "react";
 
@@ -11,6 +11,7 @@ import {
   getSocialDisplayValue,
   normalizeEmailHref,
   normalizePhoneHref,
+  isWebUrl,
   normalizeSocialUrl,
   SOCIAL_CONTACT_TYPES,
   SOCIAL_LABELS,
@@ -22,12 +23,13 @@ import type {IconType} from 'react-icons';
 import ProductCart from "@/theme/snippents/ProductCart";
 
 /** Порядок вывода: сначала то, чем реально связываются. */
-const CONTACT_ORDER = ['phone', 'whatsapp', 'telegram', 'email', 'instagram', 'facebook'];
+const CONTACT_ORDER = ['phone', 'whatsapp', 'viber', 'telegram', 'email', 'instagram', 'facebook'];
 
 const CONTACT_ICONS: Record<string, IconType> = {
   phone: FiPhone,
   email: FiMail,
   whatsapp: FaWhatsapp,
+  viber: FaViber,
   telegram: FaTelegramPlane,
   instagram: FaInstagram,
   facebook: FaFacebookF,
@@ -151,7 +153,8 @@ export default function BrandPage({
           label: SOCIAL_LABELS[contact.type] ?? contact.type,
           display: getSocialDisplayValue(contact.type, contact.value) || contact.value,
           url,
-          external: true,
+          // viber:// открывает приложение — новая вкладка осталась бы пустой.
+          external: isWebUrl(url),
         }
         : null;
     })

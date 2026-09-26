@@ -5,12 +5,13 @@
  * готовый адрес, — поэтому ссылку собираем по типу контакта.
  */
 
-export const SOCIAL_CONTACT_TYPES = ['whatsapp', 'telegram', 'instagram', 'facebook'];
+export const SOCIAL_CONTACT_TYPES = ['whatsapp', 'viber', 'telegram', 'instagram', 'facebook'];
 
 export const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
   telegram: 'Telegram',
   whatsapp: 'WhatsApp',
+  viber: 'Viber',
   facebook: 'Facebook'
 };
 
@@ -30,6 +31,11 @@ export const normalizeSocialUrl = (type: string, raw: string): string => {
     const digitsOnly = value.replace(/[^\d]/g, '');
     return digitsOnly.length ? `https://wa.me/${digitsOnly}` : value;
   }
+  if (type === 'viber') {
+    // Номер без «+» и разделителей: viber://chat?number=375291234567
+    const digitsOnly = value.replace(/[^\d]/g, '');
+    return digitsOnly.length ? `viber://chat?number=${digitsOnly}` : '';
+  }
   if (value.includes('.')) {
     const sanitized = value.replace(/^https?:\/\//i, '');
     return `https://${sanitized}`;
@@ -46,6 +52,9 @@ export const getSocialDisplayValue = (type: string, raw: string): string => {
   }
   return value;
 };
+
+/** Ссылка на веб-страницу, а не на приложение (viber://): только её открываем в новой вкладке. */
+export const isWebUrl = (url: string): boolean => /^https?:\/\//i.test(url);
 
 export const normalizePhoneHref = (value: string): string => {
   const clean = value.replace(/[^\d+]/g, '');

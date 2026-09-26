@@ -22,6 +22,7 @@ import {
   getSocialDisplayValue,
   normalizeEmailHref,
   normalizePhoneHref,
+  isWebUrl,
   normalizeSocialUrl,
   SOCIAL_CONTACT_TYPES,
   SOCIAL_LABELS,
@@ -1169,8 +1170,7 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                   <a
                     key={`${social.type}-${social.value}`}
                     href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    {...(isWebUrl(social.url) ? {target: '_blank', rel: 'noopener noreferrer'} : {})}
                     className="flex flex-col rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                   >
                     <span className="text-[0.68rem] uppercase tracking-wide text-gray-400">{social.label}</span>
