@@ -230,7 +230,7 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
               Быстрый доступ
             </p>
-            <div className="mb-3 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               <Link prefetch={false}
                 href="/register"
                 onClick={handleClose}
@@ -256,53 +256,11 @@ export default function MobileMenu({menu, adminLoginUrl}: MobileMenuProps) {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {quickLinks(menu).map((link) => (
-                <Link prefetch={false}
-                  key={link.title}
-                  href={link.url}
-                  onClick={handleClose}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:text-purple-700"
-                >
-                  {link.title}
-                </Link>
-              ))}
-            </div>
           </div>
         </aside>
       </div>
     </Fragment>
   );
-}
-
-type QuickLink = { title: string; url: string };
-
-function quickLinks(menu: MenuItem[]): QuickLink[] {
-  const links: QuickLink[] = [];
-
-  const collect = (items: MenuItem[], depth = 0) => {
-    for (const item of items) {
-      if (links.length >= 6) return;
-      if (item.url) {
-        if (depth === 0) {
-          links.push({title: item.title, url: item.url});
-        } else if (depth === 1) {
-          links.push({title: `${item.title}`, url: item.url});
-        }
-      }
-      if (item.children?.length) {
-        collect(item.children, depth + 1);
-      }
-    }
-  };
-
-  collect(menu);
-
-  if (!links.length) {
-    return [{title: 'Новые поступления', url: '/collections/new'}];
-  }
-
-  return links.slice(0, 6);
 }
 
 const BurgerIcon = () => (
