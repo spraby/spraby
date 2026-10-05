@@ -5,10 +5,10 @@ import Image from "next/image";
 import DoubleSlider from "@/theme/snippents/DoubleSlider";
 import Tabs from "@/theme/snippents/Tabs";
 import VariantSelector from "@/theme/snippents/VariantSelector";
-import {useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject} from "react";
+import {Fragment, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject} from "react";
 import {ProductModel, ProductCardModel, VariantModel} from "@/prisma/types";
 import Drawer from "@/theme/snippents/Drawer";
-import {AiOutlineClose} from "react-icons/ai";
+import {AiOutlineCheck, AiOutlineClose, AiOutlineCopy} from "react-icons/ai";
 import {useForm} from "react-hook-form"
 import {yupResolver} from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -20,7 +20,6 @@ import Price from "@/theme/snippents/Price";
 import {createWithNotifications} from "@/services/Orders";
 import {
   getSocialDisplayValue,
-  normalizeEmailHref,
   normalizePhoneHref,
   isWebUrl,
   normalizeSocialUrl,
@@ -35,6 +34,8 @@ import ProductCart from "@/theme/snippents/ProductCart";
 import ShippingMethodPicker, {
   buildOrderShippingData,
   emptyShippingSelection,
+  fieldValueText,
+  hasMerchantValue,
   normalizeShippingMethods,
   shippingSelectionComment,
   validateShippingSelection,
@@ -189,6 +190,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const [quickOrderQuantity, setQuickOrderQuantity] = useState(1);
   const [recentProducts, setRecentProducts] = useState<RelatedProduct[]>([]);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const linkCopiedTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const {
     toggleFavorite,
     isFavorite: isFavoriteProduct,
@@ -261,6 +264,31 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     setOrderNumber(undefined);
     setDrawerMode('order');
     setQuickOrderQuantity(1);
+    setLinkCopied(false);
+  };
+
+  useEffect(() => () => clearTimeout(linkCopiedTimerRef.current), []);
+
+  const handleCopyProductLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard API недоступен (не https / старый браузер) — копируем через скрытое поле
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (!copied) return;
+    }
+    setLinkCopied(true);
+    clearTimeout(linkCopiedTimerRef.current);
+    linkCopiedTimerRef.current = setTimeout(() => setLinkCopied(false), 2500);
   };
 
   const {
@@ -350,14 +378,27 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
     if (!shippingMethods.length) return '';
     return (
       <div className="flex flex-col gap-3">
-        {shippingMethods.map((method: any) => (
-          <div key={method.id} className="flex flex-col gap-1 rounded-xl border border-gray-200 px-4 py-3">
-            <span className="text-sm font-semibold text-gray-800">{method.name}</span>
-            {method.description && (
-              <span className="text-xs text-gray-500">{method.description}</span>
-            )}
-          </div>
-        ))}
+        {shippingMethods.map(method => {
+          const infoFields = method.merchantFields.filter(hasMerchantValue);
+          return (
+            <div key={method.id} className="flex flex-col gap-1 rounded-xl border border-gray-200 px-4 py-3">
+              <span className="text-sm font-semibold text-gray-800">{method.name}</span>
+              {method.description && (
+                <span className="text-xs text-gray-500">{method.description}</span>
+              )}
+              {infoFields.length > 0 && (
+                <dl className="mt-2 grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-4 gap-y-1.5 border-t border-gray-100 pt-3 text-xs sm:text-sm">
+                  {infoFields.map(field => (
+                    <Fragment key={field.key}>
+                      <dt className="text-gray-500">{field.name}</dt>
+                      <dd className="break-words font-medium text-gray-800">{fieldValueText(field)}</dd>
+                    </Fragment>
+                  ))}
+                </dl>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }, [shippingMethods]);
@@ -443,7 +484,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
   const brandContacts = useMemo(() => {
     const contacts = brandContactsRaw ?? [];
     const phones = contacts.filter(c => c.type === 'phone').map(c => c.value);
-    const emails = contacts.filter(c => c.type === 'email').map(c => c.value);
     const socials: ContactSocial[] = contacts
       .filter(c => SOCIAL_CONTACT_TYPES.includes(c.type))
       .map(c => {
@@ -455,9 +495,8 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
 
     return {
       phones,
-      emails,
       socials,
-      hasAny: Boolean(phones.length || emails.length || socials.length)
+      hasAny: Boolean(phones.length || socials.length)
     };
   }, [brandContactsRaw]);
 
@@ -1126,6 +1165,20 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
       </button>
     </div>
     <div className="flex flex-1 min-h-0 flex-col gap-6 overflow-y-auto pb-3 sm:pb-2">
+      <div className="flex flex-col gap-3 rounded-2xl border border-purple-100 bg-purple-50/40 p-4">
+        <p className="text-sm text-gray-700">
+          Для покупки скопируйте ссылку на товар и отправьте её продавцу.
+        </p>
+        <button
+          type="button"
+          onClick={handleCopyProductLink}
+          aria-live="polite"
+          className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-200 ${linkCopied ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-purple-600 hover:bg-purple-700'}`}
+        >
+          {linkCopied ? <AiOutlineCheck className="h-4 w-4"/> : <AiOutlineCopy className="h-4 w-4"/>}
+          {linkCopied ? 'Ссылка скопирована' : 'Скопировать ссылку'}
+        </button>
+      </div>
       {brandContacts.hasAny ? (
         <>
           {brandContacts.phones.length > 0 && (
@@ -1139,23 +1192,6 @@ export default function ProductPage({product, informationSettings, breadcrumbs =
                     className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                   >
                     <span>{phone}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {brandContacts.emails.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 sm:text-sm">Email</span>
-              <div className="flex flex-col gap-2">
-                {brandContacts.emails.map(email => (
-                  <a
-                    key={email}
-                    href={normalizeEmailHref(email)}
-                    className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    <span>{email}</span>
                   </a>
                 ))}
               </div>

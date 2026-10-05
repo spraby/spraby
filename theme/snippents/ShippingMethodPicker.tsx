@@ -85,7 +85,7 @@ const merchantOptionsFor = (method: StoreShippingMethod, customerKey: string): s
   return Array.isArray(source?.value) ? source.value.filter(item => `${item}`.trim().length) : [];
 };
 
-const fieldValueText = (field: StoreShippingField): string => {
+export const fieldValueText = (field: StoreShippingField): string => {
   return Array.isArray(field.value)
     ? field.value.filter(Boolean).join(', ')
     : `${field.value ?? ''}`.trim();
