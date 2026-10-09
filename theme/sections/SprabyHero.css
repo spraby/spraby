@@ -59,6 +59,21 @@
   transform: translateZ(0);
 }
 
+/* Товар плавно увеличивается при наведении. `scale` — отдельное свойство от
+   `transform`, которым заняты анимации появления и парения. Слой с товарами
+   pointer-events-none, поэтому мышь включаем только на самих товарах. */
+.spraby-hero-desktop-products .spraby-hero-product-shell {
+  pointer-events: auto;
+}
+
+.spraby-hero-product-art {
+  transition: scale 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spraby-hero-desktop-products .spraby-hero-product-shell:hover .spraby-hero-product-art {
+  scale: 1.2;
+}
+
 @media (max-width: 767px) {
   .spraby-hero-mobile-products .spraby-hero-product-art {
     filter: drop-shadow(0 10px 16px rgba(30, 41, 59, 0.12));
