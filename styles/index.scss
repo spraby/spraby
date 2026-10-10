@@ -139,86 +139,24 @@ body {
   padding-bottom: 10px;
 }
 
-// AUTH PAGES — яркий фиолетовый фон с медленно плывущим градиентом и двумя
-// размытыми пятнами. Повторяет фон входа в кабинет продавца (api: admin.css).
+/* Calm auth background shared by login and seller registration. */
 .auth-bg {
-  background: linear-gradient(120deg, #6d28d9 0%, #8f00ff 30%, #a855f7 55%, #4f46e5 80%, #8f00ff 100%);
-  background-size: 300% 300%;
-  animation: auth-gradient 18s ease-in-out infinite;
+    background:
+        radial-gradient(ellipse at 15% 15%, rgba(233, 213, 255, 0.5), transparent 55%),
+        radial-gradient(ellipse at 85% 85%, rgba(224, 231, 255, 0.5), transparent 55%),
+        #f8f7fb;
 }
 
-.auth-glow {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(80px);
-  opacity: 0.55;
-  pointer-events: none;
-  animation: auth-glow 22s ease-in-out infinite alternate;
+.auth-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 16px 48px rgba(46, 16, 101, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-@keyframes auth-gradient {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-@keyframes auth-glow {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(12vw, 8vh) scale(1.15); }
-  100% { transform: translate(-8vw, 14vh) scale(0.9); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-bg,
-  .auth-glow {
-    animation: none;
-  }
-}
-
-// Парящие товары и плашки вокруг карточки — тот же набор и движение,
-// что и в герое главной (theme/sections/SprabyHero.css).
-.auth-floater {
-    position: absolute;
-    opacity: 0;
-    animation: auth-floater-in 900ms cubic-bezier(0.22, 1, 0.36, 1) var(--appear-delay, 0ms) forwards;
-}
-
-.auth-floater-motion {
-    animation: auth-floater-float var(--float-duration, 7600ms) ease-in-out var(--float-delay, 0ms) infinite;
-    will-change: transform;
-}
-
-.auth-floater-art {
-    display: block;
-    width: 100%;
-    height: auto;
-    filter: drop-shadow(0 18px 28px rgba(46, 16, 101, 0.35));
-}
-
-// Товар увеличивается при наведении. `scale` — отдельное свойство от `transform`,
-// которым уже заняты анимации появления и парения.
-.auth-floater-product {
-    pointer-events: auto;
-}
-
-.auth-floater-product .auth-floater-art {
-    transition: scale 450ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.auth-floater-product:hover .auth-floater-art {
-    scale: 1.2;
-}
-
-@keyframes auth-floater-in {
-    from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.96); }
-    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-}
-
-@keyframes auth-floater-float {
-    0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-    50% { transform: translate3d(var(--float-x, 4px), var(--float-y, -10px), 0) rotate(1.5deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .auth-floater { animation: none; opacity: 1; }
-    .auth-floater-motion { animation: none; }
+@supports ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+    .auth-card {
+        background: rgba(255, 255, 255, 0.72);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+    }
 }
