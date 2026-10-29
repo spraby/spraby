@@ -131,7 +131,7 @@ export async function getProductsOnTrend() {
       include: {
         Brand: {
           include: {
-            User: true
+            User: {select: {first_name: true, last_name: true}}
           }
         },
         Images: {
@@ -164,7 +164,7 @@ export async function getProductsOnTrend() {
         include: {
           Brand: {
             include: {
-              User: true
+              User: {select: {first_name: true, last_name: true}}
             }
           },
           Images: {
@@ -252,7 +252,7 @@ export async function getTrendingProducts(limit = 100): Promise<(ProductModel & 
       include: {
         Brand: {
           include: {
-            User: true
+            User: {select: {first_name: true, last_name: true}}
           }
         },
         Images: {
@@ -312,7 +312,7 @@ export async function getLatestProducts(limit = 15) {
       include: {
         Brand: {
           include: {
-            User: true
+            User: {select: {first_name: true, last_name: true}}
           }
         },
         Images: {
@@ -457,7 +457,7 @@ export async function getFilteredProducts(filter: Filter): Promise<PaginatedProd
         include: {
           Brand: {
             include: {
-              User: true
+              User: {select: {first_name: true, last_name: true}}
             }
           },
           Category: {

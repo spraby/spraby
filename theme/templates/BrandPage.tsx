@@ -3,13 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {FaFacebookF, FaInstagram, FaTelegramPlane, FaViber, FaWhatsapp} from 'react-icons/fa';
-import {FiMail, FiPhone} from 'react-icons/fi';
+import {FiPhone} from 'react-icons/fi';
 import {useCallback, useEffect, useMemo, useState} from "react";
 
 import {BRAND_PAGE_SIZE} from "@/lib/brand-page";
 import {
   getSocialDisplayValue,
-  normalizeEmailHref,
   normalizePhoneHref,
   isWebUrl,
   normalizeSocialUrl,
@@ -23,11 +22,10 @@ import type {IconType} from 'react-icons';
 import ProductCart from "@/theme/snippents/ProductCart";
 
 /** Порядок вывода: сначала то, чем реально связываются. */
-const CONTACT_ORDER = ['phone', 'whatsapp', 'viber', 'telegram', 'email', 'instagram', 'facebook'];
+const CONTACT_ORDER = ['phone', 'whatsapp', 'viber', 'telegram', 'instagram', 'facebook'];
 
 const CONTACT_ICONS: Record<string, IconType> = {
   phone: FiPhone,
-  email: FiMail,
   whatsapp: FaWhatsapp,
   viber: FaViber,
   telegram: FaTelegramPlane,
@@ -135,10 +133,6 @@ export default function BrandPage({
     .map((contact) => {
       if (contact.type === 'phone') {
         return {type: contact.type, label: 'Телефон', display: contact.value, url: normalizePhoneHref(contact.value), external: false};
-      }
-
-      if (contact.type === 'email') {
-        return {type: contact.type, label: 'Email', display: contact.value, url: normalizeEmailHref(contact.value), external: false};
       }
 
       if (!SOCIAL_CONTACT_TYPES.includes(contact.type)) {

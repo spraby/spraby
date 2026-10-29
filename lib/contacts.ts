@@ -61,8 +61,6 @@ export const normalizePhoneHref = (value: string): string => {
   return clean.length ? `tel:${clean}` : `tel:${value}`;
 };
 
-export const normalizeEmailHref = (value: string): string => `mailto:${value.trim()}`;
-
 export type ContactSocial = {
   type: string
   label: string

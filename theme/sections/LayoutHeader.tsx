@@ -14,6 +14,7 @@ import {useCart} from "@/theme/hooks/useCart";
 import {useRouter} from "next/navigation";
 import {useProductSuggestions} from "@/theme/hooks/useProductSuggestions";
 import SearchSuggestionItem from "@/theme/snippents/SearchSuggestionItem";
+import {useHideOnScroll} from "@/theme/hooks/useHideOnScroll";
 
 const SHOW_HEADER_PROMO_BAR = false;
 const ADMIN_LOGIN_URL = process.env.LOGIN_URL || 'http://localhost:8000/admin';
@@ -35,6 +36,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
   const [search, setSearch] = useState('');
   const {suggestions, open: openSuggest, setOpen: setOpenSuggest} = useProductSuggestions(search);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const hideOnMobile = useHideOnScroll();
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -56,7 +58,10 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
 
   return (
     <>
-      <div className='shadow-lg shadow-slate-200'>
+      {/* На мобильных шапка липкая и уезжает вверх при прокрутке вниз.
+          transform вешаем только в скрытом состоянии: любой transform делает
+          шапку containing block'ом для fixed-оверлея MobileMenu внутри неё. */}
+      <div className={`sticky top-0 z-40 bg-white shadow-lg shadow-slate-200 transition-transform duration-150 ease-out lg:static ${hideOnMobile ? 'max-lg:-translate-y-full' : ''}`}>
         <div className='mx-auto max-w-6xl'>
           <div className='flex flex-col gap-3 lg:gap-0'>
             {SHOW_HEADER_PROMO_BAR && (

@@ -1568,7 +1568,6 @@ type RenderCarouselConfig = {
 }
 
 type BrandContact = {
-  id: string | number
   type: string
   value: string
 }

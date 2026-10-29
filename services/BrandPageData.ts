@@ -52,6 +52,7 @@ export async function getBrandContacts(brandId: bigint | number) {
     where: {
       contactable_type: 'App\\Models\\Brand',
       contactable_id: BigInt(brandId),
+      type: {not: 'email'},
     },
     select: {type: true, value: true},
   })

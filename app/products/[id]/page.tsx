@@ -34,7 +34,7 @@ const getProductDetail = cache(async (productId: bigint) => {
       },
       Brand: {
         include: {
-          User: true,
+          User: {select: {first_name: true, last_name: true}},
           Image: true,
           brand_shipping_method: {
             // Способы деактивированных конструкторов не показываем и не продаём
@@ -159,7 +159,7 @@ export default async function ProductDetailPage(props: any) {
     include: {
       Brand: {
         include: {
-          User: true
+          User: {select: {first_name: true, last_name: true}}
         }
       },
       Images: {
@@ -205,7 +205,9 @@ export default async function ProductDetailPage(props: any) {
     where: {
       contactable_type: 'App\\Models\\Brand',
       contactable_id: product.brand_id,
-    }
+      type: {not: 'email'},
+    },
+    select: {type: true, value: true},
   }) : [];
 
   const brandAddresses = product?.brand_id ? await db.addresses.findMany({
