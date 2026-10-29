@@ -1,14 +1,19 @@
 'use client'
 
-import {useEffect, useState} from "react";
+import {RefObject, useEffect, useState} from "react";
 
-/**
- * true, когда шапку нужно спрятать: листаем вниз дальше `offset`.
- * При прокрутке вверх или у самого верха страницы — false.
- * `tolerance` гасит дрожание при скрытии; показываем сразу при движении вверх.
- */
-export function useHideOnScroll(offset = 80, tolerance = 8) {
-  const [hidden, setHidden] = useState(false);
+export function useRevealOnScrollUp(ref: RefObject<HTMLElement | null>, tolerance = 6) {
+  const [revealed, setRevealed] = useState(false);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver(() => setHeight(element.offsetHeight));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
 
   useEffect(() => {
     let lastY = Math.max(0, window.scrollY);
@@ -19,22 +24,21 @@ export function useHideOnScroll(offset = 80, tolerance = 8) {
       const y = Math.max(0, window.scrollY);
       const delta = y - lastY;
 
-      if (y <= offset) {
-        setHidden(false);
+      if (y === 0) {
+        setRevealed(false);
         lastY = y;
         return;
       }
 
-      // Показываем при любом движении вверх, прячем — только после tolerance
       if (delta < 0) {
-        setHidden(false);
+        setRevealed(true);
         lastY = y;
         return;
       }
 
       if (delta < tolerance) return;
 
-      setHidden(true);
+      setRevealed(false);
       lastY = y;
     };
 
@@ -42,9 +46,6 @@ export function useHideOnScroll(offset = 80, tolerance = 8) {
       if (!frame) frame = requestAnimationFrame(update);
     };
 
-    // Мобильные браузеры тратят начало жеста вверх на показ своей адресной
-    // строки: страница не прокручивается и scroll не приходит. Поэтому
-    // короткий свайп вниз пальцем ловим по самому касанию.
     let touchY = 0;
 
     const onTouchStart = (event: TouchEvent) => {
@@ -53,8 +54,8 @@ export function useHideOnScroll(offset = 80, tolerance = 8) {
 
     const onTouchMove = (event: TouchEvent) => {
       const currentY = event.touches[0].clientY;
-      if (currentY - touchY > tolerance) {
-        setHidden(false);
+      if (currentY - touchY > tolerance && window.scrollY > 0) {
+        setRevealed(true);
         lastY = Math.max(0, window.scrollY);
       }
       if (currentY < touchY) touchY = currentY;
@@ -69,7 +70,7 @@ export function useHideOnScroll(offset = 80, tolerance = 8) {
       window.removeEventListener('touchmove', onTouchMove);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [offset, tolerance]);
+  }, [tolerance]);
 
-  return hidden;
+  return revealed ? 0 : -height;
 }
