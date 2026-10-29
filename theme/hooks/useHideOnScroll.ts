@@ -42,9 +42,31 @@ export function useHideOnScroll(offset = 80, tolerance = 8) {
       if (!frame) frame = requestAnimationFrame(update);
     };
 
+    // Мобильные браузеры тратят начало жеста вверх на показ своей адресной
+    // строки: страница не прокручивается и scroll не приходит. Поэтому
+    // короткий свайп вниз пальцем ловим по самому касанию.
+    let touchY = 0;
+
+    const onTouchStart = (event: TouchEvent) => {
+      touchY = event.touches[0].clientY;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0].clientY;
+      if (currentY - touchY > tolerance) {
+        setHidden(false);
+        lastY = Math.max(0, window.scrollY);
+      }
+      if (currentY < touchY) touchY = currentY;
+    };
+
     window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('touchstart', onTouchStart, {passive: true});
+    window.addEventListener('touchmove', onTouchMove, {passive: true});
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [offset, tolerance]);
