@@ -37,7 +37,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
   const {suggestions, open: openSuggest, setOpen: setOpenSuggest} = useProductSuggestions(search);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
-  const headerTop = useRevealOnScrollUp(headerRef);
+  const {top: headerTop, hidden: headerHidden} = useRevealOnScrollUp(headerRef);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -62,7 +62,7 @@ const LayoutHeader = ({menu}: { menu: MenuItem[] }) => {
       <div
         ref={headerRef}
         style={{top: headerTop}}
-        className='sticky z-40 bg-white shadow-lg shadow-slate-200 transition-[top] duration-300 ease-out lg:static'
+        className={`sticky z-40 bg-white transition-[top,box-shadow] duration-300 ease-out lg:static ${headerHidden ? 'shadow-none' : 'shadow-lg shadow-black/5'}`}
       >
         <div className='mx-auto max-w-6xl'>
           <div className='flex flex-col gap-3 lg:gap-0'>

@@ -5,6 +5,7 @@ import {RefObject, useEffect, useState} from "react";
 export function useRevealOnScrollUp(ref: RefObject<HTMLElement | null>, tolerance = 6) {
   const [revealed, setRevealed] = useState(false);
   const [height, setHeight] = useState(0);
+  const [scrolledPast, setScrolledPast] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -23,6 +24,8 @@ export function useRevealOnScrollUp(ref: RefObject<HTMLElement | null>, toleranc
       frame = 0;
       const y = Math.max(0, window.scrollY);
       const delta = y - lastY;
+
+      setScrolledPast(y >= (ref.current?.offsetHeight ?? 0));
 
       if (y === 0) {
         setRevealed(false);
@@ -70,7 +73,11 @@ export function useRevealOnScrollUp(ref: RefObject<HTMLElement | null>, toleranc
       window.removeEventListener('touchmove', onTouchMove);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [tolerance]);
+  }, [ref, tolerance]);
 
-  return revealed ? 0 : -height;
+  return {
+    top: revealed ? 0 : -height,
+    // Header is fully out of the viewport — anything it draws below itself (shadow) would leak in
+    hidden: !revealed && scrolledPast,
+  };
 }
